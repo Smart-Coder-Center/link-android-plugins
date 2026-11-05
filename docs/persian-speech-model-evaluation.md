@@ -102,7 +102,7 @@ Verified facts:
 
 **Feasibility is promising but not yet proven.** The base architecture is Whisper Medium, but the HF-to-OpenAI weight mapping, tokenizer parity, ONNX numerical parity, INT8 accuracy, v1.13.8 execution, and package footprint remain unverified. No conversion script, ONNX artifact, catalog entry, release asset, or app adapter change is being published yet. This avoids shipping a package that silently runs stock Whisper or fails at runtime.
 
-The next technical milestone is a reproducible conversion prototype that produces FP32 ONNX and a parity report before any INT8 packaging. The user's Android device is still required for final latency, RAM, heat, battery, and real-world Persian quality measurements.
+The detailed v1.13.8 exporter findings and proposed strict HF-to-OpenAI tensor mapping are recorded in [the conversion spike](taraneh-wmedium-conversion-spike.md). The next technical milestone is a reproducible conversion prototype that produces FP32 ONNX and a parity report before any INT8 packaging. The user's Android device is still required for final latency, RAM, heat, battery, and real-world Persian quality measurements.
 
 Sources:
 - Taraneh model card and checkpoint details: https://huggingface.co/areffarhadi/Taraneh-WMedium
