@@ -60,3 +60,7 @@ No reproducible WER/CER table was found in the reviewed model card. The small mo
 5. Keep Diba in parallel research until its native Android runtime and quality evidence are established.
 
 No catalog entry, production app code, model download, or build/test was changed/performed by this audit. Mana remains the only Persian TTS voice.
+
+### 5. Plugin settings screen has Whisper-specific navigation
+
+The settings screen lists catalog plugins generically by `kind`, so a future Koochik catalog item can appear under ASR. However, the screen decides whether to show the non-actionable “Whisper pending” row by checking only IDs beginning with `asr.whisper-`, and the ASR deep-link scroll target also searches only for that prefix. A non-Whisper ASR plugin would therefore be listed alongside a misleading Whisper-pending row, and opening the ASR category may scroll to that row instead of the available model. This should be generalized to “no ASR plugins available” / first ASR plugin when the adapter work is implemented.
