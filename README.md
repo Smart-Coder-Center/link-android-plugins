@@ -11,7 +11,7 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 ## Current status
 
-- **Persian offline TTS:** Mana Piper 1.0.0 is listed in the catalog. Its installation and speech quality still require end-to-end testing on supported Android devices.
+- **Persian offline TTS:** Mana Piper 1.0.0 is the only published voice and remains the only TTS option for now. No additional voices will be added until ASR engine quality evaluation is complete and a separate decision is made.
 - **Persian offline ASR:** no Whisper package is currently published in the catalog. The Android app contains a Sherpa-ONNX Whisper adapter for multilingual Whisper Small/Base INT8 packages, but a compatible archive must be built, released, and added to the catalog before it can be downloaded.
 - **Retired engine:** Shenava Rizeh is not part of the active catalog. Its retired-package cleanup in the app exists only to remove data left by older installations.
 
