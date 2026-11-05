@@ -7,25 +7,36 @@ Use **sherpa-onnx OfflineRecognizer with multilingual Whisper** as the single AS
 Why:
 - Link already uses sherpa-onnx Java APIs for offline speech features, so the same Java runtime and audio preprocessing path can serve ASR and TTS.
 - sherpa-onnx documents Android Java integration and provides pre-trained Whisper ONNX models.
-- Whisper is multilingual and supports Persian; one model family can handle Persian and English without separate language-specific recognizers.
+- Whisper multilingual models support Persian and English; one model family can handle both without separate language-specific recognizers.
 - Replacing the current custom Rust ASR path with the existing sherpa-onnx runtime should remove custom Rust/NDK ASR compilation and model-conversion steps from the Standard app workflow.
 
-## First model candidate
+## Primary model candidate
 
-**Whisper large-v3, int8 ONNX** (encoder, decoder, and tokens).
+**Whisper Small multilingual, INT8 ONNX** (encoder, decoder, and tokens).
 
-This is the accuracy-first candidate for Persian. It is a large model, so the app must check available memory and run inference off the UI thread. It is non-streaming and best suited to recorded voice messages or completed audio clips. A smaller/faster model can be offered later if device benchmarks show large-v3 is too slow.
+Approximate official sherpa-onnx INT8 payload:
+- small-encoder.int8.onnx: about 112 MB
+- small-decoder.int8.onnx: about 262 MB
+- small-tokens.txt: about 0.8 MB
+- Total: about 374 MB before ZIP packaging
 
-Do not silently substitute English-only tiny.en models for Persian.
+This fits Link's agreed maximum archive size of 375,000,000 bytes narrowly. The release pipeline must measure the exact final ZIP size and refuse publication if it exceeds the cap. Use the multilingual Small model, never the English-only Small model, because Persian is required.
 
-## Suggested package ID
+The model's on-disk size is not its peak RAM requirement. Before enabling it by default, measure peak memory, cold start, transcription latency, and battery on representative Android devices. Run inference on a cancellable worker thread.
 
-asr.whisper-large-v3.int8.multilingual
+## Fallback model
+
+**Whisper Base multilingual, INT8 ONNX**. Its encoder is about 29 MB and decoder about 131 MB, plus tokens (about 160 MB total). Offer it as a lower-storage and potentially lower-memory fallback if Small is too slow or memory-heavy on target phones.
+
+## Suggested package IDs
+
+- asr.whisper-small.int8.multilingual
+- asr.whisper-base.int8.multilingual
 
 Required payload:
-- large-v3-encoder.int8.onnx
-- large-v3-decoder.int8.onnx
-- large-v3-tokens.txt
+- small-encoder.int8.onnx (or base-encoder.int8.onnx)
+- small-decoder.int8.onnx (or base-decoder.int8.onnx)
+- small-tokens.txt (or base-tokens.txt)
 - license and attribution notices
 
 The final package must be built from a pinned model revision. Record exact archive size and SHA-256 in the catalog and SHA-256 for every payload file in plugin.json.
