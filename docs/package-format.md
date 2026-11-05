@@ -1,6 +1,6 @@
 # Plugin package format (draft v1)
 
-This is the packaging contract for downloadable Link plugins. A package is a ZIP uploaded as an asset to a versioned GitHub Release. Do not commit large model or runtime binaries to the Git repository.
+This is the packaging contract for downloadable Link plugins. A package is a ZIP uploaded as an asset to a versioned GitHub Release. Each ZIP must be no larger than 419,430,400 bytes (400 MiB). Do not commit large model or runtime binaries to the Git repository.
 
 ## Required archive layout
 
