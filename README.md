@@ -17,6 +17,10 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 Do not treat an engine as production-ready solely because its metadata or release asset exists. Verify model provenance, redistribution rights, package checksums, installation, inference, update, and removal on real devices.
 
+## Model evaluation
+
+See [the Persian speech model evaluation shortlist](docs/persian-speech-model-evaluation.md) for ASR/TTS alternatives, compatibility notes, and the proposed validation order. These are research candidates, not downloadable catalog entries until their packages pass the release checks.
+
 ## Catalog
 
 Raw catalog URL:
