@@ -1,5 +1,50 @@
 {
   "schema_version": 1,
-  "catalog_version": 1,
-  "plugins": []
+  "catalog_version": 2,
+  "plugins": [
+    {
+      "id": "asr.shenava.rizeh.fa",
+      "name": "تشخیص گفتار فارسی (Shenava Rizeh)",
+      "description": "بسته تشخیص گفتار فارسی به‌صورت آفلاین",
+      "kind": "asr",
+      "language": "fa",
+      "version": "1.0.0",
+      "min_link_version": "2.21.0",
+      "archive": {
+        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/speech-v1.0.0/asr-shenava-rizeh-fa-1.0.0.zip",
+        "size_bytes": 36569130,
+        "sha256": "ba0b1c0196c2a181026498045c5a579f2302a3c3fd97582d5050be3c20901eec"
+      },
+      "runtime": {
+        "engine_id": "link_asr",
+        "engine_version": "1.0.0",
+        "abis": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
+      },
+      "license": {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0"
+      },
+      "release_notes": "Persian offline ASR model package. Requires the Link ASR native runtime."
+    },
+    {
+      "id": "tts.mana.piper.fa",
+      "name": "تبدیل نوشتار به گفتار فارسی (Mana)",
+      "description": "بسته صدای فارسی برای تبدیل متن به گفتار به‌صورت آفلاین",
+      "kind": "tts",
+      "language": "fa",
+      "version": "1.0.0",
+      "min_link_version": "2.21.0",
+      "archive": {
+        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/speech-v1.0.0/tts-mana-piper-fa-1.0.0.zip",
+        "size_bytes": 67513001,
+        "sha256": "871306697e913bfc7f7ada8eb04391566b3d328562f6ed5423254e81589b8957"
+      },
+      "license": {
+        "name": "MIT + GPL-3.0-or-later",
+        "url": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "attribution": "Mana Persian Piper model (MIT) and eSpeak NG phoneme data (GPL-3.0-or-later)"
+      },
+      "release_notes": "Persian offline TTS voice and phoneme data. Requires the Sherpa-ONNX runtime included in Link."
+    }
+  ]
 }
