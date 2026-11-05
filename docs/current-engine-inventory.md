@@ -6,7 +6,7 @@ This inventory describes the currently published plugin catalog and Android app 
 
 - **Persian TTS:** Mana Piper is the only published Persian voice. Keep it as the sole voice for now; do not add alternative voices until the ASR quality evaluation is complete and a separate decision is made.
 - **Persian ASR:** no Whisper package is currently published in the catalog. The app-side adapter currently supports official multilingual Whisper Small/Base INT8 package layouts, but those packages must be built, released, and added to the catalog before they can be downloaded.
-- **ASR research candidates:** Taraneh-WMedium is the first Persian-specialized candidate to evaluate; Taraneh-WLarge is a quality ceiling/reference; Qwen3-ASR 0.6B is an experimental alternative architecture. See `persian-speech-model-evaluation.md` for published metrics, compatibility limits, and the test protocol.
+- **ASR research candidates:** Taraneh-WMedium is the first quality candidate, but its 0.8B-parameter F32 checkpoint makes the current 500 MiB expanded-package limit a likely blocker for standard INT8. Taraneh-WBase (72.6M parameters) is the compact fallback to evaluate if WMedium exceeds the measured cap; WLarge remains a quality ceiling/reference; Qwen3-ASR 0.6B is an experimental alternative architecture. See `persian-speech-model-evaluation.md` for published metrics, compatibility limits, and the test protocol.
 - **Retired engine:** Shenava Rizeh and its custom Rust runtime are retired and must not be reintroduced.
 
 ## Runtime integration
@@ -18,7 +18,7 @@ This inventory describes the currently published plugin catalog and Android app 
 
 ## Taraneh-WMedium conversion status
 
-Taraneh-WMedium is a Hugging Face Whisper Medium fine-tune, not a ready-made Sherpa-ONNX package. The upstream Sherpa exporter currently loads OpenAI Whisper checkpoint formats; Taraneh's published inference path uses Transformers/CTranslate2. A validated weight conversion and tokenizer-ID parity check are required before ONNX export can be trusted. Link's current ASR adapter also only recognizes Small/Base filenames. See [the conversion feasibility spike](persian-speech-model-evaluation.md#taraneh-wmedium-conversion-feasibility-spike-2026-11-06).
+Taraneh-WMedium is a Hugging Face Whisper Medium fine-tune, not a ready-made Sherpa-ONNX package. Its 0.8B-parameter F32 checkpoint is a likely size blocker for Link's 500 MiB expanded-package ceiling even after standard INT8 quantization; the exact ONNX size must be measured before spending effort on Android integration. The upstream Sherpa exporter currently loads OpenAI Whisper checkpoint formats; Taraneh's published inference path uses Transformers/CTranslate2. A validated weight conversion and tokenizer-ID parity check are required before ONNX export can be trusted. Link's current ASR adapter also only recognizes Small/Base filenames. See [the conversion feasibility spike](persian-speech-model-evaluation.md#taraneh-wmedium-conversion-feasibility-spike-2026-11-06).
 
 ## Quality evaluation before publishing more engines
 
