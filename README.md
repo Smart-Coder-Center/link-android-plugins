@@ -11,12 +11,11 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 ## Current status
 
-The catalog is intentionally empty until each package has been built, tested, licensed, and published with a verified SHA-256 checksum. Do not treat planned plugins as downloadable or installed.
+The Persian speech packages are published in the catalog and are available to compatible Link builds:
+- Persian offline speech recognition (ASR): Shenava Rizeh 1.0.0.
+- Persian offline speech synthesis (TTS): Mana Piper 1.0.0.
 
-## Planned plugin families
-
-- Persian and English offline speech recognition (ASR).
-- Persian and English offline speech synthesis (TTS), with separately selectable voices where available.
+These packages have not yet been confirmed by end-to-end device testing. Treat them as published test packages until installation, recognition/synthesis, update/removal, and licensing checks are complete.
 
 ## Catalog
 
