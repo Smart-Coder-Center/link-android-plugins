@@ -33,3 +33,7 @@ Do not publish an ASR catalog entry until the exact package, license, checksums,
 ## Publication requirements
 
 For the existing Whisper workflow, publish complete Small/Base multilingual INT8 packages and add their exact archive URLs, byte sizes, SHA-256 values, versions, and minimum Link version to `manifest/plugins.json`. Do not advertise a downloadable engine before the release assets and catalog entries exist.
+
+## Parallel Persian ASR candidates
+
+A parallel candidate screen is maintained in [persian-asr-alternative-candidates.md](persian-asr-alternative-candidates.md). Current highest-priority alternatives are Shenava Koochik v1.5 RNNT/CTC (Sherpa-native, Apache-2.0, INT8 package reported around 136 MB for RNNT) and Diba-STT fa-small (about 53 MB claimed, but its accuracy and Android runtime still need independent verification). C1Tech Whisper Small Persian and Taraneh-WBase remain conditional Whisper conversion candidates. Quds-v4 is excluded due to its non-commercial license; Rizeh-Pizeh is low-priority due to its reported WER. No new model has been added to the production catalog and no app integration or build has been performed.
