@@ -10,7 +10,7 @@ Do not dynamically load native libraries from downloaded ZIPs in the first relea
 
 ## Package size policy
 
-- Target each downloadable plugin archive at **200-375 MB maximum**.
+- Target each downloadable plugin archive at **200-400 MB maximum**.
 - Keep model weights out of normal Git history. Publish binary packages only as GitHub Release assets.
 - GitHub documents a 2 GiB per-release-asset ceiling; Link deliberately uses a much smaller internal cap.
 - The installer/catalog must enforce the same byte limit, with exact declared size and SHA-256 verification.
@@ -25,7 +25,7 @@ Do not dynamically load native libraries from downloaded ZIPs in the first relea
 | Persian text-to-speech | Piper VITS ONNX, evaluate Ganji Adabi and Ganji first | ~63.5 MB per voice model | Primary TTS candidate |
 | English text-to-speech | Select a Piper en-US/en-GB voice after listening and license review | Depends on voice | Later |
 
-Use the **multilingual** Whisper Small model, not Small English-only, because Persian support is required. sherpa-onnx publishes pre-exported Whisper ONNX models and identifies non-English-only variants as multilingual. The official Small model repository lists the INT8 encoder at about 112 MB and INT8 decoder at about 262 MB, plus a small token file; the combined payload is about 374 MB before packaging. This fits the agreed 375 MB ceiling narrowly, so record the exact archive byte size and reject the package if it exceeds the cap. The Base model is the fallback if packaging overhead or device memory makes Small unsuitable.
+Use the **multilingual** Whisper Small model, not Small English-only, because Persian support is required. sherpa-onnx publishes pre-exported Whisper ONNX models and identifies non-English-only variants as multilingual. The official Small model repository lists the INT8 encoder at about 112 MB and INT8 decoder at about 262 MB, plus a small token file; the combined payload is about 374 MB before packaging. This fits the agreed 400 MB ceiling narrowly, so record the exact archive byte size and reject the package if it exceeds 419,430,400 bytes (400 MiB). The Base model is the fallback if packaging overhead or device memory makes Small unsuitable.
 
 The Small model's weights may require substantial RAM beyond the download size. Benchmark peak memory, cold start, latency, and battery on representative Android devices before enabling it by default. Keep inference off the UI thread and cancellable. If device performance is poor, allow the user to install Base instead.
 
@@ -62,7 +62,7 @@ The catalog remains empty until each package is assembled, checksummed, license-
 - Model files and voices must be pinned to immutable revisions.
 - License and attribution are checked per model/voice, not inferred from the engine license.
 - SHA-256 is recorded for the release ZIP and every payload file in plugin.json.
-- Archive size must be at most 375 MB (375,000,000 bytes); reject larger assets before upload and at install time.
+- Archive size must be at most 400 MiB (419,430,400 bytes); reject larger assets before upload and at install time.
 - No network access is required during inference after installation.
 - Inference runs on worker threads and can be cancelled.
 - Existing speech controls remain disabled until a compatible plugin is installed.
