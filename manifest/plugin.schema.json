@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/smart-center-code/link-android-plugins/main/manifest/plugin.schema.json",
+  "title": "Link Android plugin catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "catalog_version", "plugins"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "catalog_version": { "type": "integer", "minimum": 1 },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id", "name", "description", "kind", "language", "version",
+          "min_link_version", "archive", "license"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["asr", "tts"] },
+          "language": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+          "voice": { "enum": ["male", "female", "neutral"] },
+          "version": { "type": "string", "minLength": 1 },
+          "min_link_version": { "type": "string", "minLength": 1 },
+          "archive": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "size_bytes", "sha256"],
+            "properties": {
+              "url": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/smart-center-code/link-android-plugins/releases/download/" },
+              "size_bytes": { "type": "integer", "minimum": 1 },
+              "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+            }
+          },
+          "runtime": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "engine_id": { "type": "string" },
+              "engine_version": { "type": "string" },
+              "abis": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "enum": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"] }
+              }
+            }
+          },
+          "license": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "url"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "format": "uri" },
+              "attribution": { "type": "string" }
+            }
+          },
+          "release_notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}
