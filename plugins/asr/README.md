@@ -20,7 +20,7 @@ Approximate official sherpa-onnx INT8 payload:
 - small-tokens.txt: about 0.8 MB
 - Total: about 374 MB before ZIP packaging
 
-This fits Link's agreed maximum archive size of 375,000,000 bytes narrowly. The release pipeline must measure the exact final ZIP size and refuse publication if it exceeds the cap. Use the multilingual Small model, never the English-only Small model, because Persian is required.
+This fits Link's agreed maximum archive size of 419,430,400 bytes (400 MiB) narrowly. The release pipeline must measure the exact final ZIP size and refuse publication if it exceeds 419,430,400 bytes. Use the multilingual Small model, never the English-only Small model, because Persian is required.
 
 The model's on-disk size is not its peak RAM requirement. Before enabling it by default, measure peak memory, cold start, transcription latency, and battery on representative Android devices. Run inference on a cancellable worker thread.
 
