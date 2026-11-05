@@ -12,6 +12,58 @@ Verified facts:
 - Link's current `LinkOfflineAsr` adapter only searches for `small-*` and `base-*` filenames. Even a valid Sherpa Whisper Medium package would not currently be selected without a small app-side adapter update.
 - Link's package installer currently caps a compressed archive at 400 MiB and expanded data at 500 MiB. The 3.06 GB source checkpoint is not a distributable package and must not be placed in the catalog.
 
+### Exact v1.13.8 exporter finding and proposed tensor mapping
+
+The pinned v1.13.8 exporter was inspected directly at:
+`https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/scripts/whisper/export-onnx.py`.
+
+Its CLI accepts `--model medium`, but that branch calls `whisper.load_model("medium")` and therefore loads the **stock OpenAI Whisper Medium checkpoint**. It does not load Taraneh. Passing `--model medium` and then publishing the result under a Taraneh name would silently ship the wrong model. The only built-in fine-tuned checkpoint special case is `medium-aishell`, which downloads an unrelated icefall checkpoint.
+
+A dedicated HF-to-OpenAI state-dict adapter is therefore required. The expected name mapping, to be validated against the exact downloaded checkpoint before use, is:
+
+| Hugging Face Transformers key family | OpenAI Whisper key family |
+|---|---|
+| `model.encoder.conv1.*` | `encoder.conv1.*` |
+| `model.encoder.conv2.*` | `encoder.conv2.*` |
+| `model.encoder.embed_positions.weight` | `encoder.positional_embedding` |
+| `model.encoder.layers.i.self_attn.q_proj.*` | `encoder.blocks.i.attn.query.*` |
+| `model.encoder.layers.i.self_attn.k_proj.*` | `encoder.blocks.i.attn.key.*` |
+| `model.encoder.layers.i.self_attn.v_proj.*` | `encoder.blocks.i.attn.value.*` |
+| `model.encoder.layers.i.self_attn.out_proj.*` | `encoder.blocks.i.attn.out.*` |
+| `model.encoder.layers.i.self_attn_layer_norm.*` | `encoder.blocks.i.attn_ln.*` |
+| `model.encoder.layers.i.fc1.*` / `fc2.*` | `encoder.blocks.i.mlp.0.*` / `mlp.2.*` |
+| `model.encoder.layers.i.final_layer_norm.*` | `encoder.blocks.i.mlp_ln.*` |
+| `model.encoder.layer_norm.*` | `encoder.ln_post.*` |
+| `model.decoder.layers.i.self_attn.*` | `decoder.blocks.i.attn.*` (same projection mapping as encoder) |
+| `model.decoder.layers.i.encoder_attn.*` | `decoder.blocks.i.cross_attn.*` |
+| `model.decoder.layers.i.self_attn_layer_norm.*` | `decoder.blocks.i.attn_ln.*` |
+| `model.decoder.layers.i.encoder_attn_layer_norm.*` | `decoder.blocks.i.cross_attn_ln.*` |
+| `model.decoder.layers.i.fc1.*` / `fc2.*` | `decoder.blocks.i.mlp.0.*` / `mlp.2.*` |
+| `model.decoder.layers.i.final_layer_norm.*` | `decoder.blocks.i.mlp_ln.*` |
+| `model.decoder.embed_tokens.weight` | `decoder.token_embedding.weight` |
+| `model.decoder.embed_positions.weight` | `decoder.positional_embedding` (must handle HF's positional offset explicitly) |
+| `model.decoder.layer_norm.*` | `decoder.ln.*` |
+
+This table is a mapping hypothesis, not a completed converter. The adapter must fail closed on every missing, unexpected, duplicate, or shape-mismatched tensor. In particular:
+
+- Check the HF decoder positional embedding's offset/row count before copying it; do not blindly copy a larger HF table into OpenAI Whisper's decoder position tensor.
+- Check whether `proj_out.weight` is tied to `model.decoder.embed_tokens.weight`; preserve the exact shared vocabulary matrix and do not create a separately initialized output head.
+- Verify the attention projection bias layout, layer-norm epsilon, convolution weights, and every tensor shape against the constructed OpenAI Whisper Medium model.
+- Compare every mapped tensor numerically against the source tensor after the explicitly documented reshape/slice operations. The report must list source key, destination key, source shape, destination shape, and max absolute difference.
+- Validate tokenizer vocabulary and every special token ID, not just the Persian language/task prefix. The HF repository includes `added_tokens.json`, `vocab.json`, `merges.txt`, and tokenizer configuration files; Sherpa's exporter generates tokens from OpenAI Whisper's multilingual tiktoken asset. Those token tables must be proven identical in ID assignment before using Sherpa's generated `*-tokens.txt`.
+
+### Prototype implementation gates
+
+The first converter should be a standalone offline tool in the plugin repository (not Android runtime code). It should:
+1. Download/pin the exact Taraneh revision and record its commit SHA.
+2. Load the HF checkpoint on CPU or GPU with Transformers and construct the matching OpenAI Whisper Medium model.
+3. Map all tensors with strict key/shape checks and export a temporary OpenAI-compatible checkpoint.
+4. Run the v1.13.8 Sherpa exporter against that temporary checkpoint, using a patched local copy that loads the temporary file rather than the stock `medium` alias.
+5. Emit a machine-readable conversion report and source/model/tokenizer hashes.
+6. Compare source Transformers and FP32 ONNX greedy-decoding outputs on a fixed set of Persian audio clips before attempting INT8.
+
+The 3.06 GB source checkpoint means conversion is a workstation/server-side packaging task, not an Android download. The model itself is not included in Link APK.
+
 ### Required conversion work
 
 1. Pin the exporter source to the Sherpa-ONNX release corresponding to Link's bundled v1.13.8 runtime; do not use an unpinned `master` exporter for a production artifact.
@@ -30,5 +82,5 @@ The next technical milestone is a reproducible conversion prototype that produce
 Sources:
 - Taraneh model card and checkpoint details: https://huggingface.co/areffarhadi/Taraneh-WMedium
 - Taraneh inference implementation: https://github.com/areffarhadi/persian-asr
-- Sherpa Whisper exporter: https://github.com/k2-fsa/sherpa-onnx/blob/master/scripts/whisper/export-onnx.py
+- Sherpa Whisper exporter: https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/scripts/whisper/export-onnx.py
 - Sherpa export guide: https://k2-fsa.github.io/sherpa/onnx/pretrained_models/whisper/export-onnx.html
