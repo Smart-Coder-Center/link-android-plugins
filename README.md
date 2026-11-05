@@ -11,11 +11,11 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 ## Current status
 
-The Persian speech packages are published in the catalog and are available to compatible Link builds:
-- Persian offline speech recognition (ASR): Shenava Rizeh 1.0.0.
-- Persian offline speech synthesis (TTS): Mana Piper 1.0.0.
+- **Persian offline TTS:** Mana Piper 1.0.0 is listed in the catalog. Its installation and speech quality still require end-to-end testing on supported Android devices.
+- **Persian offline ASR:** no Whisper package is currently published in the catalog. The Android app contains a Sherpa-ONNX Whisper adapter for multilingual Whisper Small/Base INT8 packages, but a compatible archive must be built, released, and added to the catalog before it can be downloaded.
+- **Retired engine:** Shenava Rizeh is not part of the active catalog. Its retired-package cleanup in the app exists only to remove data left by older installations.
 
-These packages have not yet been confirmed by end-to-end device testing. Treat them as published test packages until installation, recognition/synthesis, update/removal, and licensing checks are complete.
+Do not treat an engine as production-ready solely because its metadata or release asset exists. Verify model provenance, redistribution rights, package checksums, installation, inference, update, and removal on real devices.
 
 ## Catalog
 
@@ -25,11 +25,11 @@ Raw catalog URL:
 
 ## Publishing a package
 
-1. Prepare a ZIP matching the package layout in [docs/package-format.md](docs/package-format.md).
-2. Verify that redistribution is permitted by the model, runtime, and voice licenses.
-3. Compute SHA-256 for the final ZIP.
+1. Prepare a data-only ZIP matching [docs/package-format.md](docs/package-format.md).
+2. Verify redistribution rights for the model, voice, runtime, and all bundled data.
+3. Compute SHA-256 for every payload file and for the final ZIP.
 4. Upload the ZIP as an asset to a versioned GitHub Release.
 5. Add its exact release asset URL, byte size, version, compatibility, and SHA-256 to `manifest/plugins.json`.
-6. Validate the catalog and verify the download before enabling the plugin in Link.
+6. Validate the catalog and verify download, installation, inference, update, and removal.
 
 Never publish API keys, signing credentials, private source, or user data here.
