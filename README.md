@@ -19,7 +19,7 @@ Do not treat an engine as production-ready solely because its metadata or releas
 
 ## Model evaluation
 
-See [the Persian speech model evaluation shortlist](docs/persian-speech-model-evaluation.md) for ASR/TTS alternatives, compatibility notes, and the proposed validation order. These are research candidates, not downloadable catalog entries until their packages pass the release checks.
+See [the Persian speech model evaluation shortlist](docs/persian-speech-model-evaluation.md) for Persian ASR candidates, conversion feasibility, compatibility notes, and the proposed validation order. These are research candidates, not downloadable catalog entries until their packages pass the release checks.
 
 ## Catalog
 
