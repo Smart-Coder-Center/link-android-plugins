@@ -16,6 +16,10 @@ This inventory describes the currently published plugin catalog and Android app 
 - Model packages are downloaded from the public Link plugin repository, verified by SHA-256, and extracted into app-private storage.
 - The current plugin installer enforces a 400 MiB compressed archive cap and 500 MiB expanded payload cap.
 
+## Taraneh-WMedium conversion status
+
+Taraneh-WMedium is a Hugging Face Whisper Medium fine-tune, not a ready-made Sherpa-ONNX package. The upstream Sherpa exporter currently loads OpenAI Whisper checkpoint formats; Taraneh's published inference path uses Transformers/CTranslate2. A validated weight conversion and tokenizer-ID parity check are required before ONNX export can be trusted. Link's current ASR adapter also only recognizes Small/Base filenames. See [the conversion feasibility spike](persian-speech-model-evaluation.md#taraneh-wmedium-conversion-feasibility-spike-2026-11-06).
+
 ## Quality evaluation before publishing more engines
 
 1. Establish a fixed-device baseline with official Whisper Small/Base INT8.
