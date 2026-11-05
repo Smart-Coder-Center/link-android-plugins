@@ -37,3 +37,7 @@ For the existing Whisper workflow, publish complete Small/Base multilingual INT8
 ## Parallel Persian ASR candidates
 
 A parallel candidate screen is maintained in [persian-asr-alternative-candidates.md](persian-asr-alternative-candidates.md). Current highest-priority alternatives are Shenava Koochik v1.5 RNNT/CTC (Sherpa-native, Apache-2.0, INT8 package reported around 136 MB for RNNT) and Diba-STT fa-small (about 53 MB claimed, but its accuracy and Android runtime still need independent verification). C1Tech Whisper Small Persian and Taraneh-WBase remain conditional Whisper conversion candidates. Quds-v4 is excluded due to its non-commercial license; Rizeh-Pizeh is low-priority due to its reported WER. No new model has been added to the production catalog and no app integration or build has been performed.
+
+## Android ASR integration audit
+
+The Android adapter was checked against the exact Sherpa-ONNX v1.13.8 API. Koochik v1.5 RNNT is source-level compatible but needs a dedicated `nemo_transducer` adapter and package layout; Diba-STT currently has no documented native Android/Sherpa integration path. See [the Android integration audit](android-asr-integration-audit-2026-11-06.md) before implementing either candidate.
