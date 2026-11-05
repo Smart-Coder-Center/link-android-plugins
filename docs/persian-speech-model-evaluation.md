@@ -72,7 +72,7 @@ Official model packaging reference: https://k2-fsa.github.io/sherpa/onnx/pretrai
 ## Recommended evaluation order
 
 1. **Baseline:** run current official Whisper Base and Small INT8 on the same fixed Persian test set and Link Android devices.
-2. **Quality candidate:** convert Taraneh-WMedium to a Sherpa-ONNX Whisper-compatible INT8 encoder/decoder package. Confirm conversion preserves the fine-tuned weights; do not merely substitute tokenizer files.
+2. **Size gate before conversion:** Taraneh-WMedium is listed as 0.8B F32 parameters (3.06 GB source). Standard INT8 weights alone are likely to exceed Link's 500 MiB expanded package cap. Measure a real conversion before investing in Android integration; do not raise the cap without device-storage/RAM evidence. If it fails the cap, evaluate the smaller Taraneh-WBase checkpoint (72.6M parameters) as a compact candidate, while treating its lower published scores as a quality trade-off. See the detailed [conversion spike](taraneh-wmedium-conversion-spike.md).
 3. **Upper bound:** evaluate Taraneh-WLarge off-device or on a high-memory Android device to quantify quality gain versus size, RAM, and latency.
 4. **Alternative architecture:** evaluate Qwen3-ASR 0.6B only after confirming Link's pinned Sherpa 1.13.8 Java API supports it, or explicitly planning a safe dependency upgrade. Measure model size and memory first.
 5. Consider VisualEars/FastConformer only after validating the full raw-audio feature pipeline, decoder, language model/tokenizer, license, and compatibility. A standalone quantized acoustic ONNX file is not a complete ASR plugin.
