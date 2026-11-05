@@ -64,6 +64,16 @@ The first converter should be a standalone offline tool in the plugin repository
 
 The 3.06 GB source checkpoint means conversion is a workstation/server-side packaging task, not an Android download. The model itself is not included in Link APK.
 
+### Newly confirmed size risk: likely incompatible with current plugin limits
+
+The Hugging Face model page reports **0.8B parameters**, F32 weights, and a 3.06 GB `model.safetensors` file. The v1.13.8 Sherpa exporter applies ONNX Runtime dynamic **INT8** quantization to linear MatMul weights; it does not provide a 4-bit conversion path in this Whisper export script.
+
+A rough lower-bound sanity check is therefore unfavorable: 0.8 billion one-byte parameters alone are about 800 MB (decimal), before non-quantized tensors, ONNX metadata, tokenizer files, or package overhead. This is not a measured ONNX size, but it is already above Link's 500 MiB expanded-package ceiling. Standard ZIP compression is not a credible way to shrink quantized neural-network weights by the required amount.
+
+**Practical implication:** even if the weight mapping and FP32 parity succeed, Taraneh-WMedium is unlikely to be installable under the current Link plugin limits using Sherpa's standard INT8 path. Do not raise the installer limits yet. First generate the real INT8 files and measure their exact sizes; if they exceed the cap, stop packaging WMedium for Link and evaluate a smaller Persian candidate (Taraneh-WBase is 72.6M parameters) or a runtime-supported lower-bit format only if Sherpa v1.13.8 can execute it without a custom native runtime.
+
+The 72.6M WBase model is only a size candidate, not a quality recommendation: its published Persian scores are weaker than WMedium, so it must be measured against the existing Whisper Small/Base baseline on the same test set.
+
 ### Required conversion work
 
 1. Pin the exporter source to the Sherpa-ONNX release corresponding to Link's bundled v1.13.8 runtime; do not use an unpinned `master` exporter for a production artifact.
