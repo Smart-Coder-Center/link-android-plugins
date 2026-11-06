@@ -1,19 +1,25 @@
 # Speech recognition plugins (ASR)
 
-## Current status
+## Current test package
 
-The experimental multilingual Whisper Base and Small packages have been retired from the live catalog after user testing found their Persian recognition quality unsuitable for Link. They are no longer offered for installation.
+The live catalog now contains one experimental Persian ASR package:
 
-No Persian ASR package is currently published in the production catalog. Do not add a replacement until all of the following have been verified:
+- **Koochik RNNT فارسی (آزمایشی)** — INT8 FastConformer RNNT, offline, CPU, Sherpa-ONNX `nemo_transducer`.
+- Model archive: approximately 137 MB.
+- Upstream license: Apache-2.0.
+- The model card reports WER 9.50% / CER 2.60% on its own Golden-6669 held-out set. These are author-reported figures, not measurements from Link devices.
+- The previous multilingual Whisper Base and Small packages have been retired and are no longer offered.
 
-- Persian conversational-speech accuracy on a fixed, human-transcribed test set
-- Offline Android inference using Link's pinned Sherpa-ONNX runtime, or a justified runtime change
-- Actual archive size, peak RAM, latency, and battery use on representative Android devices
-- Model and runtime licenses permitting commercial redistribution
-- Exact model revision, file checksums, and reproducible packaging
+Release: https://github.com/smart-center-code/link-android-plugins/releases/tag/koochik-rnnt-test-1.0.0-test.1
 
-## Candidate research
+## Release requirements
 
-The current research shortlist is recorded in `docs/persian-asr-alternative-candidates.md`. The leading implementation candidate is a Persian FastConformer RNNT/CTC model that can use the existing Sherpa-ONNX runtime, subject to a device test. A separate compact Diba candidate remains research-only until its native Android inference path and reproducible quality results are established.
+Do not promote this package from experimental status until it has passed:
 
-Keep ASR model weights as data-only plugins outside the APK. Mana remains the only Persian TTS voice.
+- Link Android smoke testing with the pinned Sherpa-ONNX v1.13.8 runtime
+- A fixed, human-transcribed Persian conversational test set
+- CER/WER measurement with the same normalizer used for all candidate engines
+- Latency, peak RAM, storage, thermal, and battery checks on real Android devices
+- Model provenance, license, checksums, and archive-size verification
+
+Keep model weights as data-only plugins outside the APK. Mana remains the only Persian TTS voice.
