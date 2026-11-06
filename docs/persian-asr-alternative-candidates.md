@@ -18,7 +18,7 @@ This is a source-level screening only. None of these candidates has been convert
 
 | Candidate | Public evidence | Android/runtime fit | Size gate | License gate | Initial decision |
 |---|---|---|---|---|---|
-| Shenava Koochik v1.5 RNNT Sherpa-ONNX | Held-out Golden-6669 reports WER 9.50%, CER ~2.6%; same family CTC head is reported at WER 8.12%, CER ~2.3% | Native Sherpa-ONNX transducer package; Android supported | INT8 files reported as encoder 131 MB + decoder 4 MB + joiner 1.4 MB, plus tokens; comfortably below expanded cap | Apache-2.0 stated by model card | **High-priority candidate**; test RNNT package first, and inspect the related CTC artifact as a potentially more accurate alternative |
+| Shenava Koochik v1.5 RNNT Sherpa-ONNX | Held-out Golden-6669 reports WER 9.50%, CER ~2.6%; same family CTC head is reported at WER 8.12%, CER ~2.3% | Native Sherpa-ONNX transducer package; Android supported | INT8 files reported as encoder 131 MB + decoder 4 MB + joiner 1.4 MB, plus tokens; comfortably below expanded cap | Apache-2.0 stated by model card | **Selected prototype**; test the Apache-2.0 RNNT INT8 package first. The CTC alternative is currently blocked by package size or non-commercial licensing |
 | Diba-STT fa-small-0.42 | Vendor describes offline, real-time Persian recognition; no independent WER/CER table found in the reviewed model card | Mobile/browser/CPU claimed, but its documented Python package/runtime is not Sherpa's current recognizer API | ~53 MB claimed for small model | Apache-2.0 stated by model card | **High-priority investigation**; obtain reproducible benchmark and inspect native/WASM runtime and Android integration cost |
 | C1Tech/whisper_small_persian | Claims strong Persian benchmark results; links to Open Persian ASR Leaderboard, but detailed numbers are not exposed in the reviewed card | Whisper architecture; Transformers usage documented, not a ready-made Sherpa package | 74M parameters; actual INT8 ONNX package size not yet measured | Apache-2.0 metadata, but repository requires Hugging Face access/conditions acceptance | **Conditional candidate**; verify access/redistribution conditions, exact benchmark scores, tokenizer parity, and HF-to-Sherpa export |
 | Taraneh-WBase | Fine-tuned on ~1,560 hours; FLEURS WER/CER 7.88/2.93; Common Voice 10.76/4.45; Media 24.43/13.46 | Transformers Whisper checkpoint; requires the same conversion work as Taraneh-WMedium | 72.6M parameters F32; INT8 package size must be measured | MIT | **Compact Whisper candidate**; compare directly against current Whisper Base/Small, but published quality is below Taraneh-WMedium |
@@ -35,8 +35,9 @@ The Sherpa-ONNX model card identifies a 114M-parameter FastConformer hybrid and 
 Technical checks:
 - Confirm the exact sherpa-onnx API and model type are supported by Link's pinned v1.13.8 AAR.
 - Confirm the RNNT triplet, tokens, sample rate, feature configuration, and endpointing.
-- Inspect the related CTC export, its exact files/size, and its reproducibility.
-- Verify Android JNI smoke test and compare quality/latency with current Whisper.
+- The v1.5 RNNT INT8 export is the selected first prototype: its model card states Apache-2.0 and lists approximately 136.4 MB of INT8 ONNX weights before tokens.
+- The related CTC head reports better upstream WER, but the official Apache-2.0 CTC export is about 459 MB and exceeds Link's 500 MiB expanded plugin cap. A separately hosted INT8 CTC mirror is marked CC-BY-NC 4.0, so it is not suitable for Link's commercial distribution. Do not use that mirror.
+- Verify Android JNI smoke test and compare quality/latency against the retired Whisper baseline using the same audio set.
 - Preserve Apache-2.0 notices and exact upstream revision.
 
 Source: https://huggingface.co/Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx
