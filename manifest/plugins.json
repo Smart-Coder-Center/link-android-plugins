@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 3,
+  "catalog_version": 4,
   "plugins": [
     {
       "id": "tts.mana.piper.fa",
@@ -21,6 +21,46 @@
         "attribution": "Mana Persian Piper model (MIT) and eSpeak NG phoneme data (GPL-3.0-or-later)"
       },
       "release_notes": "Persian offline TTS voice and phoneme data. Requires the Sherpa-ONNX runtime included in Link."
+    },
+    {
+      "id": "asr.whisper-base.fa",
+      "name": "Whisper Base فارسی (آزمایشی)",
+      "description": "مدل چندزبانه Whisper Base برای تبدیل آفلاین گفتار فارسی به نوشتار",
+      "kind": "asr",
+      "language": "fa",
+      "version": "1.0.0-test.1",
+      "min_link_version": "2.21.0",
+      "archive": {
+        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/whisper-test-1.0.0-test.1/whisper-base-fa-1.0.0-test.1.zip",
+        "size_bytes": 160611560,
+        "sha256": "835073200080725f323754509cdfc84011cb0bd7d93cfa87be95fe42db7319a0"
+      },
+      "license": {
+        "name": "MIT (OpenAI Whisper weights; Sherpa-ONNX conversion)",
+        "url": "https://github.com/openai/whisper/blob/31243bad24cc746f07d4c8bfdd2d974872cb1803/LICENSE",
+        "attribution": "OpenAI Whisper weights; ONNX conversion published by k2-fsa/sherpa-onnx. Test package, not endorsed by OpenAI or k2-fsa."
+      },
+      "release_notes": "Experimental Persian ASR test package. Multilingual Whisper model, INT8 ONNX, offline CPU inference. Compare Base and Small on the same device and audio set."
+    },
+    {
+      "id": "asr.whisper-small.fa",
+      "name": "Whisper Small فارسی (آزمایشی)",
+      "description": "مدل چندزبانه Whisper Small برای تبدیل آفلاین گفتار فارسی به نوشتار؛ دقت بالقوه بالاتر با مصرف حافظه بیشتر",
+      "kind": "asr",
+      "language": "fa",
+      "version": "1.0.0-test.1",
+      "min_link_version": "2.21.0",
+      "archive": {
+        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/whisper-test-1.0.0-test.1/whisper-small-fa-1.0.0-test.1.zip",
+        "size_bytes": 375487607,
+        "sha256": "f21fd7108cfea4dd5b6a0275a6b128f06c787d98e5844305e253c1423edd5cc3"
+      },
+      "license": {
+        "name": "MIT (OpenAI Whisper weights; Sherpa-ONNX conversion)",
+        "url": "https://github.com/openai/whisper/blob/31243bad24cc746f07d4c8bfdd2d974872cb1803/LICENSE",
+        "attribution": "OpenAI Whisper weights; ONNX conversion published by k2-fsa/sherpa-onnx. Test package, not endorsed by OpenAI or k2-fsa."
+      },
+      "release_notes": "Experimental Persian ASR test package. Multilingual Whisper model, INT8 ONNX, offline CPU inference. Compare Base and Small on the same device and audio set."
     }
   ]
 }
