@@ -36,6 +36,34 @@ SUPPORTED = {
     },
 }
 
+HF_ALLOW_PATTERNS = [
+    "config.json",
+    "model.safetensors",
+    "generation_config.json",
+    "tokenizer.json",
+    "vocab.json",
+    "merges.txt",
+    "added_tokens.json",
+    "special_tokens_map.json",
+    "tokenizer_config.json",
+    "preprocessor_config.json",
+    "processor_config.json",
+    "normalizer.json",
+]
+
+TURBO_EXPECTED_CONFIG = {
+    "num_mel_bins": 128,
+    "d_model": 1280,
+    "encoder_layers": 32,
+    "encoder_attention_heads": 20,
+    "decoder_layers": 4,
+    "decoder_attention_heads": 20,
+    "max_source_positions": 1500,
+    "max_target_positions": 448,
+    "vocab_size": 51866,
+}
+
+
 PROBES = [
     "سلام، حال شما چطوره؟",
     "امروز می‌خواهم یک پیام صوتی کوتاه بفرستم.",
@@ -51,6 +79,19 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def validate_model_config(config: dict[str, Any], model_id: str) -> None:
+    if config.get("model_type") != "whisper":
+        raise RuntimeError(f"Expected Whisper config, got {config.get('model_type')}")
+    if model_id == "givia/whisper-large-v3-turbo-persian":
+        mismatches = {
+            key: (expected, config.get(key))
+            for key, expected in TURBO_EXPECTED_CONFIG.items()
+            if config.get(key) != expected
+        }
+        if mismatches:
+            raise RuntimeError(f"Givia checkpoint is not the expected Whisper Turbo architecture: {mismatches}")
 
 
 def dimensions_from_config(config: Any):
@@ -420,11 +461,23 @@ def main():
     metadata = SUPPORTED[args.model_id]
     info = HfApi().model_info(args.model_id, revision=args.revision)
     source_sha = info.sha
-    snapshot = Path(snapshot_download(repo_id=args.model_id, revision=source_sha))
+    # Download only files needed for Transformers inference. In particular,
+    # exclude the upstream 1.62 GB GGML model because this conversion path uses
+    # the 3.24 GB safetensors checkpoint and Sherpa-ONNX exporter.
+    snapshot = Path(snapshot_download(
+        repo_id=args.model_id,
+        revision=source_sha,
+        allow_patterns=HF_ALLOW_PATTERNS,
+    ))
+    snapshot_files = sorted(path.name for path in snapshot.iterdir() if path.is_file())
+    if "model.safetensors" not in snapshot_files or "config.json" not in snapshot_files:
+        raise RuntimeError("HF snapshot is missing config.json or model.safetensors")
+    if any(name.lower().endswith((".ggml", ".gguf", ".bin")) for name in snapshot_files):
+        raise RuntimeError("Unexpected GGML/binary model file downloaded; refusing duplicate model storage")
+
     config_path = snapshot / "config.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
-    if config.get("model_type") != "whisper":
-        raise RuntimeError(f"Expected Whisper config, got {config.get('model_type')}")
+    validate_model_config(config, args.model_id)
     if int(config.get("num_mel_bins", -1)) != metadata["feature_dim"]:
         raise RuntimeError("Model-card architecture and HF config mel dimensions disagree")
 
@@ -508,6 +561,7 @@ def main():
     report = {
         "model_id": args.model_id,
         "source_revision": source_sha,
+        "downloaded_source_files": snapshot_files,
         "license": metadata["license"],
         "base_architecture": metadata["base"],
         "feature_dim": metadata["feature_dim"],
