@@ -73,13 +73,15 @@ Declare `"runtime": {"architecture": "nemo_transducer"}` for newly built RNNT pa
 
 ## Persian model candidates
 
-The following Whisper models are being prepared as separate ASR packages:
+The Whisper rollout is sequential to avoid downloading and storing several multi-gigabyte checkpoints at once:
 
-| Model | Upstream checkpoint | Base architecture | Feature dimension | Upstream license |
-|---|---|---|---:|---|
-| Whisper Large-v3 Turbo Persian | `givia/whisper-large-v3-turbo-persian` | Whisper Large-v3 Turbo | 128 | CC-BY-4.0 |
-| Taraneh-WMedium | `areffarhadi/Taraneh-WMedium` | Whisper Medium | 80 | MIT |
-| Whisper Persian V4 | `nezamisafa/whisper-persian-v4` | Whisper Large-v3 | 128 | Apache-2.0 |
+| Model | Upstream checkpoint | Base architecture | Feature dimension | Upstream license | Status |
+|---|---|---|---:|---|---|
+| Whisper Large-v3 Turbo Persian | `givia/whisper-large-v3-turbo-persian` | Whisper Large-v3 Turbo | 128 | CC-BY-4.0 | **Stage 1 — only active conversion candidate** |
+| Taraneh-WMedium | `areffarhadi/Taraneh-WMedium` | Whisper Medium | 80 | MIT | Deferred until Givia passes Link device tests and the next stage is approved |
+| Whisper Persian V4 | `nezamisafa/whisper-persian-v4` | Whisper Large-v3 | 128 | Apache-2.0 | Deferred until the later stage is approved |
+
+Do not download, convert, package, or publish deferred checkpoints during Stage 1.
 
 **Important:** each archive must contain the actual fine-tuned checkpoint weights. Do not export stock `openai/whisper-medium`, `large-v3`, or `turbo` weights and label them as a Persian fine-tune. For custom Hugging Face checkpoints, the conversion pipeline must fail on missing/unexpected/shape-mismatched tensors, verify tokenizer IDs and special tokens, compare FP32 ONNX output against the source checkpoint, then measure INT8 accuracy loss. Preserve upstream model and tokenizer notices.
 
