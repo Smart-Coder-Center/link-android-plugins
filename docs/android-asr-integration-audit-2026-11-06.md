@@ -1,17 +1,17 @@
 # Android ASR integration audit — 2026-11-06
 
-This is a source-level integration audit only. No model was downloaded, converted, installed, benchmarked on a phone, or added to the live catalog. No Android build or test was run.
+This was an earlier source-level integration audit. Its initial LinkOfflineAsr finding is superseded by the current `main` source as of 2026-11-06: `LinkOfflineAsr` now initializes the Koochik RNNT path (`OfflineTransducerModelConfig`, `nemo_transducer`). The audit's findings about Whisper-only filenames must not be used as the current implementation description. No one of the three newly selected Whisper candidates has yet been downloaded, converted, installed, or benchmarked on a phone.
 
 ## Findings
 
-### 1. Link's current adapter is Whisper-only
+### 1. Current Link adapter on main is Koochik RNNT
 
 The current `LinkOfflineAsr` implementation:
-- Initializes `OfflineWhisperModelConfig` only.
-- Looks only for `small-encoder.int8.onnx` / `small-decoder.int8.onnx` / `small-tokens.txt`, or the equivalent Base files.
-- Throws an error if neither Whisper layout exists.
+- Initializes `OfflineTransducerModelConfig` with encoder, decoder, and joiner files.
+- Sets `model_type` to `nemo_transducer` and uses the Sherpa-ONNX v1.13.8 Java API.
+- Keeps one recognizer instance for the active selected model.
 
-The plugin catalog and installer are mostly model-data generic, but the ASR inference adapter is not. A new model cannot be made usable merely by adding a catalog entry.
+The three Whisper candidates need a separate `OfflineWhisperModelConfig` branch and a verified plugin runtime descriptor. A catalog entry alone is not sufficient.
 
 ### 2. Koochik v1.5 RNNT — compatible runtime path, adapter work required
 
@@ -64,3 +64,8 @@ No catalog entry, production app code, model download, or build/test was changed
 ### 5. Plugin settings screen has Whisper-specific navigation
 
 The settings screen lists catalog plugins generically by `kind`, so a future Koochik catalog item can appear under ASR. However, the screen decides whether to show the non-actionable “Whisper pending” row by checking only IDs beginning with `asr.whisper-`, and the ASR deep-link scroll target also searches only for that prefix. A non-Whisper ASR plugin would therefore be listed alongside a misleading Whisper-pending row, and opening the ASR category may scroll to that row instead of the available model. This should be generalized to “no ASR plugins available” / first ASR plugin when the adapter work is implemented.
+
+
+## Superseding update — 2026-11-06
+
+The earlier `LinkOfflineAsr` description above has been corrected to reflect the current `main` source: Koochik RNNT is the active implementation. The user has also instructed that the three selected Whisper-family models continue regardless of the former 400 MiB compressed / 500 MiB expanded size caps. The Android catalog archive ceiling has been raised to 10 GiB, the installer expanded ceiling to 16 GiB, and an initial free-space guard now requires at least twice the compressed archive size plus 512 MiB before download. The plugin JSON schema archive ceiling has been raised to 10 GiB. These are temporary high ceilings, not claims that the three packages are already converted or installable.
