@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -74,7 +75,7 @@ def validate_conversion_report(report: dict[str, Any], model_id: str, metadata: 
     has_shards = (
         isinstance(downloaded, list)
         and "model.safetensors.index.json" in downloaded
-        and any(__import__("re").fullmatch(r"model-\\d+-of-\\d+\\.safetensors", str(name)) for name in downloaded)
+        and any(re.fullmatch(r"model-\d+-of-\d+\.safetensors", str(name)) for name in downloaded)
     )
     if not isinstance(downloaded, list) or (not has_single and not has_shards) or "config.json" not in downloaded:
         raise RuntimeError("Conversion report does not prove a complete safetensors-only source snapshot")
