@@ -30,7 +30,7 @@ from typing import Any
 SUPPORTED = {
     "givia/whisper-large-v3-turbo-persian": {
         "base": "turbo",
-        "prefix": "turbo",
+        "prefix": "large-v3-turbo-persian",
         "license": "CC-BY-4.0",
         "feature_dim": 128,
     },
@@ -393,6 +393,22 @@ def run_exporter(exporter_path: Path, base_model: str, openai_model: Any, output
         os.chdir(old_cwd)
 
 
+def rename_exported_files(output: Path, exporter_prefix: str, package_prefix: str) -> list[dict[str, str]]:
+    """Rename every exporter-named graph, token, and external-data file as a set."""
+    renamed = []
+    for path in sorted(output.iterdir()):
+        if not path.is_file() or not path.name.startswith(exporter_prefix + "-"):
+            continue
+        destination = path.with_name(package_prefix + path.name[len(exporter_prefix):])
+        if destination.exists():
+            raise RuntimeError(f"Refusing to overwrite package output: {destination.name}")
+        path.rename(destination)
+        renamed.append({"from": path.name, "to": destination.name})
+    if not renamed:
+        raise RuntimeError(f"No files found with Sherpa exporter prefix {exporter_prefix!r}")
+    return renamed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-id", required=True, choices=sorted(SUPPORTED))
@@ -462,6 +478,12 @@ def main():
     del openai_model
     gc.collect()
 
+    # Sherpa names files after its architecture ("turbo-..."). Link resolves
+    # model files by the package-specific runtime.model_prefix, so rename the
+    # entire set, including any external ONNX tensor sidecars, consistently.
+    rename_report = rename_exported_files(
+        args.output_dir, metadata["base"], metadata["prefix"]
+    )
     prefix = metadata["prefix"]
     # The exporter must leave both the FP32 source graphs and the INT8
     # graphs. The FP32 files are required for parity checks before accepting
@@ -509,6 +531,8 @@ def main():
         },
         "tokenizer_parity": tokenizer_report,
         "forward_parity": parity_report,
+        "package_model_prefix": prefix,
+        "renamed_export_files": rename_report,
         "output_files": files,
         "status": "exported; still requires Sherpa runtime/JNI and Android device validation",
     }
