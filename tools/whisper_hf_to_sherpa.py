@@ -335,7 +335,13 @@ def run_exporter(exporter_path: Path, base_model: str, openai_model: Any, output
         exporter.whisper.load_model = lambda _name: openai_model
         os.chdir(output)
         sys.argv = [str(exporter_path), "--model", base_model]
-        exporter.main()
+        # The pinned exporter applies this workaround only when executed as a
+        # script. We import it as a module to inject the verified HF weights,
+        # so reproduce the exact v1.13.8 entry-point context explicitly.
+        from whisper.model import disable_sdpa
+
+        with disable_sdpa():
+            exporter.main()
     finally:
         exporter.whisper.load_model = original_loader
         sys.argv = old_argv
@@ -412,7 +418,12 @@ def main():
     gc.collect()
 
     prefix = metadata["prefix"]
+    # The exporter must leave both the FP32 source graphs and the INT8
+    # graphs. The FP32 files are required for parity checks before accepting
+    # the quantized package; external .weights sidecars are included below.
     required = [
+        f"{prefix}-encoder.onnx",
+        f"{prefix}-decoder.onnx",
         f"{prefix}-encoder.int8.onnx",
         f"{prefix}-decoder.int8.onnx",
         f"{prefix}-tokens.txt",
@@ -421,6 +432,14 @@ def main():
         path = args.output_dir / filename
         if not path.is_file() or path.stat().st_size == 0:
             raise RuntimeError(f"Sherpa exporter did not produce required file: {filename}")
+
+    # Validate the exported graph structures using the exact ONNX checker.
+    # Pass paths rather than loading entire external tensor payloads into RAM.
+    import onnx
+
+    for filename in required:
+        if filename.endswith(".onnx"):
+            onnx.checker.check_model(str(args.output_dir / filename))
 
     files = []
     for path in sorted(args.output_dir.iterdir()):
