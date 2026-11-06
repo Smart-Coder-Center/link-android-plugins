@@ -40,6 +40,17 @@ python tools/whisper_hf_to_sherpa.py \
   --device cuda
 ```
 
+After conversion completes and all gates in the report pass, create the data-only plugin ZIP:
+
+```bash
+python tools/package_givia_whisper_plugin.py \
+  --conversion-dir /data/link-asr/givia-turbo-fa \
+  --output-zip /data/link-asr/givia-whisper-plugin-1.0.0-test.1.zip \
+  --version 1.0.0-test.1
+```
+
+The packager re-checks the source model/revision, license, forward parity, tokenizer inventory, INT8 graph files, external ONNX sidecars, and SHA-256 values. It writes the root `plugin.json`, attribution notice, archive, and a separate package report. This creates a local ZIP only; it does not upload a GitHub Release or modify the public catalog.
+
 Do not run the converter for Taraneh-WMedium or Whisper Persian V4 yet. Those checkpoints are deliberately deferred until Givia has passed the complete Link device-test gate and the next stage is approved. The script records the resolved source commit SHA even when --revision main is used.
 
 ## Important limitations
