@@ -1,6 +1,57 @@
 import unittest
 
-from whisper_hf_to_sherpa import map_key
+from whisper_hf_to_sherpa import map_key, verify_special_token_inventory
+
+
+
+class _FakeEncoding:
+    def __init__(self, special_tokens, n_vocab):
+        self._special_tokens = special_tokens
+        self.n_vocab = n_vocab
+
+
+class _FakeOpenAITokenizer:
+    def __init__(self, special_tokens, n_vocab):
+        self.encoding = _FakeEncoding(special_tokens, n_vocab)
+
+
+class _FakeHFTokenizer:
+    def __init__(self, added_vocab, vocab_size):
+        self._added_vocab = added_vocab
+        self._vocab_size = vocab_size
+
+    def __len__(self):
+        return self._vocab_size
+
+    def get_added_vocab(self):
+        return dict(self._added_vocab)
+
+    def convert_tokens_to_ids(self, token):
+        return self._added_vocab.get(token, -1)
+
+
+class WhisperTokenizerInventoryTests(unittest.TestCase):
+    def test_exact_special_token_inventory_passes(self):
+        special = {"<|startoftranscript|>": 1, "<|fa|>": 2, "<|transcribe|>": 3}
+        hf = _FakeHFTokenizer(special, vocab_size=10)
+        openai = _FakeOpenAITokenizer(special, n_vocab=10)
+        report = verify_special_token_inventory(hf, openai)
+        self.assertTrue(report["all_special_token_ids_match"])
+        self.assertEqual(report["special_token_count"], 3)
+
+    def test_unknown_hf_added_token_fails(self):
+        special = {"<|startoftranscript|>": 1, "<|fa|>": 2}
+        hf = _FakeHFTokenizer({**special, "<|custom|>": 10}, vocab_size=11)
+        openai = _FakeOpenAITokenizer(special, n_vocab=11)
+        with self.assertRaisesRegex(RuntimeError, "special-token inventory mismatch"):
+            verify_special_token_inventory(hf, openai)
+
+    def test_vocabulary_size_mismatch_fails(self):
+        special = {"<|fa|>": 2}
+        hf = _FakeHFTokenizer(special, vocab_size=10)
+        openai = _FakeOpenAITokenizer(special, n_vocab=11)
+        with self.assertRaisesRegex(RuntimeError, "vocabulary size mismatch"):
+            verify_special_token_inventory(hf, openai)
 
 
 class WhisperStateDictMappingTests(unittest.TestCase):
