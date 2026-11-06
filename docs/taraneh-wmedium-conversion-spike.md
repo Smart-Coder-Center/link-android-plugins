@@ -64,15 +64,15 @@ The first converter should be a standalone offline tool in the plugin repository
 
 The 3.06 GB source checkpoint means conversion is a workstation/server-side packaging task, not an Android download. The model itself is not included in Link APK.
 
-### Newly confirmed size risk: likely incompatible with current plugin limits
+### Model size and mobile-memory risk (actual ONNX size not yet measured)
 
 The Hugging Face model page reports **0.8B parameters**, F32 weights, and a 3.06 GB `model.safetensors` file. The v1.13.8 Sherpa exporter applies ONNX Runtime dynamic **INT8** quantization to linear MatMul weights; it does not provide a 4-bit conversion path in this Whisper export script.
 
-A rough lower-bound sanity check is therefore unfavorable: 0.8 billion one-byte parameters alone are about 800 MB (decimal), before non-quantized tensors, ONNX metadata, tokenizer files, or package overhead. This is not a measured ONNX size, but it is already above Link's 500 MiB expanded-package ceiling. Standard ZIP compression is not a credible way to shrink quantized neural-network weights by the required amount.
+0.8 billion one-byte parameters alone are about 800 MB (decimal), before non-quantized tensors, ONNX metadata, tokenizer files, or package overhead. This is not a measured ONNX size. It is below Link's current 16 GiB expanded-package ceiling, so package size is not an automatic blocker under the user's current decision to defer size limits. It is still a substantial download and storage requirement, and model initialization may have a much larger peak-RAM cost than the final INT8 files.
 
-**Practical implication:** even if the weight mapping and FP32 parity succeed, Taraneh-WMedium is unlikely to be installable under the current Link plugin limits using Sherpa's standard INT8 path. Do not raise the installer limits yet. First generate the real INT8 files and measure their exact sizes; if they exceed the cap, stop packaging WMedium for Link and evaluate a smaller Persian candidate (Taraneh-WBase is 72.6M parameters) or a runtime-supported lower-bit format only if Sherpa v1.13.8 can execute it without a custom native runtime.
+**Practical implication:** proceed with the real HF-to-OpenAI mapping and FP32 parity prototype. Then generate the actual INT8 files and measure archive size, expanded size, download time, temporary storage, and peak RAM. Do not reject WMedium solely from the 800 MB estimate; do not publish it until it has been tested on target phones.
 
-The 72.6M WBase model is only a size candidate, not a quality recommendation: its published Persian scores are weaker than WMedium, so it must be measured against the existing Whisper Small/Base baseline on the same test set.
+The 72.6M WBase model remains a compact alternative, not a quality recommendation: its published Persian scores are weaker than WMedium, so it must be measured against the existing Whisper Small/Base baseline on the same test set.
 
 ### Required conversion work
 
@@ -81,7 +81,7 @@ The 72.6M WBase model is only a size candidate, not a quality recommendation: it
 3. Verify architecture dimensions, tensor names/shapes, multilingual tokenizer IDs, language/task tokens, and any added/special tokens. The Sherpa token table must represent the same token IDs used by the fine-tuned checkpoint.
 4. Export FP32 ONNX first. Compare the ONNX output/transcripts with the original Transformers checkpoint on a fixed audio subset. Only after parity passes, dynamically quantize encoder and decoder to INT8 and measure CER/WER degradation.
 5. Run Sherpa's own model test, then a small Java/JNI smoke test using the exact v1.13.8 AAR. Finally package the Medium encoder/decoder/tokens using the declared Whisper runtime metadata and verify installation/removal. The Link integration branch already has the generic Medium-compatible adapter path.
-6. Measure actual archive size. If it exceeds the 400 MiB compressed or 500 MiB expanded limit, stop and assess a supported quantization/compression strategy; do not raise limits before measuring device storage and peak RAM.
+6. Measure actual archive size. Compare the measured archive against Link's current 10 GiB compressed and 16 GiB expanded installer limits. Regardless of passing those limits, measure download time, temporary storage, and peak RAM on target devices.
 
 ### Current decision
 
