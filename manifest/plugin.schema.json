@@ -32,7 +32,7 @@
             "required": ["url", "size_bytes", "sha256"],
             "properties": {
               "url": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/smart-center-code/link-android-plugins/releases/download/" },
-              "size_bytes": { "type": "integer", "minimum": 1, "maximum": 419430400 },
+              "size_bytes": { "type": "integer", "minimum": 1, "maximum": 10737418240 },
               "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
             }
           },
