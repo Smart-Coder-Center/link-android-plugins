@@ -70,8 +70,14 @@ def validate_conversion_report(report: dict[str, Any], model_id: str, metadata: 
     if len(revision) != 40 or any(ch not in "0123456789abcdef" for ch in revision.lower()):
         raise RuntimeError("Conversion report does not contain an immutable 40-character source SHA")
     downloaded = report.get("downloaded_source_files", [])
-    if not isinstance(downloaded, list) or "model.safetensors" not in downloaded or "config.json" not in downloaded:
-        raise RuntimeError("Conversion report does not prove the expected safetensors-only source snapshot")
+    has_single = isinstance(downloaded, list) and "model.safetensors" in downloaded
+    has_shards = (
+        isinstance(downloaded, list)
+        and "model.safetensors.index.json" in downloaded
+        and any(__import__("re").fullmatch(r"model-\\d+-of-\\d+\\.safetensors", str(name)) for name in downloaded)
+    )
+    if not isinstance(downloaded, list) or (not has_single and not has_shards) or "config.json" not in downloaded:
+        raise RuntimeError("Conversion report does not prove a complete safetensors-only source snapshot")
     if any(str(name).lower().endswith((".ggml", ".gguf", ".bin")) for name in downloaded):
         raise RuntimeError("Conversion report includes an unnecessary GGML/binary checkpoint download")
     if report.get("forward_parity", {}).get("passed") is not True:
@@ -131,7 +137,7 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str, model_id
         files.append({"path": name, "sha256": sha256(path)})
 
     plugin_manifest = {
-        "id": PLUGIN_ID,
+        "id": plugin_id,
         "version": version,
         "kind": "asr",
         "language": "fa",
