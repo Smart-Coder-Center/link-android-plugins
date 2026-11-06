@@ -1,6 +1,8 @@
 import unittest
+import tempfile
+from pathlib import Path
 
-from whisper_hf_to_sherpa import map_key, verify_special_token_inventory
+from whisper_hf_to_sherpa import map_key, rename_exported_files, verify_special_token_inventory
 
 
 
@@ -28,6 +30,33 @@ class _FakeHFTokenizer:
 
     def convert_tokens_to_ids(self, token):
         return self._added_vocab.get(token, -1)
+
+
+
+class ExportedFilenameTests(unittest.TestCase):
+    def test_renames_graph_tokens_and_external_sidecars(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for name in (
+                "turbo-encoder.onnx",
+                "turbo-encoder.weights",
+                "turbo-decoder.int8.onnx",
+                "turbo-tokens.txt",
+            ):
+                (root / name).write_text("fixture", encoding="utf-8")
+            renamed = rename_exported_files(root, "turbo", "large-v3-turbo-persian")
+            self.assertEqual(len(renamed), 4)
+            self.assertTrue((root / "large-v3-turbo-persian-encoder.weights").is_file())
+            self.assertTrue((root / "large-v3-turbo-persian-tokens.txt").is_file())
+            self.assertFalse((root / "turbo-encoder.onnx").exists())
+
+    def test_refuses_to_overwrite_existing_package_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "turbo-encoder.onnx").write_text("source", encoding="utf-8")
+            (root / "large-v3-turbo-persian-encoder.onnx").write_text("existing", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "Refusing to overwrite"):
+                rename_exported_files(root, "turbo", "large-v3-turbo-persian")
 
 
 class WhisperTokenizerInventoryTests(unittest.TestCase):
