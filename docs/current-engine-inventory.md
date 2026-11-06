@@ -5,7 +5,7 @@ This inventory describes the currently published plugin catalog and Android app 
 ## Current catalog
 
 - **Persian TTS:** Mana Piper is the only published Persian voice. Keep it as the sole voice for now; do not add alternative voices until the ASR quality evaluation is complete and a separate decision is made.
-- **Persian ASR:** no Whisper package is currently published in the catalog. The app-side adapter currently supports official multilingual Whisper Small/Base INT8 package layouts, but those packages must be built, released, and added to the catalog before they can be downloaded.
+- **Persian ASR:** no Whisper package is published yet. The app-side adapter already supports official multilingual Whisper Small/Base INT8 package layouts. A manual GitHub Actions workflow now prepares both test packages, publishes a test release, and updates the catalog only after the workflow succeeds. See `whisper-test-runbook.md`.
 - **ASR research candidates:** Taraneh-WMedium is the first quality candidate, but its 0.8B-parameter F32 checkpoint makes the current 500 MiB expanded-package limit a likely blocker for standard INT8. Taraneh-WBase (72.6M parameters) is the compact fallback to evaluate if WMedium exceeds the measured cap; WLarge remains a quality ceiling/reference; Qwen3-ASR 0.6B is an experimental alternative architecture. See `persian-speech-model-evaluation.md` for published metrics, compatibility limits, and the test protocol.
 - **Retired engine:** Shenava Rizeh and its custom Rust runtime are retired and must not be reintroduced.
 
@@ -41,3 +41,8 @@ A parallel candidate screen is maintained in [persian-asr-alternative-candidates
 ## Android ASR integration audit
 
 The Android adapter was checked against the exact Sherpa-ONNX v1.13.8 API. Koochik v1.5 RNNT is source-level compatible but needs a dedicated `nemo_transducer` adapter and package layout; Diba-STT currently has no documented native Android/Sherpa integration path. See [the Android integration audit](android-asr-integration-audit-2026-11-06.md) before implementing either candidate.
+
+
+## Whisper test publication
+
+A manual workflow and reproducible packager have been added for multilingual Whisper Base and Small INT8. It pins the upstream Sherpa-ONNX model revisions, embeds the OpenAI Whisper MIT license text, creates inner per-file SHA-256 manifests, checks the existing package size limits, publishes release assets, and then commits the generated catalog metadata. The workflow has not been run yet, so the Whisper test packages are not yet downloadable. See [the test runbook](whisper-test-runbook.md).
