@@ -10,7 +10,7 @@ This plan is not a claim that all three candidates are currently installable or 
 
 ## Candidate set
 
-1. **Whisper Large-v3 Turbo Persian** — candidate for a Whisper.cpp-based adapter if the chosen checkpoint/quantized artifact is verified. This is a separate runtime path from the app's existing Sherpa-ONNX RNNT adapter. Confirm upstream model license, redistribution terms, exact GGML/GGUF format, tokenizer/task behavior, Android ABI support, APK/runtime overhead, and measured package size.
+1. **Whisper Large-v3 Turbo Persian** — candidate for the existing Sherpa-ONNX runtime if its original checkpoint can be exported to the exact OfflineWhisper ONNX encoder/decoder layout. The published GGML file is not directly loadable by Sherpa. Verify source checkpoint, tokenizer/task behavior, Android inference parity, license/attribution, and measured package size. Do not add Whisper.cpp unless Sherpa export proves infeasible.
 2. **Taraneh-WMedium** — Hugging Face WhisperForConditionalGeneration checkpoint (~3.06 GB F32 source). It is not a ready-to-install Sherpa package. Requires strict HF-to-supported-runtime conversion, tokenizer-ID parity, FP32 output parity, INT8 accuracy testing, and measured package size. Current 500 MiB expanded plugin cap must not be raised without device storage/RAM evidence. Standard INT8 may exceed the cap.
 3. **Whisper Persian V4** — Hugging Face Whisper Large-v3 fine-tune. Treat as a conversion candidate, not a ready Sherpa/Whisper.cpp pack. Verify checkpoint format, tokenizer and special-token parity, exporter support, license/attribution, quantization, package size, and mobile RAM/latency before catalog publication.
 
@@ -42,7 +42,7 @@ Sources:
 For each candidate:
 - Pin immutable upstream revision and inspect the complete license/redistribution terms.
 - Identify exact checkpoint files, tokenizer, decoder, and model configuration.
-- Select a runtime actually supported on Android. Do not assume Whisper-family checkpoints are interchangeable.
+- Prefer Link's already bundled Sherpa-ONNX v1.13.8 runtime: it exposes OfflineWhisperModelConfig and the OfflineRecognizer Whisper path. Produce the exact Sherpa Whisper ONNX encoder/decoder plus tokens package. Do not assume Whisper-family checkpoints or GGML artifacts are interchangeable.
 - Produce a reproducible conversion/quantization pipeline where required.
 - Compare source-framework and converted FP32 output on fixed audio samples before quantizing.
 - Measure quantized CER/WER, package size, peak RAM, cold start, latency, CPU load, and thermal/battery impact.
@@ -87,4 +87,4 @@ Published benchmark scores from different datasets or normalizers must not be pr
 
 ## Current decision
 
-The three candidates may be compared in one Link test area only after each has a verified Android runtime and installable data package. The immediate next work is Phase A feasibility, beginning with the Turbo checkpoint/runtime format and the two Hugging Face fine-tunes. No build or phone benchmark is implied by this plan.
+The three candidates may be compared in one Link test area only after each has a verified Android runtime and installable data package. The immediate next work is Phase A feasibility, beginning with export of the Turbo checkpoint and the two Hugging Face fine-tunes into Sherpa-ONNX Whisper format. Since Sherpa-ONNX v1.13.8 is already bundled in Link for Koochik/TTS and its Java API includes OfflineWhisperModelConfig, a Sherpa-compatible Whisper model pack should add no native inference runtime to the APK; only the small Java adapter code should affect DEX size. The downloaded ONNX weights remain data-only plugins. A separate Whisper.cpp runtime is a fallback only and would add native library size to the universal APK. No build or phone benchmark is implied by this plan.
