@@ -23,7 +23,7 @@ It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 
 ## Environment
 
-Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. Large-v3 / Turbo / Persian V4 are large checkpoints; the source model, mapped model, activations, ONNX export, and quantization may require substantial memory and several tens of GB of temporary disk.
+Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. The Givia repository contains a 3.24 GB safetensors checkpoint plus a separate 1.62 GB GGML model. The converter downloads only the safetensors checkpoint and required tokenizer/config files, explicitly excluding the unnecessary GGML copy. Source weights, mapped model, activations, ONNX export, and quantization may still require substantial memory and several tens of GB of temporary disk.
 
 Install compatible versions of Python 3.10 or 3.11, PyTorch, Transformers, huggingface_hub, accelerate, safetensors, openai-whisper, onnx, and onnxruntime.
 
