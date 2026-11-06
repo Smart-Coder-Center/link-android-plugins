@@ -15,13 +15,14 @@ Givia is the selected first candidate because it is the first model in the agree
 1. Resolve and record an immutable Hugging Face revision.
 2. Download only the Givia checkpoint. Do not fetch the other two checkpoints.
 3. Convert the actual fine-tuned weights with tools/whisper_hf_to_sherpa.py using the Sherpa-ONNX v1.13.8 exporter.
-4. Require strict tensor mapping, tokenizer checks, and forward-logit parity to pass.
-5. Export FP32 ONNX and compare against the original Transformers checkpoint on identical Persian WAV fixtures.
-6. Quantize only after FP32 parity passes. Measure CER, WER, short-utterance exact match, latency, peak RAM, and archive/expanded size.
-7. Run Sherpa Python and Java/JNI smoke tests against the exact v1.13.8 runtime.
-8. Build one data-only ZIP with complete file inventory, hashes, source revision, and CC-BY-4.0 attribution.
-9. Only after all conversion gates pass, publish one versioned GitHub Release asset and add one Givia entry to manifest/plugins.json.
-10. Install from the public catalog in Link. Test download, extraction, activation, transcription, switching back to Koochik/Whisper Small/Base, update, and uninstall on the target phone.
+4. Require strict tensor mapping, full special-token inventory checks, and forward-logit parity to pass.
+5. Rename all Sherpa output files and external-data sidecars to the Link package prefix `large-v3-turbo-persian`.
+6. Export FP32 ONNX and compare against the original Transformers checkpoint on identical Persian WAV fixtures.
+7. Quantize only after FP32 parity passes. Measure CER, WER, short-utterance exact match, latency, peak RAM, and archive/expanded size.
+8. Run Sherpa Python and Java/JNI smoke tests against the exact v1.13.8 runtime.
+9. Build one data-only ZIP with complete file inventory, hashes, source revision, and CC-BY-4.0 attribution.
+10. Only after all conversion gates pass, publish one versioned GitHub Release asset and add one Givia entry to manifest/plugins.json.
+11. Install from the public catalog in Link. Test download, extraction, activation, transcription, switching back to Koochik/Whisper Small/Base, update, and uninstall on the target phone.
 
 ## Stage 1 acceptance checklist
 
