@@ -204,6 +204,18 @@ def strict_map_weights(hf_model: Any, openai_model: Any) -> list[dict[str, Any]]
         openai_model.load_state_dict(mapped, strict=True, assign=True)
     except TypeError:
         openai_model.load_state_dict(mapped, strict=True)
+
+    loaded = openai_model.state_dict()
+    for entry in report:
+        source_tensor = source[entry["source"]].detach().cpu()
+        target_tensor = loaded[entry["destination"]].detach().cpu()
+        if not torch.equal(source_tensor, target_tensor):
+            difference = float((source_tensor.float() - target_tensor.float()).abs().max().item())
+            raise RuntimeError(
+                f"Tensor changed during assignment: {entry['source']} -> "
+                f"{entry['destination']} (max_abs={difference})"
+            )
+        entry["max_abs_difference_after_mapping"] = 0.0
     return report
 
 
@@ -370,6 +382,8 @@ def main():
     )
     if getattr(hf_model.config, "scale_embedding", False):
         raise RuntimeError("HF checkpoint uses scaled token embeddings; mapping is not validated")
+    if not getattr(hf_model.config, "tie_word_embeddings", True):
+        raise RuntimeError("HF checkpoint does not tie the decoder output projection to token embeddings")
 
     from whisper.model import Whisper
     dims = dimensions_from_config(hf_model.config)
