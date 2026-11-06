@@ -53,6 +53,11 @@ def validate_conversion_report(report: dict[str, Any]) -> None:
     revision = report.get("source_revision", "")
     if len(revision) != 40 or any(ch not in "0123456789abcdef" for ch in revision.lower()):
         raise RuntimeError("Conversion report does not contain an immutable 40-character source SHA")
+    downloaded = report.get("downloaded_source_files", [])
+    if not isinstance(downloaded, list) or "model.safetensors" not in downloaded or "config.json" not in downloaded:
+        raise RuntimeError("Conversion report does not prove the expected safetensors-only source snapshot")
+    if any(str(name).lower().endswith((".ggml", ".gguf", ".bin")) for name in downloaded):
+        raise RuntimeError("Conversion report includes an unnecessary GGML/binary checkpoint download")
     if report.get("forward_parity", {}).get("passed") is not True:
         raise RuntimeError("HF/OpenAI forward parity did not pass")
     inventory = report.get("tokenizer_parity", {}).get("inventory", {})
