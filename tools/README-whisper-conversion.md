@@ -39,7 +39,7 @@ python tools/whisper_hf_to_sherpa.py \
   --device cuda
 ```
 
-Repeat in a separate empty output directory for Taraneh-WMedium and Whisper Persian V4. The script records the resolved source commit SHA even when --revision main is used.
+Do not run the converter for Taraneh-WMedium or Whisper Persian V4 yet. Those checkpoints are deliberately deferred until Givia has passed the complete Link device-test gate and the next stage is approved. The script records the resolved source commit SHA even when --revision main is used.
 
 ## Important limitations
 
