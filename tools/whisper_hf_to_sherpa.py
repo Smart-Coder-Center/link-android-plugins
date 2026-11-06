@@ -34,11 +34,25 @@ SUPPORTED = {
         "license": "CC-BY-4.0",
         "feature_dim": 128,
     },
+    "areffarhadi/Taraneh-WMedium": {
+        "base": "medium",
+        "prefix": "taraneh-wmedium",
+        "license": "MIT",
+        "feature_dim": 80,
+    },
+    "nezamisafa/whisper-persian-v4": {
+        "base": "large-v3",
+        "prefix": "whisper-persian-v4",
+        "license": "Apache-2.0",
+        "feature_dim": 128,
+    },
 }
 
 HF_ALLOW_PATTERNS = [
     "config.json",
     "model.safetensors",
+    "model.safetensors.index.json",
+    "model-*.safetensors",
     "generation_config.json",
     "tokenizer.json",
     "vocab.json",
@@ -51,16 +65,25 @@ HF_ALLOW_PATTERNS = [
     "normalizer.json",
 ]
 
-TURBO_EXPECTED_CONFIG = {
-    "num_mel_bins": 128,
-    "d_model": 1280,
-    "encoder_layers": 32,
-    "encoder_attention_heads": 20,
-    "decoder_layers": 4,
-    "decoder_attention_heads": 20,
-    "max_source_positions": 1500,
-    "max_target_positions": 448,
-    "vocab_size": 51866,
+EXPECTED_CONFIGS = {
+    "givia/whisper-large-v3-turbo-persian": {
+        "num_mel_bins": 128, "d_model": 1280, "encoder_layers": 32,
+        "encoder_attention_heads": 20, "decoder_layers": 4,
+        "decoder_attention_heads": 20, "max_source_positions": 1500,
+        "max_target_positions": 448, "vocab_size": 51866,
+    },
+    "areffarhadi/Taraneh-WMedium": {
+        "num_mel_bins": 80, "d_model": 1024, "encoder_layers": 24,
+        "encoder_attention_heads": 16, "decoder_layers": 24,
+        "decoder_attention_heads": 16, "max_source_positions": 1500,
+        "max_target_positions": 448, "vocab_size": 51866,
+    },
+    "nezamisafa/whisper-persian-v4": {
+        "num_mel_bins": 128, "d_model": 1280, "encoder_layers": 32,
+        "encoder_attention_heads": 20, "decoder_layers": 32,
+        "decoder_attention_heads": 20, "max_source_positions": 1500,
+        "max_target_positions": 448, "vocab_size": 51866,
+    },
 }
 
 
@@ -84,14 +107,16 @@ def sha256(path: Path) -> str:
 def validate_model_config(config: dict[str, Any], model_id: str) -> None:
     if config.get("model_type") != "whisper":
         raise RuntimeError(f"Expected Whisper config, got {config.get('model_type')}")
-    if model_id == "givia/whisper-large-v3-turbo-persian":
-        mismatches = {
-            key: (expected, config.get(key))
-            for key, expected in TURBO_EXPECTED_CONFIG.items()
-            if config.get(key) != expected
-        }
-        if mismatches:
-            raise RuntimeError(f"Givia checkpoint is not the expected Whisper Turbo architecture: {mismatches}")
+    expected = EXPECTED_CONFIGS[model_id]
+    mismatches = {
+        key: (value, config.get(key))
+        for key, value in expected.items()
+        if config.get(key) != value
+    }
+    if mismatches:
+        raise RuntimeError(
+            f"{model_id} checkpoint does not match its declared Whisper architecture: {mismatches}"
+        )
 
 
 def dimensions_from_config(config: Any):
@@ -470,8 +495,13 @@ def main():
         allow_patterns=HF_ALLOW_PATTERNS,
     ))
     snapshot_files = sorted(path.name for path in snapshot.iterdir() if path.is_file())
-    if "model.safetensors" not in snapshot_files or "config.json" not in snapshot_files:
-        raise RuntimeError("HF snapshot is missing config.json or model.safetensors")
+    has_single_checkpoint = "model.safetensors" in snapshot_files
+    has_sharded_checkpoint = (
+        "model.safetensors.index.json" in snapshot_files
+        and any(re.fullmatch(r"model-\\d+-of-\\d+\\.safetensors", name) for name in snapshot_files)
+    )
+    if (not has_single_checkpoint and not has_sharded_checkpoint) or "config.json" not in snapshot_files:
+        raise RuntimeError("HF snapshot is missing config.json or a complete safetensors checkpoint")
     if any(name.lower().endswith((".ggml", ".gguf", ".bin")) for name in snapshot_files):
         raise RuntimeError("Unexpected GGML/binary model file downloaded; refusing duplicate model storage")
 
