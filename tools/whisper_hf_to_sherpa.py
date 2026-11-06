@@ -264,7 +264,9 @@ def verify_forward_parity(hf_model: Any, openai_model: Any, feature_dim: int, de
             use_cache=False,
             return_dict=True,
         ).logits.float().cpu()
-    del hf_model
+    # Move the HF model back off the accelerator before moving the OpenAI
+    # model there. This keeps peak VRAM to one full checkpoint, not two.
+    hf_model.cpu()
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
