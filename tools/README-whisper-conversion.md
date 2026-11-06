@@ -9,7 +9,8 @@ It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 3. Maps all expected encoder/decoder tensors to the OpenAI Whisper state-dict layout. Missing, extra, duplicate, or shape-mismatched tensors stop conversion.
 4. Checks Persian tokenizer probes and key special-token IDs against OpenAI Whisper's multilingual tokenizer.
 5. Compares Transformers and OpenAI Whisper forward logits on a deterministic 30-second synthetic log-mel input.
-6. Runs the Whisper ONNX export and INT8 quantization code from the exact Sherpa-ONNX v1.13.8 exporter supplied by the operator.
+6. Runs the Whisper ONNX export and INT8 quantization code from the exact Sherpa-ONNX v1.13.8 exporter supplied by the operator, including the exporter's SDPA workaround even though it is imported as a module.
+7. Requires both FP32 and INT8 encoder/decoder graphs and the tokenizer file, then runs the ONNX structural checker on all four graphs. FP32 graphs and any external weight sidecars are retained for parity testing.
 7. Writes hashes, tensor mapping, tokenizer checks, and parity results to conversion-report.json.
 
 ## Supported source checkpoints
