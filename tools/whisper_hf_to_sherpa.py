@@ -219,11 +219,51 @@ def strict_map_weights(hf_model: Any, openai_model: Any) -> list[dict[str, Any]]
     return report
 
 
+def verify_special_token_inventory(hf_tokenizer: Any, openai_tokenizer: Any) -> dict[str, Any]:
+    """Require the HF added-token inventory to match OpenAI Whisper exactly."""
+    encoding = getattr(openai_tokenizer, "encoding", None)
+    expected_special = getattr(encoding, "_special_tokens", None)
+    if not isinstance(expected_special, dict) or not expected_special:
+        raise RuntimeError("Cannot inspect OpenAI Whisper special-token inventory")
+
+    hf_vocab_size = len(hf_tokenizer)
+    openai_vocab_size = int(encoding.n_vocab)
+    if hf_vocab_size != openai_vocab_size:
+        raise RuntimeError(
+            f"Tokenizer vocabulary size mismatch: HF={hf_vocab_size}, "
+            f"OpenAI={openai_vocab_size}"
+        )
+
+    hf_added = hf_tokenizer.get_added_vocab()
+    mismatches = []
+    for token, expected_id in expected_special.items():
+        actual_id = hf_tokenizer.convert_tokens_to_ids(token)
+        if actual_id != expected_id:
+            mismatches.append((token, expected_id, actual_id))
+    unknown_added = [
+        (token, token_id) for token, token_id in hf_added.items()
+        if token not in expected_special or expected_special[token] != token_id
+    ]
+    if mismatches or unknown_added:
+        raise RuntimeError(
+            "Whisper special-token inventory mismatch: "
+            f"wrong_ids={mismatches[:12]}, unexpected_hf_added_tokens={unknown_added[:12]}"
+        )
+    return {
+        "hf_vocabulary_size": hf_vocab_size,
+        "openai_vocabulary_size": openai_vocab_size,
+        "special_token_count": len(expected_special),
+        "hf_added_token_count": len(hf_added),
+        "all_special_token_ids_match": True,
+    }
+
+
 def verify_tokenizer(processor: Any, base_model: str) -> dict[str, Any]:
     from whisper.tokenizer import get_tokenizer
 
     hf_tokenizer = processor.tokenizer
     openai_tokenizer = get_tokenizer(multilingual=True, num_languages=99)
+    inventory_report = verify_special_token_inventory(hf_tokenizer, openai_tokenizer)
     comparisons = []
     for text in PROBES:
         hf_ids = hf_tokenizer.encode(text, add_special_tokens=False)
@@ -252,7 +292,12 @@ def verify_tokenizer(processor: Any, base_model: str) -> dict[str, Any]:
     for name, ids in special.items():
         if ids[0] != ids[1]:
             raise RuntimeError(f"Tokenizer special-token mismatch ({name}): {ids}")
-    return {"base_model": base_model, "probes": comparisons, "special_token_ids": special}
+    return {
+        "base_model": base_model,
+        "probes": comparisons,
+        "special_token_ids": special,
+        "inventory": inventory_report,
+    }
 
 
 def verify_forward_parity(hf_model: Any, openai_model: Any, feature_dim: int, device: str):
