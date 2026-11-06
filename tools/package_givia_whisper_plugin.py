@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a data-only Link plugin ZIP from a validated Givia Sherpa conversion."""
+"""Build a data-only Link plugin ZIP from a validated Persian Whisper conversion."""
 
 from __future__ import annotations
 
@@ -10,10 +10,26 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-MODEL_ID = "givia/whisper-large-v3-turbo-persian"
-PLUGIN_ID = "asr.givia-whisper-large-v3-turbo.fa"
-PACKAGE_PREFIX = "large-v3-turbo-persian"
-LICENSE = "CC-BY-4.0"
+SUPPORTED_PACKAGES = {
+    "givia/whisper-large-v3-turbo-persian": {
+        "plugin_id": "asr.givia-whisper-large-v3-turbo.fa",
+        "prefix": "large-v3-turbo-persian",
+        "license": "CC-BY-4.0",
+        "author": "givia",
+    },
+    "areffarhadi/Taraneh-WMedium": {
+        "plugin_id": "asr.taraneh-wmedium.fa",
+        "prefix": "taraneh-wmedium",
+        "license": "MIT",
+        "author": "areffarhadi",
+    },
+    "nezamisafa/whisper-persian-v4": {
+        "plugin_id": "asr.whisper-persian-v4.fa",
+        "prefix": "whisper-persian-v4",
+        "license": "Apache-2.0",
+        "author": "nezamisafa",
+    },
+}
 
 
 def sha256(path: Path) -> str:
@@ -41,15 +57,15 @@ def external_data_files(onnx_path: Path) -> list[str]:
     return sorted(locations)
 
 
-def validate_conversion_report(report: dict[str, Any]) -> None:
-    if report.get("model_id") != MODEL_ID:
+def validate_conversion_report(report: dict[str, Any], model_id: str, metadata: dict[str, str]) -> None:
+    if report.get("model_id") != model_id:
         raise RuntimeError(f"Wrong source model in conversion report: {report.get('model_id')}")
-    if report.get("license") != LICENSE:
+    if report.get("license") != metadata["license"]:
         raise RuntimeError(f"Unexpected model license: {report.get('license')}")
-    if report.get("base_architecture") != "turbo" or report.get("feature_dim") != 128:
-        raise RuntimeError("Conversion report is not the expected Whisper Turbo/128-mel model")
-    if report.get("package_model_prefix") != PACKAGE_PREFIX:
+    if report.get("package_model_prefix") != metadata["prefix"]:
         raise RuntimeError("Conversion report has the wrong Link package model prefix")
+    if report.get("feature_dim") not in (80, 128):
+        raise RuntimeError("Conversion report has an unsupported Whisper feature dimension")
     revision = report.get("source_revision", "")
     if len(revision) != 40 or any(ch not in "0123456789abcdef" for ch in revision.lower()):
         raise RuntimeError("Conversion report does not contain an immutable 40-character source SHA")
@@ -65,18 +81,24 @@ def validate_conversion_report(report: dict[str, Any]) -> None:
         raise RuntimeError("Full Whisper special-token inventory did not pass")
 
 
-def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[str, Any]:
+def build_package(conversion_dir: Path, output_zip: Path, version: str, model_id: str) -> dict[str, Any]:
     conversion_dir = conversion_dir.resolve()
     output_zip = output_zip.resolve()
     report_path = conversion_dir / "conversion-report.json"
     if not report_path.is_file():
         raise FileNotFoundError(report_path)
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    validate_conversion_report(report)
+    if model_id not in SUPPORTED_PACKAGES:
+        raise RuntimeError(f"Unsupported Persian Whisper checkpoint: {model_id}")
+    metadata = SUPPORTED_PACKAGES[model_id]
+    validate_conversion_report(report, model_id, metadata)
+    plugin_id = metadata["plugin_id"]
+    package_prefix = metadata["prefix"]
+    license_name = metadata["license"]
 
-    encoder = f"{PACKAGE_PREFIX}-encoder.int8.onnx"
-    decoder = f"{PACKAGE_PREFIX}-decoder.int8.onnx"
-    tokens = f"{PACKAGE_PREFIX}-tokens.txt"
+    encoder = f"{package_prefix}-encoder.int8.onnx"
+    decoder = f"{package_prefix}-decoder.int8.onnx"
+    tokens = f"{package_prefix}-tokens.txt"
     payload_names = {encoder, decoder, tokens}
     for graph_name in (encoder, decoder):
         graph = conversion_dir / graph_name
@@ -88,11 +110,10 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
 
     attribution = (
         "Link Persian speech recognition plugin attribution\n"
-        f"Model: {MODEL_ID}\n"
-        f"Upstream author: givia\n"
+        f"Model: {model_id}\n"
+        f"Upstream author: {metadata['author']}\n"
         f"Source revision: {report['source_revision']}\n"
-        "License: Creative Commons Attribution 4.0 International (CC BY 4.0)\n"
-        "License URL: https://creativecommons.org/licenses/by/4.0/\n"
+        f"License: {license_name}\n"
         "Changes: converted from the upstream Hugging Face checkpoint to Sherpa-ONNX "
         "and dynamically quantized to INT8 for Link.\n"
     )
@@ -116,8 +137,8 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
         "language": "fa",
         "runtime": {
             "architecture": "whisper",
-            "model_prefix": PACKAGE_PREFIX,
-            "feature_dim": 128,
+            "model_prefix": package_prefix,
+            "feature_dim": report["feature_dim"],
             "language": "fa",
             "task": "transcribe",
             "tail_paddings": 300,
@@ -138,9 +159,9 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
 
     archive_sha = sha256(output_zip)
     package_report = {
-        "plugin_id": PLUGIN_ID,
+        "plugin_id": plugin_id,
         "version": version,
-        "model_id": MODEL_ID,
+        "model_id": model_id,
         "source_revision": report["source_revision"],
         "license": LICENSE,
         "archive": str(output_zip),
@@ -158,11 +179,12 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model-id", required=True, choices=sorted(SUPPORTED_PACKAGES))
     parser.add_argument("--conversion-dir", required=True, type=Path)
     parser.add_argument("--output-zip", required=True, type=Path)
     parser.add_argument("--version", default="1.0.0-test.1")
     args = parser.parse_args()
-    result = build_package(args.conversion_dir, args.output_zip, args.version)
+    result = build_package(args.conversion_dir, args.output_zip, args.version, args.model_id)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
