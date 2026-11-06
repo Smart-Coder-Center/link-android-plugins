@@ -24,7 +24,7 @@ It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 
 Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. Large-v3 / Turbo / Persian V4 are large checkpoints; the source model, mapped model, activations, ONNX export, and quantization may require substantial memory and several tens of GB of temporary disk.
 
-Install compatible versions of Python 3.10 or 3.11, PyTorch, Transformers, huggingface_hub, safetensors, openai-whisper, onnx, and onnxruntime.
+Install compatible versions of Python 3.10 or 3.11, PyTorch, Transformers, huggingface_hub, accelerate, safetensors, openai-whisper, onnx, and onnxruntime.
 
 Use the same Python environment for the Sherpa exporter. The exporter itself comes from the Sherpa-ONNX v1.13.8 source tree; do not use an unpinned development-branch copy.
 
