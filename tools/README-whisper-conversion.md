@@ -23,7 +23,7 @@ It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 
 ## Environment
 
-Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. The Givia repository contains a 3.24 GB safetensors checkpoint plus a separate 1.62 GB GGML model. The converter downloads only the safetensors checkpoint and required tokenizer/config files, explicitly excluding the unnecessary GGML copy. Source weights, mapped model, activations, ONNX export, and quantization may still require substantial memory and several tens of GB of temporary disk.
+Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. The three source repositories contain multi-gigabyte Transformers checkpoints. The converter downloads only safetensors weights and required tokenizer/config files, explicitly excluding GGML/GGUF/binary inference copies. Sharded safetensors snapshots are accepted when the index and all shards are present. Source weights, mapped model, activations, ONNX export, and quantization may still require substantial memory and several tens of GB of temporary disk.
 
 Install compatible versions of Python 3.10 or 3.11, PyTorch, Transformers, huggingface_hub, accelerate, safetensors, openai-whisper, onnx, and onnxruntime.
 
@@ -38,20 +38,33 @@ python tools/whisper_hf_to_sherpa.py \
   --sherpa-exporter /path/to/sherpa-onnx/scripts/whisper/export-onnx.py \
   --output-dir /data/link-asr/givia-turbo-fa \
   --device cuda
+
+# Repeat for the other requested checkpoints, using separate empty output folders:
+python tools/whisper_hf_to_sherpa.py --model-id areffarhadi/Taraneh-WMedium \
+  --revision main --sherpa-exporter /path/to/sherpa-onnx/scripts/whisper/export-onnx.py \
+  --output-dir /data/link-asr/taraneh-wmedium --device cuda
+
+python tools/whisper_hf_to_sherpa.py --model-id nezamisafa/whisper-persian-v4 \
+  --revision main --sherpa-exporter /path/to/sherpa-onnx/scripts/whisper/export-onnx.py \
+  --output-dir /data/link-asr/whisper-persian-v4 --device cuda
 ```
 
 After conversion completes and all gates in the report pass, create the data-only plugin ZIP:
 
 ```bash
 python tools/package_givia_whisper_plugin.py \
+  --model-id givia/whisper-large-v3-turbo-persian \
   --conversion-dir /data/link-asr/givia-turbo-fa \
   --output-zip /data/link-asr/givia-whisper-plugin-1.0.0-test.1.zip \
   --version 1.0.0-test.1
+
+# Use the same packager for Taraneh-WMedium and Whisper Persian V4 by changing
+# --model-id, --conversion-dir, and --output-zip to their corresponding values.
 ```
 
 The packager re-checks the source model/revision, license, forward parity, tokenizer inventory, INT8 graph files, external ONNX sidecars, and SHA-256 values. It writes the root `plugin.json`, attribution notice, archive, and a separate package report. This creates a local ZIP only; it does not upload a GitHub Release or modify the public catalog.
 
-Do not run the converter for Taraneh-WMedium or Whisper Persian V4 yet. Those checkpoints are deliberately deferred until Givia has passed the complete Link device-test gate and the next stage is approved. The script records the resolved source commit SHA even when --revision main is used.
+The three requested models are supported by the conversion and packaging command paths. Process them sequentially to control workstation memory and disk pressure, but do not silently substitute stock OpenAI Whisper weights for any fine-tuned checkpoint. Each run records the resolved immutable source commit SHA even when --revision main is used. A model remains unpublished until its own conversion, tokenizer, numerical parity, audio quality, Sherpa JNI, and Android device gates pass.
 
 ## Important limitations
 
