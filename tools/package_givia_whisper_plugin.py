@@ -170,7 +170,7 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str, model_id
         "version": version,
         "model_id": model_id,
         "source_revision": report["source_revision"],
-        "license": LICENSE,
+        "license": license_name,
         "archive": str(output_zip),
         "archive_size_bytes": output_zip.stat().st_size,
         "archive_sha256": archive_sha,
