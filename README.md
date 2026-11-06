@@ -11,15 +11,20 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 ## Current status
 
-- **Persian offline TTS:** Mana Piper 1.0.0 is the only published voice and remains the only TTS option for now. No additional voices will be added until ASR engine quality evaluation is complete and a separate decision is made.
-- **Persian offline ASR:** no Whisper package is currently published in the catalog. The Android app contains a Sherpa-ONNX Whisper adapter for multilingual Whisper Small/Base INT8 packages, but a compatible archive must be built, released, and added to the catalog before it can be downloaded.
-- **Retired engine:** Shenava Rizeh is not part of the active catalog. Its retired-package cleanup in the app exists only to remove data left by older installations.
+- **Persian offline TTS:** Mana Piper 1.0.0 remains the only published voice. No additional TTS voices are part of the current work.
+- **Persian offline ASR:** the Link integration branch supports both the existing Koochik RNNT engine and multilingual Sherpa-ONNX Whisper packages. Previously installed Whisper Small/Base packages are retained and remain selectable.
+- **Three Persian Whisper candidates are being prepared as separate data-only plugins:**
+  1. Whisper Large-v3 Turbo Persian — based on `givia/whisper-large-v3-turbo-persian` (CC-BY-4.0).
+  2. Taraneh-WMedium — `areffarhadi/Taraneh-WMedium` (MIT).
+  3. Whisper Persian V4 — `nezamisafa/whisper-persian-v4` (Apache-2.0).
+- **Publication status:** none of these three candidate archives is published in the public catalog yet. Their actual fine-tuned weights must be converted to the pinned Sherpa-ONNX v1.13.8 Whisper format, checked for tensor/tokenizer parity, quantized, and measured before catalog publication.
+- **Retired engine:** Shenava Rizeh is not part of the active catalog and must not be reintroduced.
 
-Do not treat an engine as production-ready solely because its metadata or release asset exists. Verify model provenance, redistribution rights, package checksums, installation, inference, update, and removal on real devices.
+Do not treat an engine as production-ready solely because its metadata or release asset exists. Verify model provenance, redistribution rights, package checksums, installation, inference, update, removal, and real-device memory/latency.
 
 ## Model evaluation
 
-See [the Persian speech model evaluation shortlist](docs/persian-speech-model-evaluation.md) for Persian ASR candidates, conversion feasibility, compatibility notes, and the proposed validation order. These are research candidates, not downloadable catalog entries until their packages pass the release checks.
+See [the Persian speech model evaluation shortlist](docs/persian-speech-model-evaluation.md) for Persian ASR candidates, benchmark evidence, conversion feasibility, and the proposed validation order. These are research candidates, not downloadable catalog entries until their packages pass the release checks.
 
 ## Catalog
 
