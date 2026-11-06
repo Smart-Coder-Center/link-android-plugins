@@ -52,10 +52,7 @@ jobs:
           PACKAGE_VERSION: ${{ inputs.version || '1.0.0-test.1' }}
         run: |
           TAG="whisper-test-${PACKAGE_VERSION}"
-          gh release create "$TAG" dist/*.zip \\
-            --title "Link Persian Whisper test models ${PACKAGE_VERSION}" \\
-            --target main \\
-            --notes "Experimental offline Persian ASR test packages for Link. Includes multilingual Whisper Base and Small INT8 ONNX exports. Compare both on the same Android device and audio set. Model weights derive from OpenAI Whisper (MIT); converted ONNX artifacts are from the pinned sherpa-onnx model repositories."
+          gh release create "$TAG" dist/*.zip --title "Link Persian Whisper test models ${PACKAGE_VERSION}" --target main --notes "Experimental offline Persian ASR test packages for Link. Includes multilingual Whisper Base and Small INT8 ONNX exports. Compare both on the same Android device and audio set. Model weights derive from OpenAI Whisper (MIT); converted ONNX artifacts are from the pinned sherpa-onnx model repositories."
 
       - name: Commit generated catalog metadata
         env:
