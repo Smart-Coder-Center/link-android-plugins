@@ -89,6 +89,30 @@ Published benchmark scores from different datasets or normalizers must not be pr
 
 The three candidates will be compared alongside the existing Koochik RNNT baseline only after each has a verified Android runtime and installable data package. The immediate work is Phase A: pin revisions, inspect configs/tokenizers, and export each fine-tune to Sherpa-ONNX Whisper format. Sherpa's documented exporter covers standard Whisper model families, but the Persian fine-tunes need custom checkpoint loading and parity verification. The current `LinkOfflineAsr` on `main` is the Koochik RNNT adapter, so a separate Whisper adapter and plugin runtime metadata/selection path are required; do not replace Koochik. If successful, Sherpa reuses the native runtime already bundled in Link, while downloaded ONNX weights remain data-only plugin payloads. The user has suspended the 400/500 MiB plugin size gates for this work; storage/RAM safety still applies. No phone benchmark is implied by this plan.
 
+
+## Checkpoint compatibility details (2026-11-06)
+
+The public Hugging Face configs confirm that all three are WhisperForConditionalGeneration checkpoints, but they are not the same size/model family:
+
+| Candidate | Mel bins | Width | Encoder layers | Decoder layers | Vocab size | Upstream license |
+|---|---:|---:|---:|---:|---:|---|
+| Whisper Large-v3 Turbo Persian | 128 | 1280 | 32 | 4 | 51866 | CC-BY-4.0 |
+| Taraneh-WMedium | 80 | 1024 | 24 | 24 | 51865 | MIT |
+| Whisper Persian V4 | 128 | 1280 | 32 | 32 | 51866 | Apache-2.0 |
+
+- Turbo publishes both a Transformers safetensors checkpoint and a GGML file for whisper.cpp. The GGML file is not a Sherpa ONNX package.
+- Taraneh-WMedium is explicitly based on `openai/whisper-medium`; its generation config forces Persian (`50359`) and transcribe (`50363`) tokens.
+- Whisper Persian V4 has the Large-v3-sized architecture and a two-shard safetensors checkpoint.
+- Sherpa's upstream exporter uses the OpenAI Whisper model API and the standard multilingual tiktoken table. It does not directly load arbitrary Hugging Face `WhisperForConditionalGeneration` directories. The conversion lane therefore needs an explicit HF-to-OpenAI state-dict mapper (including layer-name mapping and tied decoder output weights), followed by exact token-ID parity checks, FP32 transcript parity, Sherpa ONNX export, and INT8 accuracy checks.
+- The exporter uses 128 mel bins for Large-v3/Turbo and 80 for Medium. Do not reuse one model's mel configuration for another.
+
+Sources:
+- https://huggingface.co/givia/whisper-large-v3-turbo-persian
+- https://huggingface.co/areffarhadi/Taraneh-WMedium
+- https://huggingface.co/nezamisafa/whisper-persian-v4
+- https://k2-fsa.github.io/sherpa/onnx/pretrained_models/whisper/export-onnx.html
+- https://github.com/huggingface/transformers/blob/main/src/transformers/models/whisper/convert_openai_to_hf.py
+
 ## User decision update — 2026-11-06
 
 The user explicitly requested that all three selected Whisper candidates continue and that model size limits not be considered for now. This supersedes earlier statements that the 400 MiB compressed / 500 MiB expanded caps are selection gates. Do not quietly narrow the candidate set or substitute smaller models. The next implementation work must update the catalog/schema/installer to accept large data-only archives safely, add free-space checks, and report exact storage requirements. Keep the limits as a temporary compatibility setting only if required to prevent unsafe writes, not as a reason to exclude a candidate.
