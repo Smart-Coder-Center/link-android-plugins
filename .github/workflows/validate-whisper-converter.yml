@@ -6,6 +6,7 @@ on:
       - feature/persian-whisper-models
     paths:
       - "tools/whisper_hf_to_sherpa.py"
+      - "tools/package_givia_whisper_plugin.py"
       - "tools/test_whisper_hf_to_sherpa.py"
       - ".github/workflows/validate-whisper-converter.yml"
   pull_request:
@@ -28,6 +29,6 @@ jobs:
         with:
           python-version: "3.11"
       - name: Compile converter
-        run: python -m py_compile tools/whisper_hf_to_sherpa.py tools/test_whisper_hf_to_sherpa.py
-      - name: Test state-dict key mapping
+        run: python -m py_compile tools/whisper_hf_to_sherpa.py tools/package_givia_whisper_plugin.py tools/test_whisper_hf_to_sherpa.py
+      - name: Test converter, tokenizer, and Givia package validation
         run: python -m unittest discover -s tools -p "test_whisper_hf_to_sherpa.py" -v
