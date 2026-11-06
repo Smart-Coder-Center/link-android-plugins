@@ -14,6 +14,19 @@ This plan is not a claim that all three candidates are currently installable or 
 2. **Taraneh-WMedium** — Hugging Face WhisperForConditionalGeneration checkpoint (~3.06 GB F32 source). It is not a ready-to-install Sherpa package. Requires strict HF-to-supported-runtime conversion, tokenizer-ID parity, FP32 output parity, INT8 accuracy testing, and measured package size. Current 500 MiB expanded plugin cap must not be raised without device storage/RAM evidence. Standard INT8 may exceed the cap.
 3. **Whisper Persian V4** — Hugging Face Whisper Large-v3 fine-tune. Treat as a conversion candidate, not a ready Sherpa/Whisper.cpp pack. Verify checkpoint format, tokenizer and special-token parity, exporter support, license/attribution, quantization, package size, and mobile RAM/latency before catalog publication.
 
+
+## Verified upstream artifact facts (2026-11-06)
+
+- **Turbo Persian:** the givia model card publishes a Whisper.cpp GGML file and reports a 809M-parameter FP32 Transformers checkpoint. The original GGML file is FP16; a separate q5_0 conversion is published at 574,041,195 bytes. That q5_0 artifact alone is larger than Link's current 500 MiB expanded cap (524,288,000 bytes), before plugin manifest/license files. The model repository declares CC-BY-4.0 and lists dataset/channel attribution. Any redistributed package must preserve attribution and be reviewed for the training-data terms. A lower-bit quantization could be investigated, but no size or quality claim should be made until an actual artifact is produced and measured.
+- **Taraneh-WMedium:** the Hugging Face repository reports a 3.06 GB F32 safetensors checkpoint and MIT license. Its documented inference path is Transformers/CTranslate2, not a ready-made Android Whisper.cpp or Sherpa package.
+- **Whisper Persian V4:** the Hugging Face repository reports 6.18 GB of checkpoint files and Apache-2.0 metadata. It is a Transformers checkpoint, not a ready-to-install mobile package.
+
+Sources:
+- Turbo model card and GGML usage: https://huggingface.co/givia/whisper-large-v3-turbo-persian
+- Published q5_0 artifact and exact byte size: https://huggingface.co/pejmans21/whisper-large-v3-turbo-persian-ggml
+- Taraneh-WMedium checkpoint and license: https://huggingface.co/areffarhadi/Taraneh-WMedium
+- Whisper Persian V4 checkpoint and license metadata: https://huggingface.co/nezamisafa/whisper-persian-v4
+
 ## Existing Link architecture constraints
 
 - The current Android ASR implementation is model-specific; a catalog entry alone does not make an arbitrary model executable.
