@@ -34,18 +34,6 @@ SUPPORTED = {
         "license": "CC-BY-4.0",
         "feature_dim": 128,
     },
-    "areffarhadi/Taraneh-WMedium": {
-        "base": "medium",
-        "prefix": "medium",
-        "license": "MIT",
-        "feature_dim": 80,
-    },
-    "nezamisafa/whisper-persian-v4": {
-        "base": "large-v3",
-        "prefix": "large-v3",
-        "license": "Apache-2.0",
-        "feature_dim": 128,
-    },
 }
 
 PROBES = [
