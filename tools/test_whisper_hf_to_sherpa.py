@@ -83,6 +83,7 @@ class GiviaPackageBuilderTests(unittest.TestCase):
             "base_architecture": "turbo",
             "feature_dim": 128,
             "package_model_prefix": "large-v3-turbo-persian",
+            "downloaded_source_files": ["config.json", "model.safetensors", "tokenizer.json"],
             "forward_parity": {"passed": True},
             "tokenizer_parity": {
                 "inventory": {"all_special_token_ids_match": True}
