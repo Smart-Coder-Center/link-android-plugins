@@ -1,15 +1,19 @@
 # Speech recognition plugins (ASR)
 
-## Supported ASR integration
+## Current status
 
-The Link app-side adapter supports multilingual Persian Whisper Small and Base INT8 ONNX packages through Sherpa-ONNX.
+The experimental multilingual Whisper Base and Small packages have been retired from the live catalog after user testing found their Persian recognition quality unsuitable for Link. They are no longer offered for installation.
 
-**Important:** no Whisper package is currently published in the live catalog. Do not show a download/install action until a versioned package release has been uploaded, its exact checksum and size have been verified, and its entry has been added to `manifest/plugins.json`.
+No Persian ASR package is currently published in the production catalog. Do not add a replacement until all of the following have been verified:
 
-Required package files:
-- Whisper encoder ONNX
-- Whisper decoder ONNX
-- matching tokens file
-- model license and attribution notices
+- Persian conversational-speech accuracy on a fixed, human-transcribed test set
+- Offline Android inference using Link's pinned Sherpa-ONNX runtime, or a justified runtime change
+- Actual archive size, peak RAM, latency, and battery use on representative Android devices
+- Model and runtime licenses permitting commercial redistribution
+- Exact model revision, file checksums, and reproducible packaging
 
-Use a pinned upstream model revision. The final ZIP must remain below the app's 400 MiB archive limit and include per-file SHA-256 entries in `plugin.json`.
+## Candidate research
+
+The current research shortlist is recorded in `docs/persian-asr-alternative-candidates.md`. The leading implementation candidate is a Persian FastConformer RNNT/CTC model that can use the existing Sherpa-ONNX runtime, subject to a device test. A separate compact Diba candidate remains research-only until its native Android inference path and reproducible quality results are established.
+
+Keep ASR model weights as data-only plugins outside the APK. Mana remains the only Persian TTS voice.
