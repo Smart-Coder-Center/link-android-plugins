@@ -7,7 +7,7 @@ from unittest.mock import patch
 import tempfile
 from pathlib import Path
 
-from whisper_hf_to_sherpa import map_key, rename_exported_files, verify_special_token_inventory
+from whisper_hf_to_sherpa import map_key, rename_exported_files, validate_model_config, verify_special_token_inventory
 from package_givia_whisper_plugin import build_package, validate_conversion_report
 
 
@@ -38,6 +38,40 @@ class _FakeHFTokenizer:
         return self._added_vocab.get(token, -1)
 
 
+
+
+
+class GiviaArchitectureGateTests(unittest.TestCase):
+    def test_expected_turbo_architecture_passes(self):
+        config = {
+            "model_type": "whisper",
+            "num_mel_bins": 128,
+            "d_model": 1280,
+            "encoder_layers": 32,
+            "encoder_attention_heads": 20,
+            "decoder_layers": 4,
+            "decoder_attention_heads": 20,
+            "max_source_positions": 1500,
+            "max_target_positions": 448,
+            "vocab_size": 51866,
+        }
+        validate_model_config(config, "givia/whisper-large-v3-turbo-persian")
+
+    def test_wrong_decoder_depth_fails(self):
+        config = {
+            "model_type": "whisper",
+            "num_mel_bins": 128,
+            "d_model": 1280,
+            "encoder_layers": 32,
+            "encoder_attention_heads": 20,
+            "decoder_layers": 32,
+            "decoder_attention_heads": 20,
+            "max_source_positions": 1500,
+            "max_target_positions": 448,
+            "vocab_size": 51866,
+        }
+        with self.assertRaisesRegex(RuntimeError, "not the expected Whisper Turbo"):
+            validate_model_config(config, "givia/whisper-large-v3-turbo-persian")
 
 
 class GiviaPackageBuilderTests(unittest.TestCase):
