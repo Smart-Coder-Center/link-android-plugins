@@ -81,11 +81,6 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
             payload_names.add(sidecar)
     payload_names.add("ATTRIBUTION.txt")
 
-    for name in payload_names:
-        path = conversion_dir / name
-        if not path.is_file() or path.is_symlink() or path.stat().st_size == 0:
-            raise RuntimeError(f"Missing, empty, or unsafe plugin payload: {name}")
-
     attribution = (
         "Link Persian speech recognition plugin attribution\n"
         f"Model: {MODEL_ID}\n"
@@ -98,6 +93,11 @@ def build_package(conversion_dir: Path, output_zip: Path, version: str) -> dict[
     )
     attribution_path = conversion_dir / "ATTRIBUTION.txt"
     attribution_path.write_text(attribution, encoding="utf-8")
+
+    for name in payload_names:
+        path = conversion_dir / name
+        if not path.is_file() or path.is_symlink() or path.stat().st_size == 0:
+            raise RuntimeError(f"Missing, empty, or unsafe plugin payload: {name}")
 
     files = []
     for name in sorted(payload_names):
