@@ -498,7 +498,7 @@ def main():
     has_single_checkpoint = "model.safetensors" in snapshot_files
     has_sharded_checkpoint = (
         "model.safetensors.index.json" in snapshot_files
-        and any(re.fullmatch(r"model-\\d+-of-\\d+\\.safetensors", name) for name in snapshot_files)
+        and any(re.fullmatch(r"model-\d+-of-\d+\.safetensors", name) for name in snapshot_files)
     )
     if (not has_single_checkpoint and not has_sharded_checkpoint) or "config.json" not in snapshot_files:
         raise RuntimeError("HF snapshot is missing config.json or a complete safetensors checkpoint")
