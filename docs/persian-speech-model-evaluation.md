@@ -8,13 +8,41 @@ This is a research comparison from published model cards and benchmark reports. 
 
 ## Link's current constraints
 
-- Link currently uses Sherpa-ONNX Java `OfflineRecognizer` with multilingual Whisper Small/Base INT8 model files.
-- The ASR adapter currently recognizes only the Whisper Small/Base filename layouts. It does not yet expose Taraneh, Qwen3-ASR, or FastConformer engines.
+- The Link integration branch uses Sherpa-ONNX Java `OfflineRecognizer` and supports both the existing Koochik RNNT package and multilingual Whisper packages.
+- The Whisper adapter preserves the legacy Small/Base filenames and also accepts manifest-declared model prefixes, feature dimensions (80/128), Persian language and transcription task. This is the runtime integration only; the three fine-tuned checkpoints still require verified conversion and package publication.
 - The app currently pins Sherpa-ONNX Android dependency `v1.13.8`; newer model support must be verified against this exact runtime before integration.
-- Downloaded plugin packages are data-only ZIP files, limited to 400 MiB compressed and 500 MiB expanded by the current installer. Do not raise those limits casually: model size, free storage, peak RAM, and download time are user-facing constraints.
+- Downloaded plugin packages are data-only ZIP files. The current integration branch temporarily allows up to 10 GiB compressed and 16 GiB expanded because the requested large Persian checkpoints exceed the old cap. This does not remove the need to measure actual download size, free storage, peak RAM, and download time.
 - The signed app already contains Sherpa-ONNX native runtime. Keep weights outside the APK.
 
 ## Published Persian quality evidence
+
+## Requested Persian Whisper models
+
+### Whisper Large-v3 Turbo Persian
+
+- Upstream checkpoint: `givia/whisper-large-v3-turbo-persian`.
+- Base architecture: OpenAI Whisper Large-v3 Turbo; approximately 809M parameters.
+- Training: the model card describes roughly 236 hours of openly licensed Persian speech and a full Persian fine-tune.
+- License: CC-BY-4.0; retain the required attribution and model provenance.
+- Sherpa contract: Whisper encoder/decoder plus matching multilingual tokens; `feature_dim=128`.
+- Conversion status: source checkpoint is Hugging Face Whisper; the pinned Sherpa exporter only loads OpenAI Whisper checkpoints by built-in model name. A strict HF-to-OpenAI weight converter is required before export. Do not use the separate browser ONNX repository as a drop-in Sherpa package: its graph signatures are for Transformers.js.
+
+Sources:
+- https://huggingface.co/givia/whisper-large-v3-turbo-persian
+- https://huggingface.co/mehrshadjavid/whisper-large-v3-turbo-persian-ONNX
+
+### Whisper Persian V4
+
+- Upstream checkpoint: `nezamisafa/whisper-persian-v4`.
+- Base architecture: Whisper Large-v3; the Hugging Face repository reports a 6.18 GB F32 checkpoint and approximately 2B parameters.
+- License: Apache-2.0; retain the original notice and attribution.
+- Published PESTE v2.1.0 result: normalized CER 4.97% and WER 13.18% on 871 FLEURS Persian test recordings. Treat this as benchmark evidence, not a prediction of Link device performance.
+- Sherpa contract: Whisper encoder/decoder plus matching multilingual tokens; `feature_dim=128`.
+- Conversion status: Hugging Face Whisper checkpoint; requires the same strict tensor/tokenizer conversion and parity validation as Taraneh-WMedium.
+
+Sources:
+- https://huggingface.co/nezamisafa/whisper-persian-v4
+- https://github.com/ArmanJR/PESTE-Benchmark
 
 ### Taraneh-ASR family
 
@@ -86,7 +114,7 @@ Verified facts:
 - The Taraneh model card identifies the checkpoint as a Hugging Face `WhisperForConditionalGeneration` model based on `openai/whisper-medium`. The published repository contains a 3.06 GB `model.safetensors` file and tokenizer/configuration assets.
 - Taraneh's own inference path loads it through Transformers and optionally converts it to **CTranslate2**. That fast path does not produce Sherpa-ONNX files and cannot be used by Link's current Sherpa Java recognizer.
 - Sherpa's documented Whisper exporter imports `openai-whisper`, creates an OpenAI Whisper model with `whisper.load_model()`, then exports encoder/decoder graphs and dynamically quantizes their MatMul weights. Its current built-in loader does not load a Hugging Face `WhisperForConditionalGeneration` directory; the special `medium-aishell` path expects a different icefall checkpoint, not Taraneh's safetensors.
-- Link's current `LinkOfflineAsr` adapter only searches for `small-*` and `base-*` filenames. Even a valid Sherpa Whisper Medium package would not currently be selected without a small app-side adapter update.
+- Link's updated integration branch now supports manifest-declared Whisper model prefixes and the 80-dimensional Medium feature layout, while preserving the legacy Small/Base package names. The conversion and package itself remain unverified.
 - Link's package installer currently caps a compressed archive at 400 MiB and expanded data at 500 MiB. The 3.06 GB source checkpoint is not a distributable package and must not be placed in the catalog.
 
 ### Required conversion work
@@ -102,7 +130,7 @@ Verified facts:
 
 **Feasibility is promising but not yet proven.** The base architecture is Whisper Medium, but the HF-to-OpenAI weight mapping, tokenizer parity, ONNX numerical parity, INT8 accuracy, v1.13.8 execution, and package footprint remain unverified. No conversion script, ONNX artifact, catalog entry, release asset, or app adapter change is being published yet. This avoids shipping a package that silently runs stock Whisper or fails at runtime.
 
-The detailed v1.13.8 exporter findings and proposed strict HF-to-OpenAI tensor mapping are recorded in [the conversion spike](taraneh-wmedium-conversion-spike.md). The next technical milestone is a reproducible conversion prototype that produces FP32 ONNX and a parity report before any INT8 packaging. The user's Android device is still required for final latency, RAM, heat, battery, and real-world Persian quality measurements.
+The detailed v1.13.8 exporter findings and proposed strict HF-to-OpenAI tensor mapping are recorded in [the conversion spike](taraneh-wmedium-conversion-spike.md). The next technical milestone is a reproducible conversion prototype for each of the three requested checkpoints that produces FP32 ONNX and a parity report before any INT8 packaging. The user's Android device is still required for final latency, RAM, heat, battery, and real-world Persian quality measurements.
 
 Sources:
 - Taraneh model card and checkpoint details: https://huggingface.co/areffarhadi/Taraneh-WMedium
