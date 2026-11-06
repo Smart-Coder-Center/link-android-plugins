@@ -49,6 +49,14 @@ See [taraneh-wmedium-conversion-spike.md](taraneh-wmedium-conversion-spike.md) f
 - Verify the Persian language/task tokens and tokenizer IDs against the checkpoint's own processor/tokenizer assets.
 - Export FP32, compare against Transformers, and only then quantize to INT8 and measure quality and actual package size.
 
+## Conversion prototype added
+
+A first strict conversion prototype is now available at [tools/whisper_hf_to_sherpa.py](../tools/whisper_hf_to_sherpa.py), with usage notes in [tools/README-whisper-conversion.md](../tools/README-whisper-conversion.md).
+
+The prototype resolves an immutable HF revision, maps the full Transformers state dict to OpenAI Whisper, rejects unmapped or shape-mismatched tensors, checks Persian tokenizer probes and special tokens, compares deterministic forward logits, and then invokes the pinned Sherpa-ONNX v1.13.8 exporter/INT8 quantizer. It writes a conversion report and output hashes.
+
+**Important current status:** the script has been committed but has not yet been executed against the 3.24 GB, 3.06 GB, or 6.18 GB checkpoints. No ONNX output, transcript parity result, archive size, or Android runtime result exists yet. The prototype's tokenizer probe checks are an initial gate, not a complete vocabulary audit. The generated graphs still require real Persian WAV comparison, Sherpa Python/JNI smoke testing, and Android device validation. Do not treat the presence of this script as a successful conversion.
+
 ## Shared release gates
 
 1. Record source repository, immutable revision, license, conversion tool versions, and hashes.
