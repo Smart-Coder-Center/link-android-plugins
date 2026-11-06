@@ -9,14 +9,14 @@ This is a source-level screening only. None of these candidates has been convert
 - Persian quality must be supported by a reproducible benchmark, not marketing language alone.
 - Must run fully offline on Android.
 - Prefer the already bundled Sherpa-ONNX v1.13.8 Java runtime; a separate runtime is possible only if its APK/native-library cost is justified.
-- Plugin payload must fit the current 400 MiB compressed / 500 MiB expanded limits.
+- **Superseded for the selected three-model work:** the user has temporarily suspended the 400 MiB compressed / 500 MiB expanded plugin size gates. Do not reject a selected model on size alone; keep reporting storage requirements and verify available device space/RAM.
 - Commercial redistribution rights must be clear.
 - Evaluate CER/WER on the same fixed Persian test set, plus latency, peak RAM, storage, battery, and robustness to conversational speech/noise.
 - Keep Mana Piper as the only Persian TTS voice. This document is ASR-only.
 
 ## Candidates screened in parallel
 
-| Candidate | Public evidence | Android/runtime fit | Size gate | License gate | Initial decision |
+| Candidate | Public evidence | Android/runtime fit | Storage note (not a selection gate) | License gate | Initial decision |
 |---|---|---|---|---|---|
 | Shenava Koochik v1.5 RNNT Sherpa-ONNX | Held-out Golden-6669 reports WER 9.50%, CER ~2.6%; same family CTC head is reported at WER 8.12%, CER ~2.3% | Native Sherpa-ONNX transducer package; Android supported | INT8 files reported as encoder 131 MB + decoder 4 MB + joiner 1.4 MB, plus tokens; comfortably below expanded cap | Apache-2.0 stated by model card | **Selected prototype**; test the Apache-2.0 RNNT INT8 package first. The CTC alternative is currently blocked by package size or non-commercial licensing |
 | Diba-STT fa-small-0.42 | Vendor describes offline, real-time Persian recognition; no independent WER/CER table found in the reviewed model card | Mobile/browser/CPU claimed, but its documented Python package/runtime is not Sherpa's current recognizer API | ~53 MB claimed for small model | Apache-2.0 stated by model card | **High-priority investigation**; obtain reproducible benchmark and inspect native/WASM runtime and Android integration cost |
@@ -97,3 +97,8 @@ Source: https://huggingface.co/Reza2kn/Shenava-Rizeh-Pizeh-v1.0-sherpa-onnx
 Start with Koochik v1.5 Sherpa RNNT/CTC and Diba fa-small as the two most promising alternatives, while inspecting C1Tech and Taraneh-WBase as Whisper-family candidates. No model should be added to the production catalog, no installer size limit should be changed, and no Android app integration should be merged until license, reproducible accuracy, package size, exact Sherpa v1.13.8 compatibility, and real-device RAM/latency have been verified.
 
 No build or Android test is performed as part of this screening. Mana remains the only Persian TTS voice.
+
+
+## Size policy update — 2026-11-06
+
+The user has explicitly requested that the three selected Whisper models (Whisper Large-v3 Turbo Persian, Taraneh-WMedium, Whisper Persian V4) continue regardless of current plugin size caps. The old 400 MiB/500 MiB thresholds are no longer selection criteria for this work. This does not waive checksum verification, archive path validation, disk-space checks, device RAM/latency testing, or license review.
