@@ -1,45 +1,39 @@
-# Sequential rollout: first Persian Whisper plugin
+# Three-model Persian Whisper rollout
 
-## Decision
+## Scope
 
-Process one multi-gigabyte model at a time. The first and only active candidate is Givia Whisper Large-v3 Turbo Persian (givia/whisper-large-v3-turbo-persian, CC-BY-4.0).
+The user has explicitly requested that all three Persian Whisper candidates continue through the integration pipeline. Process one checkpoint at a time to control workstation memory and disk usage, but do not defer the second or third model pending a new approval.
 
-Taraneh-WMedium and Whisper Persian V4 are deferred. Do not download, convert, package, or publish either until Givia has passed installation and real-device testing in Link and the user approves the next stage.
+1. Givia Whisper Large-v3 Turbo Persian — `givia/whisper-large-v3-turbo-persian`, CC-BY-4.0, Sherpa feature dimension 128.
+2. Taraneh-WMedium — `areffarhadi/Taraneh-WMedium`, MIT, Sherpa feature dimension 80.
+3. Whisper Persian V4 — `nezamisafa/whisper-persian-v4`, Apache-2.0, Sherpa feature dimension 128.
 
-## Why this order
+Koochik RNNT remains the existing baseline and fallback; it is not one of the three new candidates.
 
-Givia is the selected first candidate because it is the first model in the agreed rollout and its base architecture (Whisper Large-v3 Turbo) is supported by the pinned Sherpa-ONNX v1.13.8 exporter. Its Hugging Face fine-tuned weights still require the custom adapter and parity checks; stock Whisper Turbo weights must never be substituted.
+## Per-model conversion and release gates
 
-## Stage 1: Givia only
+For each checkpoint, in the order above:
 
-1. Resolve and record an immutable Hugging Face revision.
-2. Download only the Givia checkpoint. Do not fetch the other two checkpoints.
-3. Convert the actual fine-tuned weights with tools/whisper_hf_to_sherpa.py using the Sherpa-ONNX v1.13.8 exporter.
-4. Require strict tensor mapping, full special-token inventory checks, and forward-logit parity to pass.
-5. Rename all Sherpa output files and external-data sidecars to the Link package prefix `large-v3-turbo-persian`.
-6. Export FP32 ONNX and compare against the original Transformers checkpoint on identical Persian WAV fixtures.
-7. Quantize only after FP32 parity passes. Measure CER, WER, short-utterance exact match, latency, peak RAM, and archive/expanded size.
-8. Run Sherpa Python and Java/JNI smoke tests against the exact v1.13.8 runtime.
-9. Build one data-only ZIP with complete file inventory, hashes, source revision, and CC-BY-4.0 attribution.
-10. Only after all conversion gates pass, publish one versioned GitHub Release asset and add one Givia entry to manifest/plugins.json.
-11. Install from the public catalog in Link. Test download, extraction, activation, transcription, switching back to Koochik/Whisper Small/Base, update, and uninstall on the target phone.
+1. Resolve and record an immutable Hugging Face revision and verify the license.
+2. Download the actual fine-tuned safetensors checkpoint and tokenizer/configuration assets only. Do not download duplicate GGML/GGUF inference files.
+3. Map the complete HF state dict into the matching OpenAI Whisper architecture used by the pinned Sherpa-ONNX v1.13.8 exporter. Reject missing, extra, duplicate, or shape-mismatched tensors.
+4. Verify tokenizer vocabulary, all special-token IDs, language/task tokens, mel dimension, and decoder contract.
+5. Export FP32 ONNX and compare Transformers and ONNX outputs on identical fixtures.
+6. Quantize to INT8 only after FP32 parity passes. Measure CER/WER degradation on the same Persian conversational test set.
+7. Run Sherpa Python and Java/JNI smoke tests against the exact v1.13.8 runtime.
+8. Package as data-only ZIP with complete file inventory, SHA-256 hashes, immutable source revision, and model-specific license attribution.
+9. Test download, extraction, activation, transcription, switching to Koochik, update, and uninstall on the target Link device.
+10. Publish a versioned GitHub Release asset and catalog entry only after all gates for that model pass.
 
-## Stage 1 acceptance checklist
+## Shared quality test set
 
-- [ ] Source revision and license provenance recorded.
-- [ ] Every source tensor mapped; no unexpected or missing tensors.
-- [ ] Full tokenizer vocabulary and special-token inventory audited.
-- [ ] FP32 ONNX numerical/transcript parity passed.
-- [ ] INT8 CER/WER regression measured on the same held-out Persian set.
-- [ ] Sherpa v1.13.8 Python and Android JNI smoke tests passed.
-- [ ] Final archive and expanded sizes, SHA-256, and contents recorded.
-- [ ] Link installation, activation, transcription, switching, update, and removal tested.
-- [ ] User confirms the first model is acceptable before Stage 2 begins.
+Use identical audio fixtures and one normalization/scoring pipeline for all three models. Include colloquial Persian, short single-word answers inside complete sentences, Persian numerals, punctuation, half-spaces, mixed Persian/English, different speaking rates, silence, and realistic background noise. Report WER, CER, short-utterance exact match, latency, peak RSS, thermal behavior, model initialization time, and archive/expanded size.
 
-## Stage 2 and Stage 3
+Model-card scores from different datasets are not directly comparable. Do not declare a winner until Link evaluates all three on the same held-out test set.
 
-Only after Stage 1 acceptance and explicit approval, repeat the same process for Taraneh-WMedium. Whisper Persian V4 remains deferred until Taraneh has also been evaluated and a further stage is approved.
+## Current implementation status
 
-## Current truthful status
-
-The conversion prototype and static mapping CI exist, but no Givia ONNX files or plugin ZIP have been generated yet. No catalog entry is present. The large checkpoint conversion requires a suitable machine with sufficient RAM, disk, and preferably CUDA; do not create a placeholder catalog entry or claim that the plugin is installable before the real archive exists.
+- Link Android contains the Sherpa-ONNX Whisper runtime adapter and supports manifest-declared model prefixes and 80/128 mel dimensions.
+- The companion converter and packager command paths now declare all three source checkpoints.
+- This is implementation support only. No successful multi-gigabyte checkpoint conversion, INT8 quality result, final ZIP, public catalog entry, or Android device validation is claimed until the corresponding artifacts and reports exist.
+- Never add placeholder entries to the public catalog. Keep model weights outside the APK.
