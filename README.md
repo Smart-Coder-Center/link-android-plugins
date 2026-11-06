@@ -13,11 +13,8 @@ Large plugin archives are distributed as GitHub Release assets rather than commi
 
 - **Persian offline TTS:** Mana Piper 1.0.0 remains the only published voice. No additional TTS voices are part of the current work.
 - **Persian offline ASR:** the Link integration branch supports both the existing Koochik RNNT engine and multilingual Sherpa-ONNX Whisper packages. Previously installed Whisper Small/Base packages are retained and remain selectable.
-- **Three Persian Whisper candidates are being prepared as separate data-only plugins:**
-  1. Whisper Large-v3 Turbo Persian — based on `givia/whisper-large-v3-turbo-persian` (CC-BY-4.0).
-  2. Taraneh-WMedium — `areffarhadi/Taraneh-WMedium` (MIT).
-  3. Whisper Persian V4 — `nezamisafa/whisper-persian-v4` (Apache-2.0).
-- **Publication status:** none of these three candidate archives is published in the public catalog yet. Their actual fine-tuned weights must be converted to the pinned Sherpa-ONNX v1.13.8 Whisper format, checked for tensor/tokenizer parity, quantized, and measured before catalog publication.
+- **Sequential Persian Whisper rollout:** only Whisper Large-v3 Turbo Persian (`givia/whisper-large-v3-turbo-persian`, CC-BY-4.0) is the first active conversion and device-test candidate. Taraneh-WMedium and Whisper Persian V4 are deferred; do not download, convert, package, or publish them until Givia passes Link device testing and the next stage is approved.
+- **Publication status:** Givia is not yet converted or published. Its actual fine-tuned weights must be converted to the pinned Sherpa-ONNX v1.13.8 format, checked for tensor/tokenizer parity, quantized, and measured before catalog publication. See [the sequential rollout plan](docs/first-whisper-plugin-rollout.md).
 - **Retired engine:** Shenava Rizeh is not part of the active catalog and must not be reintroduced.
 
 Do not treat an engine as production-ready solely because its metadata or release asset exists. Verify model provenance, redistribution rights, package checksums, installation, inference, update, removal, and real-device memory/latency.
