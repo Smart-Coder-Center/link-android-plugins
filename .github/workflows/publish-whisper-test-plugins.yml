@@ -7,6 +7,11 @@ on:
         description: "Test package version"
         required: true
         default: "1.0.0-test.1"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-whisper-test-plugins.yml"
 
 permissions:
   contents: write
@@ -29,7 +34,7 @@ jobs:
 
       - name: Build Base and Small data-only packages
         env:
-          PACKAGE_VERSION: ${{ inputs.version }}
+          PACKAGE_VERSION: ${{ inputs.version || '1.0.0-test.1' }}
         run: python scripts/package_whisper_test_plugins.py --version "$PACKAGE_VERSION"
 
       - name: Check generated package sizes
@@ -44,17 +49,17 @@ jobs:
       - name: Publish GitHub release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          PACKAGE_VERSION: ${{ inputs.version }}
+          PACKAGE_VERSION: ${{ inputs.version || '1.0.0-test.1' }}
         run: |
           TAG="whisper-test-${PACKAGE_VERSION}"
-          gh release create "$TAG" dist/*.zip \
-            --title "Link Persian Whisper test models ${PACKAGE_VERSION}" \
-            --target main \
+          gh release create "$TAG" dist/*.zip \\
+            --title "Link Persian Whisper test models ${PACKAGE_VERSION}" \\
+            --target main \\
             --notes "Experimental offline Persian ASR test packages for Link. Includes multilingual Whisper Base and Small INT8 ONNX exports. Compare both on the same Android device and audio set. Model weights derive from OpenAI Whisper (MIT); converted ONNX artifacts are from the pinned sherpa-onnx model repositories."
 
       - name: Commit generated catalog metadata
         env:
-          PACKAGE_VERSION: ${{ inputs.version }}
+          PACKAGE_VERSION: ${{ inputs.version || '1.0.0-test.1' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
