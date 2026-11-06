@@ -55,7 +55,7 @@ A first strict conversion prototype is now available at [tools/whisper_hf_to_she
 
 The prototype resolves an immutable HF revision, maps the full Transformers state dict to OpenAI Whisper, rejects unmapped or shape-mismatched tensors, checks Persian tokenizer probes and special tokens, compares deterministic forward logits, and then invokes the pinned Sherpa-ONNX v1.13.8 exporter/INT8 quantizer. It writes a conversion report and output hashes.
 
-**Important current status:** the script has been committed but has not yet been executed against the 3.24 GB, 3.06 GB, or 6.18 GB checkpoints. No ONNX output, transcript parity result, archive size, or Android runtime result exists yet. The prototype's tokenizer probe checks are an initial gate, not a complete vocabulary audit. The generated graphs still require real Persian WAV comparison, Sherpa Python/JNI smoke testing, and Android device validation. Do not treat the presence of this script as a successful conversion.
+**Important current status:** the script has been committed but has not yet been executed against the 3.24 GB, 3.06 GB, or 6.18 GB checkpoints. No ONNX output, transcript parity result, archive size, or Android runtime result exists yet. The prototype's tokenizer probe checks are an initial gate, not a complete vocabulary audit. A lightweight GitHub Actions check has passed: Python syntax compilation and seven state-dict key-mapping unit tests. That check does not load multi-gigabyte checkpoints or run conversion. The generated graphs still require real Persian WAV comparison, Sherpa Python/JNI smoke testing, and Android device validation. Do not treat the presence of this script or the static CI pass as a successful conversion.
 
 ## Shared release gates
 
