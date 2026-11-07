@@ -28,12 +28,6 @@ from pathlib import Path
 from typing import Any
 
 SUPPORTED = {
-    "givia/whisper-large-v3-turbo-persian": {
-        "base": "turbo",
-        "prefix": "large-v3-turbo-persian",
-        "license": "CC-BY-4.0",
-        "feature_dim": 128,
-    },
     "areffarhadi/Taraneh-WMedium": {
         "base": "medium",
         "prefix": "taraneh-wmedium",
@@ -66,12 +60,6 @@ HF_ALLOW_PATTERNS = [
 ]
 
 EXPECTED_CONFIGS = {
-    "givia/whisper-large-v3-turbo-persian": {
-        "num_mel_bins": 128, "d_model": 1280, "encoder_layers": 32,
-        "encoder_attention_heads": 20, "decoder_layers": 4,
-        "decoder_attention_heads": 20, "max_source_positions": 1500,
-        "max_target_positions": 448, "vocab_size": 51866,
-    },
     "areffarhadi/Taraneh-WMedium": {
         "num_mel_bins": 80, "d_model": 1024, "encoder_layers": 24,
         "encoder_attention_heads": 16, "decoder_layers": 24,
@@ -549,9 +537,8 @@ def main():
     del openai_model
     gc.collect()
 
-    # Sherpa names files after its architecture ("turbo-..."). Link resolves
-    # model files by the package-specific runtime.model_prefix, so rename the
-    # entire set, including any external ONNX tensor sidecars, consistently.
+    # Rename the export set, including external ONNX tensor sidecars, to a
+    # stable package-specific prefix.
     rename_report = rename_exported_files(
         args.output_dir, metadata["base"], metadata["prefix"]
     )
