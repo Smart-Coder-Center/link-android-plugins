@@ -37,6 +37,6 @@ The generic workflow `.github/workflows/package-universal-plugins.yml` runs on c
 
 Supported kinds are extensible; examples include `asr`, `tts`, `prompt`, `translation`, and `ai-model`. Do not add a new kind by editing a closed allowlist in the app. The app must route a kind to its built-in consumer while using the same catalog, downloader, integrity checks, and private storage pipeline.
 
-See [the universal package format](docs/universal-plugin-package-format.md) for the source layout, metadata contract, and security rules. The older [speech package format](docs/package-format.md) remains as a compatibility reference for existing speech adapters.
+See [the universal package format](docs/universal-plugin-package-format.md) for the source layout, metadata contract, and security rules. The [legacy pipeline migration status](docs/legacy-pipeline-migration.md) tracks existing model acquisition workflows and their remaining migration work. The older [speech package format](docs/package-format.md) remains as a compatibility reference for existing speech adapters.
 
 Large archives belong in GitHub Releases, never Git history. Never publish API keys, signing credentials, private source, or user data.
