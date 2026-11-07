@@ -96,12 +96,14 @@ jobs:
                   if item.suffix.lower() in forbidden:
                       raise SystemExit(f"Executable/code payload is not allowed: {item}")
                   relative = item.relative_to(source_dir).as_posix()
-                  if relative.startswith("/") or ".." in Path(relative).parts:
+                  if relative.startswith("/") or "\\" in relative or any(part in ("", ".", "..") for part in Path(relative).parts):
                       raise SystemExit(f"Unsafe payload path: {relative}")
                   expanded += item.stat().st_size
                   payload.append((relative, item))
               if not payload:
                   raise SystemExit(f"Plugin {plugin_id} has no payload files")
+              if len(payload) > 10000:
+                  raise SystemExit(f"Plugin {plugin_id} exceeds Link's 10,000-file limit")
               if expanded > max_expanded:
                   raise SystemExit(f"Expanded plugin payload exceeds 16 GiB: {plugin_id}")
 
