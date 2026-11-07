@@ -1,5 +1,17 @@
 # Speech synthesis plugins (TTS)
 
+## Current published package
+
+The public catalog currently contains **Mana Persian Piper**:
+
+- Plugin ID: `tts.mana.piper.fa`
+- Catalog version: `1.0.0`
+- Download: approximately 67.5 MB
+- Catalog license metadata: MIT + GPL-3.0-or-later
+- Runtime: Sherpa-ONNX TTS with Piper voice data
+
+This is an existing release/catalog package, not yet a migrated source package under the universal `plugins/tts/<plugin-id>/` layout. Keep the current catalog entry available while migrating its reproducible source/acquisition process. Do not replace or retire it until a new package has been published and verified.
+
 ## Recommended engine
 
 Use **Piper VITS ONNX voices through sherpa-onnx TTS**.
@@ -10,9 +22,9 @@ Why:
 - sherpa-onnx documents support for Piper model formats and Android TTS integration.
 - This avoids adding a separate PyTorch, Coqui, or Chatterbox runtime to Link.
 
-## First Persian voice candidates
+## Additional Persian voice candidates
 
-Use the existing Persian (fa_IR) Piper voice set as the first evaluation pool:
+Use the existing Persian (fa_IR) Piper voice set as an evaluation pool:
 - fa_IR-ganji-medium
 - fa_IR-ganji_adabi-medium
 - fa_IR-amir-medium
@@ -21,26 +33,21 @@ Use the existing Persian (fa_IR) Piper voice set as the first evaluation pool:
 
 Each voice is currently listed as a single-speaker, medium-quality voice. Do not label a voice male or female in the UI unless actual samples have been listened to and attribution confirms it. Start with one default Persian voice, then add other choices after listening tests with native Persian speakers.
 
-Ganji Adabi is a useful first candidate for a more literary reading style; Ganji is a practical baseline. This is a shortlist for listening tests, not a claim that one has objectively superior quality.
+Ganji Adabi is a useful candidate for a more literary reading style; Ganji is a practical baseline. This is a shortlist for listening tests, not a claim that one has objectively superior quality.
 
-## Suggested first package
+## Packaging requirements
 
-Suggested package ID: tts.piper.fa-IR.ganji-adabi
+Every new voice must use the shared universal plugin source and publishing pipeline:
+- Source directory: `plugins/tts/<plugin-id>/`
+- Root source manifest: `plugin.json`
+- Payload includes model, configuration, required phonemizer data (only if not already supplied by Link's shared runtime), and license/attribution notices.
+- The common packager generates the inner file checksums, immutable ZIP release, archive checksum, and catalog entry.
+- Do not add another independent catalog writer or downloader.
 
-Required payload:
-- fa_IR-ganji_adabi-medium.onnx
-- fa_IR-ganji_adabi-medium.onnx.json
-- required eSpeak NG phonemizer data, unless a compatible shared runtime copy already exists in Link
-- license and attribution notices
+Pin upstream revisions and verify Persian pronunciation (including ی/ک variants, نیم‌فاصله, Arabic loanwords, numbers, URLs, and English words) before promoting additional voices. Do not download or duplicate eSpeak data per voice if the shared runtime data is sufficient.
 
-Do not download or duplicate eSpeak data per voice if the shared runtime data is sufficient.
+## License and attribution
 
-## English voices
+Piper's code repository being MIT does not automatically mean every voice model is MIT-licensed. Inspect each voice's MODEL_CARD, configuration, dataset attribution, and redistribution terms separately. Preserve all original attribution and license files in each package.
 
-Add English only after choosing and checking an actual voice sample and its model card. Keep each voice as an independent catalog item. Avoid hard-coding gender labels from voice names.
-
-## License and release gate
-
-Piper's code repository being MIT does not automatically mean every voice has an MIT model license. Inspect each voice's MODEL_CARD, configuration, dataset attribution, and redistribution terms separately. The Persian voice cards currently identify the source dataset as CC0; preserve original attribution and license files in the package.
-
-No TTS package is published yet. Pin the upstream revision, run Persian pronunciation tests (including ی/ک variants, نیم‌فاصله, Arabic loanwords, numbers, URLs, and English words), and publish only after the selected voice passes listening tests and package checksums are final.
+The current additional-voice publishing workflow is still a legacy bespoke path and must be migrated to the universal packager before it becomes the standard release path. A restrictive license is not a reason to stop independent research or packaging preparation; give a concise reminder of the relevant restriction and continue without misrepresenting redistribution rights.
