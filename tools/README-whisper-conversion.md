@@ -1,6 +1,6 @@
 # Experimental HF Whisper to Sherpa-ONNX converter
 
-tools/whisper_hf_to_sherpa.py is the first reproducible conversion prototype for the three Persian Whisper checkpoints requested for Link.
+tools/whisper_hf_to_sherpa.py is the first reproducible conversion prototype for the two remaining Persian Whisper checkpoints requested for Link.
 
 It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 
