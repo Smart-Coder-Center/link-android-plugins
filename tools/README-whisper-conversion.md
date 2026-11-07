@@ -17,13 +17,12 @@ It does not publish plugins or edit the catalog. It is deliberately fail-closed:
 
 | Model ID | Base architecture | Feature dimension | License |
 |---|---|---:|---|
-| givia/whisper-large-v3-turbo-persian | turbo | 128 | CC-BY-4.0 |
 | areffarhadi/Taraneh-WMedium | medium | 80 | MIT |
 | nezamisafa/whisper-persian-v4 | large-v3 | 128 | Apache-2.0 |
 
 ## Environment
 
-Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. The three source repositories contain multi-gigabyte Transformers checkpoints. The converter downloads only safetensors weights and required tokenizer/config files, explicitly excluding GGML/GGUF/binary inference copies. Sharded safetensors snapshots are accepted when the index and all shards are present. Source weights, mapped model, activations, ONNX export, and quantization may still require substantial memory and several tens of GB of temporary disk.
+Use a dedicated Linux workstation with adequate RAM, free disk, and preferably a CUDA GPU. The two source repositories contain multi-gigabyte Transformers checkpoints. The converter downloads only safetensors weights and required tokenizer/config files, explicitly excluding GGML/GGUF/binary inference copies. Sharded safetensors snapshots are accepted when the index and all shards are present. Source weights, mapped model, activations, ONNX export, and quantization may still require substantial memory and several tens of GB of temporary disk.
 
 Install compatible versions of Python 3.10 or 3.11, PyTorch, Transformers, huggingface_hub, accelerate, safetensors, openai-whisper, onnx, and onnxruntime.
 
@@ -31,15 +30,9 @@ Use the same Python environment for the Sherpa exporter. The exporter itself com
 
 ## Example
 
-```bash
-python tools/whisper_hf_to_sherpa.py \
-  --model-id givia/whisper-large-v3-turbo-persian \
-  --revision main \
-  --sherpa-exporter /path/to/sherpa-onnx/scripts/whisper/export-onnx.py \
-  --output-dir /data/link-asr/givia-turbo-fa \
-  --device cuda
+The converter supports the two remaining checkpoints. Run each sequentially with its own empty output directory:
 
-# Repeat for the other requested checkpoints, using separate empty output folders:
+```bash
 python tools/whisper_hf_to_sherpa.py --model-id areffarhadi/Taraneh-WMedium \
   --revision main --sherpa-exporter /path/to/sherpa-onnx/scripts/whisper/export-onnx.py \
   --output-dir /data/link-asr/taraneh-wmedium --device cuda
@@ -49,22 +42,7 @@ python tools/whisper_hf_to_sherpa.py --model-id nezamisafa/whisper-persian-v4 \
   --output-dir /data/link-asr/whisper-persian-v4 --device cuda
 ```
 
-After conversion completes and all gates in the report pass, create the data-only plugin ZIP:
-
-```bash
-python tools/package_givia_whisper_plugin.py \
-  --model-id givia/whisper-large-v3-turbo-persian \
-  --conversion-dir /data/link-asr/givia-turbo-fa \
-  --output-zip /data/link-asr/givia-whisper-plugin-1.0.0-test.1.zip \
-  --version 1.0.0-test.1
-
-# Use the same packager for Taraneh-WMedium and Whisper Persian V4 by changing
-# --model-id, --conversion-dir, and --output-zip to their corresponding values.
-```
-
-The packager re-checks the source model/revision, license, forward parity, tokenizer inventory, INT8 graph files, external ONNX sidecars, and SHA-256 values. It writes the root `plugin.json`, attribution notice, archive, and a separate package report. This creates a local ZIP only; it does not upload a GitHub Release or modify the public catalog.
-
-The three requested models are supported by the conversion and packaging command paths. Process them sequentially to control workstation memory and disk pressure, but do not silently substitute stock OpenAI Whisper weights for any fine-tuned checkpoint. Each run records the resolved immutable source commit SHA even when --revision main is used. A model remains unpublished until its own conversion, tokenizer, numerical parity, audio quality, Sherpa JNI, and Android device gates pass.
+The converter writes ONNX artifacts and a conversion report only. It does not create a plugin ZIP, publish a GitHub Release, or modify the catalog. Packaging must be implemented and validated separately after each model passes conversion and device tests.
 
 ## Important limitations
 
