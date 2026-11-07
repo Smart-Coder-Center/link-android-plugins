@@ -27,13 +27,16 @@ Raw catalog URL:
 
 `https://raw.githubusercontent.com/smart-center-code/link-android-plugins/main/manifest/plugins.json`
 
-## Publishing a package
+## Universal plugin publishing
 
-1. Prepare a data-only ZIP matching [docs/package-format.md](docs/package-format.md).
-2. Verify redistribution rights for the model, voice, runtime, and all bundled data.
-3. Compute SHA-256 for every payload file and for the final ZIP.
-4. Upload the ZIP as an asset to a versioned GitHub Release.
-5. Add its exact release asset URL, byte size, version, compatibility, and SHA-256 to `manifest/plugins.json`.
-6. Validate the catalog and verify download, installation, inference, update, and removal.
+All downloadable plugin categories use one source layout and one installer contract:
 
-Never publish API keys, signing credentials, private source, or user data here.
+`plugins/<kind>/<plugin-id>/plugin.json` plus that plugin's data files.
+
+The generic workflow `.github/workflows/package-universal-plugins.yml` runs on changes under `plugins/**` or by manual dispatch. It validates each source package, creates a root-manifest data-only ZIP, computes payload and archive SHA-256 values, publishes immutable GitHub Release assets, and updates `manifest/plugins.json`.
+
+Supported kinds are extensible; examples include `asr`, `tts`, `prompt`, `translation`, and `ai-model`. Do not add a new kind by editing a closed allowlist in the app. The app must route a kind to its built-in consumer while using the same catalog, downloader, integrity checks, and private storage pipeline.
+
+See [the universal package format](docs/universal-plugin-package-format.md) for the source layout, metadata contract, and security rules. The older [speech package format](docs/package-format.md) remains as a compatibility reference for existing speech adapters.
+
+Large archives belong in GitHub Releases, never Git history. Never publish API keys, signing credentials, private source, or user data.
