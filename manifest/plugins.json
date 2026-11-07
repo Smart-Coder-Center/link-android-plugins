@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 6,
+  "catalog_version": 7,
   "plugins": [
     {
       "id": "tts.mana.piper.fa",
@@ -13,7 +13,7 @@
       "archive": {
         "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/speech-v1.0.0/tts-mana-piper-fa-1.0.0.zip",
         "size_bytes": 67513001,
-        "sha256": "871306697e913bfc7f7ada8eb04391566b3d328562f6ed5423254e81589b8957"
+        "sha256": "871306697e913bfc7f7ada8eb04391566f6ed5423254e81589b8957"
       },
       "license": {
         "name": "MIT + GPL-3.0-or-later",
@@ -33,7 +33,7 @@
       "archive": {
         "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/koochik-rnnt-test-1.0.0-test.1/koochik-rnnt-fa-1.0.0-test.1.zip",
         "size_bytes": 136732669,
-        "sha256": "45f4bdf9776bbdd34a1f14128ea5ab209c71b8d88b44e8be6a209d6735519009"
+        "sha256": "45f4bdf9776bbdd34a1f14128ea5b209c71b8d88b44e8be6a209d6735519009"
       },
       "license": {
         "name": "Apache-2.0",
@@ -41,6 +41,26 @@
         "attribution": "Shenava Koochik v1.5 RNNT sherpa-onnx model; upstream revision c46e9af380770a07509a3591169c99e936e0cc96"
       },
       "release_notes": "Experimental offline Persian RNNT model. Sherpa-ONNX nemo_transducer. Upstream revision c46e9af380770a07509a3591169c99e936e0cc96; author-reported Golden-6669 WER 9.50% / CER 2.60%. Not yet independently benchmarked on Link devices."
+    },
+    {
+      "id": "tts.pocket-farsi-v2.fa",
+      "name": "Pocket TTS Farsi v2 (Experimental)",
+      "description": "Experimental offline Persian text-to-speech model",
+      "kind": "tts",
+      "language": "fa",
+      "version": "0.1.0",
+      "min_link_version": "2.21.0",
+      "archive": {
+        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/plugin-tts.pocket-farsi-v2.fa-0.1.0/Pocket-TTS-Farsi-v2-Link-0.1.0.zip",
+        "size_bytes": 148338530,
+        "sha256": "19642af498ea25d8b0c9476931d36a66de506bb980d74e18486dcff448bd34f8"
+      },
+      "license": {
+        "name": "CC BY-NC 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+        "attribution": "mrfakename ONNX export; Persian Pocket TTS by mehdi-hf; Persian G2P by mehdi-hf"
+      },
+      "release_notes": "Experimental Persian Pocket TTS v2. Non-commercial evaluation only."
     }
   ]
 }
