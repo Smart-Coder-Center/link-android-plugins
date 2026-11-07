@@ -45,7 +45,7 @@ jobs:
           id_re = re.compile(r"^[a-z0-9]+([.-][a-z0-9]+)*$")
           kind_re = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
           version_re = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-          link_re = re.compile(r"^[0-9]+\\.[0-9]+\\.[0-9]+$")
+          link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class"}
           max_archive = 10 * 1024**3
           max_expanded = 16 * 1024**3
@@ -112,7 +112,7 @@ jobs:
               archive_name = f"{plugin_id}-{version}.zip"
               archive = dist / archive_name
               with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as z:
-                  z.writestr("plugin.json", json.dumps(generated, ensure_ascii=False, indent=2) + "\\n")
+                  z.writestr("plugin.json", json.dumps(generated, ensure_ascii=False, indent=2) + "\n")
                   for relative, path in payload:
                       z.write(path, arcname=relative)
               archive_size = archive.stat().st_size
@@ -140,18 +140,18 @@ jobs:
           if not pending:
               print("No new plugin versions to publish.")
               with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-                  out.write("pending=false\\n")
+                  out.write("pending=false\n")
               raise SystemExit(0)
 
           for item in pending:
               by_id[item["id"]] = item["entry"]
           catalog["plugins"] = sorted(by_id.values(), key=lambda item: (item["kind"], item["id"]))
           catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
-          catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           with open(dist / "release-matrix.json", "w", encoding="utf-8") as out:
               json.dump(pending, out, ensure_ascii=False)
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write("pending=true\\n")
+              out.write("pending=true\n")
           PY
 
       - name: Publish immutable GitHub Release assets
