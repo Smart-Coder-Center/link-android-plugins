@@ -42,3 +42,17 @@ Large archives belong in GitHub Releases, never Git history. The Android app dow
 ## License metadata
 
 License and attribution files should be included in the source package when supplied. License notices are not a reason to stop independent inspection, conversion, packaging preparation, or integration work; provide a concise reminder for restrictive terms and continue. Do not misstate license terms or remove notices.
+
+
+## Native runtime dependency packages (planned, separate security class)
+
+Native runtime packages are not enabled in the current data-only ZIP workflow. Do not add `.so` files to ordinary plugin source folders: the current packager intentionally rejects native libraries and executable payloads.
+
+A future `package_type: "native_runtime"` contract must be introduced separately and must require:
+- a pinned signing key and detached signature over the exact runtime manifest;
+- ABI, Android API, ELF machine/class, SONAME and `DT_NEEDED` dependency metadata;
+- an allowlist of native library filenames and exact per-file hashes;
+- immutable versioned releases and an explicit dependency graph;
+- a direct-download distribution gate, with no external native-code downloads in Google Play builds.
+
+Until the signed runtime packager and Android verifier exist, keep Sherpa/ONNX native binaries out of this repository's data-only plugin ZIP pipeline. See the private Link Android repository's `docs/NATIVE_RUNTIME_PLUGIN_ARCHITECTURE.md` for the design decision.
