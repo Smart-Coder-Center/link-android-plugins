@@ -46,6 +46,7 @@ jobs:
           kind_re = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
           version_re = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
           link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+          dependency_types = {"data", "native_runtime", "play_feature"}
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class", ".js", ".mjs", ".cjs", ".rb", ".pl", ".php", ".vbs", ".command", ".exe", ".com"}
           max_archive = 10 * 1024**3
           max_expanded = 16 * 1024**3
@@ -82,6 +83,23 @@ jobs:
                       raise SystemExit(f"Missing {field} in {source_manifest}")
               if not link_re.fullmatch(metadata["min_link_version"]):
                   raise SystemExit(f"Invalid min_link_version for {plugin_id}")
+              dependencies = metadata.get("dependencies", [])
+              if not isinstance(dependencies, list) or len(dependencies) > 32:
+                  raise SystemExit(f"Invalid dependency list for {plugin_id}")
+              seen_dependencies = set()
+              for dependency in dependencies:
+                  if not isinstance(dependency, dict):
+                      raise SystemExit(f"Invalid dependency entry for {plugin_id}")
+                  dependency_id = dependency.get("id", "")
+                  dependency_version = dependency.get("version", "")
+                  dependency_type = dependency.get("package_type", "")
+                  if (not id_re.fullmatch(dependency_id)
+                          or not version_re.fullmatch(dependency_version)
+                          or ".." in dependency_version
+                          or dependency_type not in dependency_types
+                          or dependency_id in seen_dependencies):
+                      raise SystemExit(f"Invalid or duplicate dependency in {plugin_id}: {dependency_id}")
+                  seen_dependencies.add(dependency_id)
               if not isinstance(metadata.get("license"), dict) or not metadata["license"].get("name"):
                   print(f"::warning::License metadata is not specified for {plugin_id}; packaging continues.")
                   metadata["license"] = {"name": "Unspecified"}
