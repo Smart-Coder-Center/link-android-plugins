@@ -36,6 +36,22 @@
               "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
             }
           },
+          "dependencies": {
+            "type": "array",
+            "description": "Exact, immutable dependency versions resolved and installed automatically by Link when this plugin is selected.",
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "version", "package_type"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
+                "version": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+                "package_type": { "enum": ["data", "native_runtime", "play_feature"] }
+              }
+            }
+          },
           "runtime": {
             "type": "object",
             "additionalProperties": false,
