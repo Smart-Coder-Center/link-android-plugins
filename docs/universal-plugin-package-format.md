@@ -33,6 +33,24 @@ The Action creates a data-only ZIP with a root-level `plugin.json` and all paylo
 
 Downloaded packages must contain data only. Do not package APK, DEX, JAR, native libraries, executable binaries, scripts, or code intended to be loaded/executed by Link. Link's signed APK supplies trusted runtime code; plugins supply data/configuration only.
 
+## Automatic dependency declarations
+
+A plugin may declare an optional `dependencies` array in its catalog metadata. Each entry must pin an exact immutable version and declare its package type:
+
+```json
+{
+  "dependencies": [
+    {
+      "id": "runtime.sherpa-onnx",
+      "version": "1.13.8-link.1",
+      "package_type": "native_runtime"
+    }
+  ]
+}
+```
+
+The user selects only the desired plugin. Link resolves the complete dependency graph, checks exact compatible versions already installed, downloads only missing dependencies, deduplicates shared dependencies, and installs them in dependency-first order. The resolver must reject missing artifacts, version/type conflicts and cycles before changing installed state. Removing a plugin must not remove a dependency still referenced by another installed plugin. This declaration format does not make native runtimes eligible for the ordinary data ZIP workflow; native runtime artifacts remain subject to the separate signed package contract below.
+
 ## Publishing
 
 The generic workflow scans `plugins/**/plugin.json`, validates metadata and payload paths, creates an immutable GitHub Release asset for each new plugin version, and updates `manifest/plugins.json`. The version/tag is immutable: change the plugin version whenever payload or metadata changes. Existing catalog entries are retained unless the same plugin ID is being advanced to a new version.
