@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 7,
+  "catalog_version": 8,
   "plugins": [
     {
       "id": "tts.mana.piper.fa",
@@ -41,26 +41,6 @@
         "attribution": "Shenava Koochik v1.5 RNNT sherpa-onnx model; upstream revision c46e9af380770a07509a3591169c99e936e0cc96"
       },
       "release_notes": "Experimental offline Persian RNNT model. Sherpa-ONNX nemo_transducer. Upstream revision c46e9af380770a07509a3591169c99e936e0cc96; author-reported Golden-6669 WER 9.50% / CER 2.60%. Not yet independently benchmarked on Link devices."
-    },
-    {
-      "id": "tts.pocket-farsi-v2.fa",
-      "name": "Pocket TTS Farsi v2 (Experimental)",
-      "description": "Experimental offline Persian text-to-speech model",
-      "kind": "tts",
-      "language": "fa",
-      "version": "0.1.0",
-      "min_link_version": "2.21.0",
-      "archive": {
-        "url": "https://github.com/smart-center-code/link-android-plugins/releases/download/plugin-tts.pocket-farsi-v2.fa-0.1.0/Pocket-TTS-Farsi-v2-Link-0.1.0.zip",
-        "size_bytes": 148338530,
-        "sha256": "19642af498ea25d8b0c9476931d36a66de506bb980d74e18486dcff448bd34f8"
-      },
-      "license": {
-        "name": "CC BY-NC 4.0",
-        "url": "https://creativecommons.org/licenses/by-nc/4.0/",
-        "attribution": "mrfakename ONNX export; Persian Pocket TTS by mehdi-hf; Persian G2P by mehdi-hf"
-      },
-      "release_notes": "Experimental Persian Pocket TTS v2. Non-commercial evaluation only."
     }
   ]
 }
