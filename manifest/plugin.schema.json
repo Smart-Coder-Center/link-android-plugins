@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/smart-center-code/link-android-plugins/main/manifest/plugin.schema.json",
+  "$id": "https://raw.githubusercontent.com/Smart-Coder-Center/link-android-plugins/main/manifest/plugin.schema.json",
   "title": "Link Android plugin catalog",
   "type": "object",
   "additionalProperties": false,
@@ -31,7 +31,7 @@
             "additionalProperties": false,
             "required": ["url", "size_bytes", "sha256"],
             "properties": {
-              "url": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/smart-center-code/link-android-plugins/releases/download/" },
+              "url": { "type": "string", "format": "uri", "pattern": "^https://github\\.com/Smart-Coder-Center/link-android-plugins/releases/download/" },
               "size_bytes": { "type": "integer", "minimum": 1, "maximum": 10737418240 },
               "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
             }
