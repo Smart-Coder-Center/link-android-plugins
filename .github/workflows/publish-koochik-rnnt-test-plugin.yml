@@ -118,7 +118,7 @@ jobs:
               "version": version,
               "min_link_version": "2.21.0",
               "archive": {
-                  "url": f"https://github.com/smart-center-code/link-android-plugins/releases/download/koochik-rnnt-test-{version}/{archive.name}",
+                  "url": f"https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/koochik-rnnt-test-{version}/{archive.name}",
                   "size_bytes": archive.stat().st_size,
                   "sha256": sha(archive),
               },
