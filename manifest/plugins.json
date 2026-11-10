@@ -4,8 +4,8 @@
   "plugins": [
     {
       "id": "tts.mana.piper.fa",
-      "name": "تبدیل نوشتار به گفتار فارسی (Mana)",
-      "description": "بسته صدای فارسی برای تبدیل متن به گفتار به‌صورت آفلاین",
+      "name": "Read text",
+      "description": "Read text aloud.",
       "kind": "tts",
       "language": "fa",
       "version": "1.0.0",
@@ -24,8 +24,8 @@
     },
     {
       "id": "asr.koochik-rnnt.fa",
-      "name": "Koochik RNNT فارسی (آزمایشی)",
-      "description": "مدل تخصصی فارسی FastConformer برای تبدیل آفلاین گفتار به نوشتار؛ نسخه آزمایشی",
+      "name": "Voice typing",
+      "description": "Convert speech to text.",
       "kind": "asr",
       "language": "fa",
       "version": "1.0.0-test.1",
