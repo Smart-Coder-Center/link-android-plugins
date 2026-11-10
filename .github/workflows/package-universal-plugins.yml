@@ -352,6 +352,8 @@ jobs:
               if existing.returncode == 0:
                   assets = json.loads(existing.stdout).get("assets", [])
                   matching = [asset for asset in assets if asset.get("name") == archive.name]
+                  if len(matching) > 1:
+                      raise SystemExit(f"Release contains duplicate asset names: {tag}/{archive.name}")
                   if matching:
                       with tempfile.TemporaryDirectory(prefix="link-plugin-release-") as directory:
                           run(["gh", "release", "download", tag, "--pattern", archive.name,
@@ -366,6 +368,9 @@ jobs:
                       run(["gh", "release", "upload", tag, str(archive)])
                       print(f"Uploaded missing asset to existing release: {tag}/{archive.name}")
               else:
+                  error_text = (existing.stderr or "").lower()
+                  if "not found" not in error_text and "404" not in error_text:
+                      raise SystemExit(f"Could not inspect existing release {tag}: {existing.stderr}")
                   run([
                       "gh", "release", "create", tag, str(archive),
                       "--title", f"Link plugin {item['id']} {item['version']}",
