@@ -38,7 +38,7 @@ Accepting and installing a data-only ZIP is not equivalent to implementing a con
 ## Completion checklist
 
 - [ ] Mana has a reproducible source/acquisition definition and is packaged by the universal workflow.
-- [ ] Koochik acquisition is retained but no longer owns a separate catalog writer.
+- [x] Koochik acquisition is pinned in a universal source manifest; the bespoke catalog writer is removed. Publishing and device verification remain pending.
 - [ ] Additional Persian Piper voices are routed through the universal workflow and target `main`.
 - [ ] Pocket TTS can be installed from the public catalog without a local ZIP picker.
 - [ ] Retired Whisper workflows are clearly marked as historical or restored intentionally; no accidental re-publication.
