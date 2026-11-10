@@ -25,7 +25,7 @@ See [the Persian speech model evaluation shortlist](docs/persian-speech-model-ev
 
 Raw catalog URL:
 
-`https://raw.githubusercontent.com/smart-center-code/link-android-plugins/main/manifest/plugins.json`
+`https://raw.githubusercontent.com/Smart-Coder-Center/link-android-plugins/main/manifest/plugins.json`
 
 ## Universal plugin publishing
 
