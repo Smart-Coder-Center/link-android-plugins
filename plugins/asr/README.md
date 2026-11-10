@@ -12,6 +12,8 @@ The live catalog now contains one experimental Persian ASR package:
 
 Release: https://github.com/Smart-Coder-Center/link-android-plugins/releases/tag/koochik-rnnt-test-1.0.0-test.1
 
+The universal source manifest for the next immutable package version (`1.0.0-test.2`) now pins the exact upstream Hugging Face commit and file list. The old Koochik-specific publisher has been retired; publishing the new version through the universal workflow is still pending manual authorization.
+
 ## Release requirements
 
 Do not promote this package from experimental status until it has passed:
