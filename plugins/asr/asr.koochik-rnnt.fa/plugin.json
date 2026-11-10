@@ -1,0 +1,27 @@
+{
+  "id": "asr.koochik-rnnt.fa",
+  "name": "Voice typing",
+  "description": "Convert Persian speech to text offline.",
+  "kind": "asr",
+  "language": "fa",
+  "version": "1.0.0-test.2",
+  "min_link_version": "2.21.0",
+  "license": {
+    "name": "Apache-2.0",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0",
+    "attribution": "Shenava Koochik v1.5 RNNT sherpa-onnx model; upstream revision c46e9af380770a07509a3591169c99e936e0cc96"
+  },
+  "release_notes": "Experimental offline Persian RNNT model. Sherpa-ONNX nemo_transducer. Upstream revision c46e9af380770a07509a3591169c99e936e0cc96; author-reported Golden-6669 WER 9.50% / CER 2.60%. Not yet independently benchmarked on Link devices.",
+  "source": {
+    "type": "huggingface_files",
+    "repo": "Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx",
+    "revision": "c46e9af380770a07509a3591169c99e936e0cc96",
+    "files": [
+      "encoder.int8.onnx",
+      "decoder.int8.onnx",
+      "joiner.int8.onnx",
+      "tokens.txt",
+      "LICENSE"
+    ]
+  }
+}
