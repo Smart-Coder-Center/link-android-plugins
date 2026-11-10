@@ -2,11 +2,6 @@ name: Package and publish universal Link plugins
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "plugins/**"
 
 permissions:
   contents: write
@@ -25,6 +20,82 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Acquire pinned upstream plugin payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import re
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          root = Path("plugins")
+          repo_re = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+          revision_re = re.compile(r"^[0-9a-f]{40}$")
+          allowed_hosts = {
+              "huggingface.co",
+              "cdn-lfs.huggingface.co",
+              "cas-bridge.xethub.hf.co",
+              "transfer.xethub.hf.co",
+              "hf.co",
+          }
+          max_total = 16 * 1024**3
+          total = 0
+
+          for manifest_path in sorted(root.glob("*/*/plugin.json")):
+              metadata = json.loads(manifest_path.read_text(encoding="utf-8"))
+              source = metadata.get("source")
+              if source is None:
+                  continue
+              if not isinstance(source, dict) or source.get("type") != "huggingface_files":
+                  raise SystemExit(f"Unsupported source descriptor: {manifest_path}")
+              repo = source.get("repo", "")
+              revision = source.get("revision", "")
+              files = source.get("files")
+              if not repo_re.fullmatch(repo) or not revision_re.fullmatch(revision):
+                  raise SystemExit(f"Source must pin a Hugging Face repo and full commit SHA: {manifest_path}")
+              if not isinstance(files, list) or not files or len(files) > 10000:
+                  raise SystemExit(f"Invalid upstream file list: {manifest_path}")
+              base = manifest_path.parent.resolve()
+              seen = set()
+              for relative in files:
+                  if (not isinstance(relative, str) or not relative or relative.startswith("/")
+                          or "\\" in relative or any(part in ("", ".", "..") for part in relative.split("/"))
+                          or relative in seen):
+                      raise SystemExit(f"Unsafe or duplicate upstream path: {relative}")
+                  seen.add(relative)
+                  target = (base / relative).resolve()
+                  if base not in target.parents or target.exists():
+                      raise SystemExit(f"Upstream target escapes source directory or already exists: {relative}")
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  url = (f"https://huggingface.co/{repo}/resolve/{revision}/"
+                         f"{urllib.parse.quote(relative, safe='/')}")
+                  request = urllib.request.Request(url, headers={"User-Agent": "Link-Plugin-Packager/1.0"})
+                  with urllib.request.urlopen(request, timeout=90) as response:
+                      final = urllib.parse.urlparse(response.geturl())
+                      if final.scheme != "https" or final.hostname not in allowed_hosts:
+                          raise SystemExit(f"Untrusted upstream redirect host: {final.hostname}")
+                      length = response.headers.get("Content-Length")
+                      if length and int(length) > max_total:
+                          raise SystemExit(f"Upstream file is too large: {relative}")
+                      written = 0
+                      with target.open("xb") as output:
+                          while True:
+                              chunk = response.read(1024 * 1024)
+                              if not chunk:
+                                  break
+                              written += len(chunk)
+                              total += len(chunk)
+                              if total > max_total:
+                                  raise SystemExit("Upstream plugin payloads exceed 16 GiB")
+                              output.write(chunk)
+                  if written <= 0:
+                      raise SystemExit(f"Downloaded upstream file is empty: {relative}")
+                  print(f"Acquired {repo}@{revision}:{relative} ({written} bytes)")
+          PY
 
       - name: Build and validate data-only plugin archives
         id: packages
@@ -128,6 +199,7 @@ jobs:
               generated = dict(metadata)
               generated.pop("files", None)
               generated.pop("archive", None)
+              generated.pop("source", None)
               generated["files"] = [{"path": rel, "sha256": sha(path)} for rel, path in payload]
 
               archive_name = f"{plugin_id}-{version}.zip"
@@ -150,6 +222,7 @@ jobs:
 
               tag = f"plugin-{plugin_id}-{version}"
               entry = dict(metadata)
+              entry.pop("source", None)
               entry["archive"] = {
                   "url": f"https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/{tag}/{archive_name}",
                   "size_bytes": archive_size,
