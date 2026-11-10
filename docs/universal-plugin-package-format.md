@@ -49,6 +49,8 @@ Example:
 }
 ```
 
+An existing public package can be used as a temporary migration seed only when its canonical GitHub Release URL, exact size, and SHA-256 are pinned. The packager verifies the archive and safely extracts its payload before generating a fresh universal ZIP.
+
 The publisher is manual-dispatch only. Adding or editing source manifests does not trigger a release automatically. Large model files are acquired in the ephemeral workflow runner and must never be committed to Git history.
 
 
