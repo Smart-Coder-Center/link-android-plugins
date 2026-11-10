@@ -47,7 +47,7 @@ jobs:
 
           def safe_relative(value):
               return (isinstance(value, str) and value and not value.startswith("/")
-                      and "\\\\" not in value
+                      and "\\" not in value
                       and all(part not in ("", ".", "..") for part in value.split("/")))
 
           def download(url, target, allowed_hosts, expected_size=None, expected_sha=None):
@@ -120,7 +120,13 @@ jobs:
                   size, _ = download(url, archive_path, github_hosts, expected_size, expected_sha)
                   seen = set()
                   with zipfile.ZipFile(archive_path) as archive:
-                      for info in archive.infolist():
+                      infos = archive.infolist()
+                      if not infos or len(infos) > 10000:
+                          raise SystemExit("Migration seed ZIP has an invalid entry count")
+                      expanded = sum(info.file_size for info in infos)
+                      if expanded > max_total:
+                          raise SystemExit("Migration seed ZIP expands beyond 16 GiB")
+                      for info in infos:
                           relative = info.filename.rstrip("/") if info.is_dir() else info.filename
                           if relative == "plugin.json":
                               continue
