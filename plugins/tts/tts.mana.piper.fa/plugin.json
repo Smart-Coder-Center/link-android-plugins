@@ -1,0 +1,21 @@
+{
+  "id": "tts.mana.piper.fa",
+  "name": "Read text",
+  "description": "Read Persian text aloud offline.",
+  "kind": "tts",
+  "language": "fa",
+  "version": "1.0.1",
+  "min_link_version": "2.21.0",
+  "license": {
+    "name": "MIT + GPL-3.0-or-later",
+    "url": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "attribution": "Mana Persian Piper model (MIT) and eSpeak NG phoneme data (GPL-3.0-or-later)"
+  },
+  "release_notes": "Migration package reconstructed from the currently published immutable Mana ZIP. Preserves its payload and license notices; upstream source archives and their cryptographic hashes still need to be pinned independently.",
+  "source": {
+    "type": "github_release_zip",
+    "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/speech-v1.0.0/tts-mana-piper-fa-1.0.0.zip",
+    "size_bytes": 67513001,
+    "sha256": "871306697e913bfc7f7ada8eb04391566b3d328562f6ed5423254e81589b8957"
+  }
+}
