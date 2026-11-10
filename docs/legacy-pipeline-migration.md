@@ -37,7 +37,7 @@ Accepting and installing a data-only ZIP is not equivalent to implementing a con
 
 ## Completion checklist
 
-- [ ] Mana has a reproducible source/acquisition definition and is packaged by the universal workflow.
+- [x] Mana has a SHA-256/size-pinned migration seed manifest for the universal workflow. Original upstream acquisition pinning, publication, and device validation remain pending.
 - [x] Koochik acquisition is pinned in a universal source manifest; the bespoke catalog writer is removed. Publishing and device verification remain pending.
 - [ ] Additional Persian Piper voices are routed through the universal workflow and target `main`.
 - [ ] Pocket TTS can be installed from the public catalog without a local ZIP picker.
