@@ -10,7 +10,7 @@ The public catalog currently contains **Mana Persian Piper**:
 - Catalog license metadata: MIT + GPL-3.0-or-later
 - Runtime: Sherpa-ONNX TTS with Piper voice data
 
-This is an existing release/catalog package, not yet a migrated source package under the universal `plugins/tts/<plugin-id>/` layout. Keep the current catalog entry available while migrating its reproducible source/acquisition process. Do not replace or retire it until a new package has been published and verified.
+The existing release/catalog package `1.0.0` remains available. A universal source manifest for `1.0.1` now imports that immutable ZIP using its verified SHA-256 and byte size as a migration seed, preserving the known-good payload and license notices. This does not yet pin the original Piper/eSpeak upstream archives independently. Do not replace the current catalog entry until the universal package has been published and verified.
 
 ## Recommended engine
 
