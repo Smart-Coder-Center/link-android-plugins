@@ -151,7 +151,7 @@ jobs:
               tag = f"plugin-{plugin_id}-{version}"
               entry = dict(metadata)
               entry["archive"] = {
-                  "url": f"https://github.com/smart-center-code/link-android-plugins/releases/download/{tag}/{archive_name}",
+                  "url": f"https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/{tag}/{archive_name}",
                   "size_bytes": archive_size,
                   "sha256": archive_hash,
               }
