@@ -10,7 +10,7 @@ The live catalog now contains one experimental Persian ASR package:
 - The model card reports WER 9.50% / CER 2.60% on its own Golden-6669 held-out set. These are author-reported figures, not measurements from Link devices.
 - The previous multilingual Whisper Base and Small packages have been retired and are no longer offered.
 
-Release: https://github.com/smart-center-code/link-android-plugins/releases/tag/koochik-rnnt-test-1.0.0-test.1
+Release: https://github.com/Smart-Coder-Center/link-android-plugins/releases/tag/koochik-rnnt-test-1.0.0-test.1
 
 ## Release requirements
 
