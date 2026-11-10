@@ -10,7 +10,7 @@ The universal source of truth is this repository's `main` branch:
 
 Do not delete or disable an older acquisition workflow until its required upstream download/conversion behavior has been preserved in the common pipeline and the replacement package is available.
 
-## Verified inventory (2026-11-07)
+## Verified inventory (2026-11-10)
 
 | Plugin / path | Current state | Required migration |
 |---|---|---|
