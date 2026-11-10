@@ -27,6 +27,26 @@ The source `plugin.json` contains package metadata:
 
 Do not put generated `files` checksums or archive URL/size/hash in the source manifest; the packaging Action generates these values.
 
+### Pinned upstream acquisition
+
+A source manifest may include an optional `source` object for reproducible remote acquisition. The current supported source type is `huggingface_files`, which requires a repository ID, a full 40-character commit SHA, and a list of relative file paths. The universal publisher downloads those exact files over HTTPS, checks the final redirect host against the Hugging Face allowlist, and then treats them as ordinary local payload files. The private acquisition descriptor is removed from both the generated inner manifest and public catalog; only generated payload checksums and provenance/attribution metadata are published.
+
+Example:
+
+```json
+{
+  "source": {
+    "type": "huggingface_files",
+    "repo": "owner/model",
+    "revision": "0123456789abcdef0123456789abcdef01234567",
+    "files": ["encoder.onnx", "tokens.txt", "LICENSE"]
+  }
+}
+```
+
+The publisher is manual-dispatch only. Adding or editing source manifests does not trigger a release automatically. Large model files are acquired in the ephemeral workflow runner and must never be committed to Git history.
+
+
 ## Generated ZIP layout
 
 The Action creates a data-only ZIP with a root-level `plugin.json` and all payload files, preserving relative paths. The generated manifest contains the source metadata plus a `files` array with one SHA-256 entry per payload file. The public catalog entry contains the exact release URL, byte size, and SHA-256 of the complete ZIP.
