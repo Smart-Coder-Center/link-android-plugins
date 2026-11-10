@@ -26,75 +26,131 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import hashlib
           import json
           import re
           import urllib.parse
           import urllib.request
+          import zipfile
           from pathlib import Path
 
           root = Path("plugins")
           repo_re = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
           revision_re = re.compile(r"^[0-9a-f]{40}$")
-          allowed_hosts = {
-              "huggingface.co",
-              "cdn-lfs.huggingface.co",
-              "cas-bridge.xethub.hf.co",
-              "transfer.xethub.hf.co",
-              "hf.co",
+          hf_hosts = {
+              "huggingface.co", "cdn-lfs.huggingface.co", "cas-bridge.xethub.hf.co",
+              "transfer.xethub.hf.co", "hf.co",
           }
+          github_hosts = {"github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com"}
           max_total = 16 * 1024**3
           total = 0
+
+          def safe_relative(value):
+              return (isinstance(value, str) and value and not value.startswith("/")
+                      and "\\\\" not in value
+                      and all(part not in ("", ".", "..") for part in value.split("/")))
+
+          def download(url, target, allowed_hosts, expected_size=None, expected_sha=None):
+              global total
+              request = urllib.request.Request(url, headers={"User-Agent": "Link-Plugin-Packager/1.0"})
+              digest = hashlib.sha256()
+              written = 0
+              with urllib.request.urlopen(request, timeout=90) as response:
+                  final = urllib.parse.urlparse(response.geturl())
+                  if final.scheme != "https" or final.hostname not in allowed_hosts:
+                      raise SystemExit(f"Untrusted upstream redirect host: {final.hostname}")
+                  with target.open("xb") as output:
+                      while True:
+                          chunk = response.read(1024 * 1024)
+                          if not chunk:
+                              break
+                          written += len(chunk)
+                          total += len(chunk)
+                          if total > max_total or written > max_total:
+                              raise SystemExit("Upstream plugin payloads exceed 16 GiB")
+                          digest.update(chunk)
+                          output.write(chunk)
+              if written <= 0 or (expected_size is not None and written != expected_size):
+                  raise SystemExit(f"Upstream size verification failed: {target.name}")
+              actual_sha = digest.hexdigest()
+              if expected_sha is not None and actual_sha != expected_sha:
+                  raise SystemExit(f"Upstream SHA-256 verification failed: {target.name}")
+              return written, actual_sha
 
           for manifest_path in sorted(root.glob("*/*/plugin.json")):
               metadata = json.loads(manifest_path.read_text(encoding="utf-8"))
               source = metadata.get("source")
               if source is None:
                   continue
-              if not isinstance(source, dict) or source.get("type") != "huggingface_files":
-                  raise SystemExit(f"Unsupported source descriptor: {manifest_path}")
-              repo = source.get("repo", "")
-              revision = source.get("revision", "")
-              files = source.get("files")
-              if not repo_re.fullmatch(repo) or not revision_re.fullmatch(revision):
-                  raise SystemExit(f"Source must pin a Hugging Face repo and full commit SHA: {manifest_path}")
-              if not isinstance(files, list) or not files or len(files) > 10000:
-                  raise SystemExit(f"Invalid upstream file list: {manifest_path}")
+              if not isinstance(source, dict):
+                  raise SystemExit(f"Invalid source descriptor: {manifest_path}")
               base = manifest_path.parent.resolve()
-              seen = set()
-              for relative in files:
-                  if (not isinstance(relative, str) or not relative or relative.startswith("/")
-                          or "\\" in relative or any(part in ("", ".", "..") for part in relative.split("/"))
-                          or relative in seen):
-                      raise SystemExit(f"Unsafe or duplicate upstream path: {relative}")
-                  seen.add(relative)
-                  target = (base / relative).resolve()
-                  if base not in target.parents or target.exists():
-                      raise SystemExit(f"Upstream target escapes source directory or already exists: {relative}")
-                  target.parent.mkdir(parents=True, exist_ok=True)
-                  url = (f"https://huggingface.co/{repo}/resolve/{revision}/"
-                         f"{urllib.parse.quote(relative, safe='/')}")
-                  request = urllib.request.Request(url, headers={"User-Agent": "Link-Plugin-Packager/1.0"})
-                  with urllib.request.urlopen(request, timeout=90) as response:
-                      final = urllib.parse.urlparse(response.geturl())
-                      if final.scheme != "https" or final.hostname not in allowed_hosts:
-                          raise SystemExit(f"Untrusted upstream redirect host: {final.hostname}")
-                      length = response.headers.get("Content-Length")
-                      if length and int(length) > max_total:
-                          raise SystemExit(f"Upstream file is too large: {relative}")
-                      written = 0
-                      with target.open("xb") as output:
-                          while True:
-                              chunk = response.read(1024 * 1024)
-                              if not chunk:
-                                  break
-                              written += len(chunk)
-                              total += len(chunk)
-                              if total > max_total:
-                                  raise SystemExit("Upstream plugin payloads exceed 16 GiB")
-                              output.write(chunk)
-                  if written <= 0:
-                      raise SystemExit(f"Downloaded upstream file is empty: {relative}")
-                  print(f"Acquired {repo}@{revision}:{relative} ({written} bytes)")
+              source_type = source.get("type")
+              if source_type == "huggingface_files":
+                  repo = source.get("repo", "")
+                  revision = source.get("revision", "")
+                  files = source.get("files")
+                  if not repo_re.fullmatch(repo) or not revision_re.fullmatch(revision):
+                      raise SystemExit(f"Source must pin a Hugging Face repo and full commit SHA: {manifest_path}")
+                  if not isinstance(files, list) or not files or len(files) > 10000:
+                      raise SystemExit(f"Invalid upstream file list: {manifest_path}")
+                  seen = set()
+                  for relative in files:
+                      if not safe_relative(relative) or relative in seen:
+                          raise SystemExit(f"Unsafe or duplicate upstream path: {relative}")
+                      seen.add(relative)
+                      target = (base / relative).resolve()
+                      if base not in target.parents or target.exists():
+                          raise SystemExit(f"Upstream target escapes source directory or already exists: {relative}")
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      url = (f"https://huggingface.co/{repo}/resolve/{revision}/"
+                             f"{urllib.parse.quote(relative, safe='/')}")
+                      size, _ = download(url, target, hf_hosts)
+                      print(f"Acquired {repo}@{revision}:{relative} ({size} bytes)")
+              elif source_type == "github_release_zip":
+                  url = source.get("url", "")
+                  expected_size = source.get("size_bytes")
+                  expected_sha = source.get("sha256", "")
+                  prefix = "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/"
+                  if (not isinstance(url, str) or not url.startswith(prefix)
+                          or not isinstance(expected_size, int) or expected_size <= 0
+                          or not re.fullmatch(r"[a-f0-9]{64}", expected_sha)):
+                      raise SystemExit(f"GitHub seed ZIP must pin URL, size and SHA-256: {manifest_path}")
+                  archive_path = base / ".migration-seed.zip"
+                  size, _ = download(url, archive_path, github_hosts, expected_size, expected_sha)
+                  seen = set()
+                  with zipfile.ZipFile(archive_path) as archive:
+                      for info in archive.infolist():
+                          relative = info.filename.rstrip("/") if info.is_dir() else info.filename
+                          if relative == "plugin.json":
+                              continue
+                          if not safe_relative(relative) or relative in seen:
+                              raise SystemExit(f"Unsafe or duplicate seed ZIP path: {relative}")
+                          seen.add(relative)
+                          mode = (info.external_attr >> 16) & 0o170000
+                          if mode == 0o120000:
+                              raise SystemExit(f"Symlink is not allowed in seed ZIP: {relative}")
+                          target = (base / relative).resolve()
+                          if base not in target.parents:
+                              raise SystemExit(f"Seed ZIP path escapes source directory: {relative}")
+                          if info.is_dir():
+                              target.mkdir(parents=True, exist_ok=True)
+                          else:
+                              if target.exists():
+                                  raise SystemExit(f"Seed ZIP would overwrite source file: {relative}")
+                              target.parent.mkdir(parents=True, exist_ok=True)
+                              with archive.open(info) as source_stream, target.open("xb") as output:
+                                  while True:
+                                      chunk = source_stream.read(1024 * 1024)
+                                      if not chunk:
+                                          break
+                                      output.write(chunk)
+                  archive_path.unlink()
+                  if not seen:
+                      raise SystemExit(f"Seed ZIP has no payload files: {manifest_path}")
+                  print(f"Imported verified migration seed ZIP ({size} bytes): {manifest_path}")
+              else:
+                  raise SystemExit(f"Unsupported source type {source_type}: {manifest_path}")
           PY
 
       - name: Build and validate data-only plugin archives
