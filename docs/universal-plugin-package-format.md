@@ -29,7 +29,12 @@ Do not put generated `files` checksums or archive URL/size/hash in the source ma
 
 ### Pinned upstream acquisition
 
-A source manifest may include an optional `source` object for reproducible remote acquisition. The current supported source type is `huggingface_files`, which requires a repository ID, a full 40-character commit SHA, and a list of relative file paths. The universal publisher downloads those exact files over HTTPS, checks the final redirect host against the Hugging Face allowlist, and then treats them as ordinary local payload files. The private acquisition descriptor is removed from both the generated inner manifest and public catalog; only generated payload checksums and provenance/attribution metadata are published.
+A source manifest may include an optional `source` object for reproducible remote acquisition. The current supported source types are:
+
+- `huggingface_files`: requires a repository ID, a full 40-character commit SHA, and a list of relative file paths. The publisher downloads those exact files over HTTPS and checks the final redirect host against the Hugging Face allowlist.
+- `github_release_zip`: imports an already-published immutable migration seed ZIP from this repository. It requires the canonical Release URL, exact byte size, and SHA-256; extraction rejects unsafe paths, symlinks, excessive entry counts, and expanded archives over 16 GiB.
+
+The private acquisition descriptor is removed from both the generated inner manifest and public catalog; only generated payload checksums and provenance/attribution metadata are published. A migration seed proves the integrity of the imported archive, but does not replace independent pinning of its original upstream source.
 
 Example:
 
