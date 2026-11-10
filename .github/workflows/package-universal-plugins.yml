@@ -195,7 +195,14 @@ jobs:
           catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
           if catalog.get("schema_version") != 1 or not isinstance(catalog.get("plugins"), list):
               raise SystemExit("Unsupported or invalid public catalog")
-          by_id = {entry["id"]: entry for entry in catalog["plugins"]}
+          by_id = {}
+          for entry in catalog["plugins"]:
+              plugin_id = entry.get("id") if isinstance(entry, dict) else None
+              if not isinstance(plugin_id, str) or not id_re.fullmatch(plugin_id):
+                  raise SystemExit("Public catalog contains an invalid plugin ID")
+              if plugin_id in by_id:
+                  raise SystemExit(f"Public catalog contains duplicate plugin ID: {plugin_id}")
+              by_id[plugin_id] = entry
           pending = []
 
           manifests = sorted(root.glob("*/*/plugin.json")) if root.exists() else []
@@ -318,16 +325,53 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, subprocess
+          import hashlib
+          import json
+          import subprocess
+          import tempfile
           from pathlib import Path
+
           packages = json.loads(Path("dist/universal-plugins/release-matrix.json").read_text())
+
+          def run(args, check=True):
+              return subprocess.run(args, check=check, text=True, capture_output=True)
+
+          def sha256(path):
+              digest = hashlib.sha256()
+              with path.open("rb") as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
           for item in packages:
-              subprocess.run([
-                  "gh", "release", "create", item["tag"], item["archive"],
-                  "--title", f"Link plugin {item['id']} {item['version']}",
-                  "--target", "main",
-                  "--notes", f"Immutable data-only Link plugin package: {item['id']} {item['version']}."
-              ], check=True)
+              archive = Path(item["archive"])
+              tag = item["tag"]
+              # A previous run may have created the immutable Release but failed before
+              # updating the catalog. Reuse only an asset whose exact bytes match.
+              existing = run(["gh", "release", "view", tag, "--json", "assets"], check=False)
+              if existing.returncode == 0:
+                  assets = json.loads(existing.stdout).get("assets", [])
+                  matching = [asset for asset in assets if asset.get("name") == archive.name]
+                  if matching:
+                      with tempfile.TemporaryDirectory(prefix="link-plugin-release-") as directory:
+                          run(["gh", "release", "download", tag, "--pattern", archive.name,
+                               "--dir", directory])
+                          downloaded = Path(directory) / archive.name
+                          if (not downloaded.is_file()
+                                  or downloaded.stat().st_size != archive.stat().st_size
+                                  or sha256(downloaded) != sha256(archive)):
+                              raise SystemExit(f"Immutable release asset mismatch: {tag}/{archive.name}")
+                      print(f"Verified existing immutable release asset: {tag}/{archive.name}")
+                  else:
+                      run(["gh", "release", "upload", tag, str(archive)])
+                      print(f"Uploaded missing asset to existing release: {tag}/{archive.name}")
+              else:
+                  run([
+                      "gh", "release", "create", tag, str(archive),
+                      "--title", f"Link plugin {item['id']} {item['version']}",
+                      "--target", "main",
+                      "--notes", f"Immutable data-only Link plugin package: {item['id']} {item['version']}."
+                  ])
           PY
 
       - name: Commit updated public catalog
