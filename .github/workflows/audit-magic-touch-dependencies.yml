@@ -65,4 +65,6 @@ jobs:
             plugins/image/magic-touch/lib/**
             plugins/image/magic-touch/code/**
             plugins/image/magic-touch/vendor-jars/**
+            plugins/image/magic-touch/LICENSE-*
+            plugins/image/magic-touch/NOTICE
             plugins/image/magic-touch/provenance/**
