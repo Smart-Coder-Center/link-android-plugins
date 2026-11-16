@@ -131,7 +131,7 @@ javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
   -d "$WORK_DIR/classes" "$ADAPTER"
 jar --create --file "$WORK_DIR/magic-touch-adapter.jar" -C "$WORK_DIR/classes" .
 
-"$D8" --min-api 24 --lib "$ANDROID_JAR" --classpath "$CLASSPATH" \
+"$D8" --min-api 24 --lib "$ANDROID_JAR" \
   --output "$WORK_DIR/dex" "$WORK_DIR/magic-touch-adapter.jar" "${JARS[@]}"
 
 mapfile -t DEX_FILES < <(find "$WORK_DIR/dex" -maxdepth 1 -type f -name 'classes*.dex' | sort -V)
