@@ -1,0 +1,67 @@
+name: Audit Magic Touch runtime dependencies
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: magic-touch-dependency-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and D8
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.4'
+
+      - name: Download, resolve and audit exact upstream bytes
+        shell: bash
+        env:
+          MEDIAPIPE_AUDIT_ONLY: '1'
+        run: |
+          set -euo pipefail
+          bash tools/build_magic_touch_runtime.sh plugins/image/magic-touch
+          cat tools/mediapipe-runtime.lock.generated.json
+          {
+            echo "## Magic Touch upstream lock"
+            cat tools/mediapipe-runtime.lock.generated.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated checksum lock and assembled package inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: magic-touch-runtime-audit
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            tools/mediapipe-runtime.lock.generated.json
+            plugins/image/magic-touch/model/**
+            plugins/image/magic-touch/lib/**
+            plugins/image/magic-touch/code/**
+            plugins/image/magic-touch/provenance/**
