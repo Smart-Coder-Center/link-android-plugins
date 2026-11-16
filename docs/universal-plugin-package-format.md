@@ -67,7 +67,7 @@ Native runtime ZIPs are signed as follows:
 - The workflow requires the GitHub Actions secret `LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY` (Ed25519 PEM) and the matching pinned public key at `keys/native-runtime-ed25519-public.pem`.
 - The canonical JSON representation of the generated root `plugin.json` is signed with Ed25519. The detached Base64 signature is included inside the same ZIP as `plugin.json.sig`, so the user still downloads one archive.
 - The manifest lists SHA-256 for every payload file. The catalog separately pins the complete ZIP's exact size and SHA-256.
-- Native libraries must be placed under `lib/<abi>/`, and every ABI must be declared in `runtime.abis`. The workflow rejects unsupported ABIs and unsafe paths.
+- Native libraries must be placed under `lib/<abi>/`, and every ABI must be declared in `runtime.abis`. The source manifest must also declare `runtime.load_order` with every packaged `.so` path exactly once, in dependency-first load order. The workflow rejects unsupported ABIs, incomplete load order and unsafe paths.
 
 **Important:** repository-side packaging is not sufficient to make a runtime safe to load. Before publishing or enabling a native-runtime plugin to users, the Link Android app must embed/pin the matching public key, verify the signature and every hash before extraction/loading, enforce ABI/API/ELF dependency checks, extract only into app-private storage, and make native files read-only before loading. Google Play builds must not download executable native code from outside Play; keep this package type disabled for Play-distributed builds. The runtime workflow fails closed when the signing secret or pinned public key is absent.
 
