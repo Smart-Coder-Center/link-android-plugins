@@ -159,16 +159,21 @@ jobs:
                   raise SystemExit(f"Unsupported source type {source_type}: {manifest_path}")
           PY
 
-      - name: Build and validate data-only plugin archives
+      - name: Build and validate universal plugin archives
         id: packages
+        env:
+          LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: \${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import base64
           import hashlib
           import json
           import os
           import re
+          import subprocess
+          import tempfile
           import zipfile
           from pathlib import Path
 
@@ -181,6 +186,9 @@ jobs:
           link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
           dependency_types = {"data", "native_runtime", "play_feature"}
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class", ".js", ".mjs", ".cjs", ".rb", ".pl", ".php", ".vbs", ".command", ".exe", ".com"}
+          native_forbidden = forbidden - {".so"}
+          supported_abis = {"arm64-v8a", "armeabi-v7a", "x86", "x86_64"}
+          public_key_path = Path("keys/native-runtime-ed25519-public.pem")
           max_archive = 10 * 1024**3
           max_expanded = 16 * 1024**3
 
@@ -223,6 +231,14 @@ jobs:
                       raise SystemExit(f"Missing {field} in {source_manifest}")
               if not link_re.fullmatch(metadata["min_link_version"]):
                   raise SystemExit(f"Invalid min_link_version for {plugin_id}")
+              package_type = metadata.get("package_type", "data")
+              if package_type not in {"data", "native_runtime"}:
+                  raise SystemExit(f"Unsupported package_type for {plugin_id}: {package_type}")
+              if package_type == "native_runtime":
+                  runtime = metadata.get("runtime", {})
+                  abis = runtime.get("abis", []) if isinstance(runtime, dict) else []
+                  if not isinstance(abis, list) or not abis or len(set(abis)) != len(abis) or not set(abis).issubset(supported_abis):
+                      raise SystemExit(f"Native runtime {plugin_id} must declare supported runtime.abis")
               dependencies = metadata.get("dependencies", [])
               if not isinstance(dependencies, list) or len(dependencies) > 32:
                   raise SystemExit(f"Invalid dependency list for {plugin_id}")
@@ -251,9 +267,17 @@ jobs:
                       raise SystemExit(f"Symlinks are not allowed in plugin payloads: {item}")
                   if not item.is_file() or item == source_manifest:
                       continue
-                  if item.suffix.lower() in forbidden:
-                      raise SystemExit(f"Executable/code payload is not allowed: {item}")
                   relative = item.relative_to(source_dir).as_posix()
+                  suffix = item.suffix.lower()
+                  if package_type == "data" and suffix in forbidden:
+                      raise SystemExit(f"Executable/code payload is not allowed in data packages: {item}")
+                  if package_type == "native_runtime":
+                      if suffix in native_forbidden:
+                          raise SystemExit(f"Only native .so libraries and data assets are allowed in native_runtime packages: {item}")
+                      if suffix == ".so":
+                          parts = relative.split("/")
+                          if len(parts) < 3 or parts[0] != "lib" or parts[1] not in abis:
+                              raise SystemExit(f"Native library must be stored under lib/<declared-abi>/: {relative}")
                   if relative.startswith("/") or "\\" in relative or any(part in ("", ".", "..") for part in Path(relative).parts):
                       raise SystemExit(f"Unsafe payload path: {relative}")
                   expanded += item.stat().st_size
@@ -270,11 +294,31 @@ jobs:
               generated.pop("archive", None)
               generated.pop("source", None)
               generated["files"] = [{"path": rel, "sha256": sha(path)} for rel, path in payload]
+              signature_bytes = None
+              if package_type == "native_runtime":
+                  private_key = os.environ.get("LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY", "").strip()
+                  if not private_key or not public_key_path.is_file():
+                      raise SystemExit("Native runtime publishing requires the LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY secret and keys/native-runtime-ed25519-public.pem pinned public key.")
+                  manifest_bytes = (json.dumps(generated, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+                  with tempfile.TemporaryDirectory(prefix="link-runtime-sign-") as temp_dir:
+                      key_file = Path(temp_dir) / "private.pem"
+                      derived_public = Path(temp_dir) / "derived-public.pem"
+                      manifest_file = Path(temp_dir) / "plugin.json"
+                      signature_file = Path(temp_dir) / "plugin.json.sig"
+                      key_file.write_text(private_key + "\n", encoding="utf-8")
+                      manifest_file.write_bytes(manifest_bytes)
+                      subprocess.run(["openssl", "pkey", "-in", str(key_file), "-pubout", "-out", str(derived_public)], check=True, capture_output=True)
+                      if derived_public.read_bytes().strip() != public_key_path.read_bytes().strip():
+                          raise SystemExit("Runtime signing private key does not match the repository-pinned public key.")
+                      subprocess.run(["openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(key_file), "-in", str(manifest_file), "-out", str(signature_file)], check=True, capture_output=True)
+                      signature_bytes = base64.b64encode(signature_file.read_bytes())
 
               archive_name = f"{plugin_id}-{version}.zip"
               archive = dist / archive_name
-              with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as z:
+              with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6, allowZip64=True) as z:
                   z.writestr("plugin.json", json.dumps(generated, ensure_ascii=False, indent=2) + "\n")
+                  if signature_bytes is not None:
+                      z.writestr("plugin.json.sig", signature_bytes)
                   for relative, path in payload:
                       z.write(path, arcname=relative)
               archive_size = archive.stat().st_size
