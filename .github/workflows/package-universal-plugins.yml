@@ -355,7 +355,7 @@ jobs:
                   if code_paths:
                       entry_class = runtime.get("entry_class", "")
                       if (not isinstance(entry_class, str)
-                              or not re.fullmatch(r"eu\.siacs\.link\.plugins\\.[A-Za-z_$][A-Za-z0-9_$.]*", entry_class)
+                              or not re.fullmatch(r"eu\.siacs\.link\.plugins\.[A-Za-z_$][A-Za-z0-9_$.]*", entry_class)
                               or runtime.get("code_api_version") != 1):
                           raise SystemExit(f"Native runtime {plugin_id} must declare a valid entry_class and code_api_version=1")
                   if native_library_count == 0:
