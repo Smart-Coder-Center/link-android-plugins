@@ -162,7 +162,7 @@ jobs:
       - name: Build and validate universal plugin archives
         id: packages
         env:
-          LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: \${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
+          LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         shell: bash
         run: |
           set -euo pipefail
