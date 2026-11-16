@@ -161,10 +161,15 @@ print(json.dumps({"native_libraries": order, "dex_files": metadata["code_files"]
 PY
 
 curl --fail --location --retry 3 --connect-timeout 20 https://www.apache.org/licenses/LICENSE-2.0.txt -o "$SOURCE_DIR/LICENSE-APACHE-2.0.txt"
+cp "$REPO_ROOT/tools/licenses/BSD-3-Clause.txt" "$SOURCE_DIR/LICENSE-BSD-3-Clause.txt"
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
 Magic Touch Photo includes MediaPipe Tasks Vision and the Google MediaPipe MagicTouch model.
-MediaPipe and model licensing: Apache License 2.0.
-Upstream model: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf
+MediaPipe Tasks Vision, MagicTouch model, Guava, Flogger, AndroidX and Android Data Transport
+components are distributed under Apache License 2.0 where stated by their upstream metadata.
+The protobuf-javalite dependency is distributed under the BSD 3-Clause license.
+The exact resolved Maven artifacts and their SHA-256 digests are recorded in
+provenance/mediapipe-runtime-lock.json. See the accompanying license texts.
+Upstream model card: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf
 NOTICE
 
 echo "Magic Touch runtime assembled in $SOURCE_DIR"
