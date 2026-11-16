@@ -132,7 +132,7 @@ for library in libraries:
     result = subprocess.run(["readelf", "-d", str(library)], check=True, text=True, capture_output=True)
     needed[library.name] = re.findall(r"Shared library: \[(.+?)\]", result.stdout)
 by_name = {p.name: p for p in libraries}
-system_prefixes = ("libandroid.", "libc.", "libdl.", "liblog.", "libm.", "libz.", "libEGL.", "libGLES", "libOpenSLES.", "libvulkan.", "libjnigraphics.", "libmediandk.", "libnativewindow.", "libaaudio.")
+system_prefixes = ("libandroid.", "libc.", "libdl.", "liblog.", "libm.", "libz.", "libEGL.", "libGLES", "libOpenSLES.", "libvulkan.", "libjnigraphics.", "libmediandk.", "libnativewindow.", "libaaudio.", "libstdc++.so", "libatomic.so", "libgcc_s.so", "libGLESv1_CM.so", "libOpenMAXAL.so")
 order, visiting, visited = [], set(), set()
 def visit(name):
     if name in visited: return
