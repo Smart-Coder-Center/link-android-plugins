@@ -81,24 +81,24 @@
             }
           },
           "release_notes": { "type": "string" }
-        }
-      }
-    }
-  },
-  "allOf": [
-    {
-      "if": { "properties": { "package_type": { "const": "native_runtime" } }, "required": ["package_type"] },
-      "then": {
-        "required": ["runtime"],
-        "properties": {
-          "runtime": {
-            "required": ["abis"],
-            "properties": {
-              "abis": { "type": "array", "minItems": 1 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "package_type": { "const": "native_runtime" } }, "required": ["package_type"] },
+            "then": {
+              "required": ["runtime"],
+              "properties": {
+                "runtime": {
+                  "required": ["abis"],
+                  "properties": {
+                    "abis": { "type": "array", "minItems": 1 }
+                  }
+                }
+              }
             }
           }
-        }
+        ]
       }
     }
-  ]
+  }
 }
