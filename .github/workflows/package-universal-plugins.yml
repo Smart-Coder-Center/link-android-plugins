@@ -238,7 +238,7 @@ jobs:
                   runtime = metadata.get("runtime", {})
                   abis = runtime.get("abis", []) if isinstance(runtime, dict) else []
                   load_order = runtime.get("load_order", []) if isinstance(runtime, dict) else []
-                  if not isinstance(abis, list) or not abis or len(set(abis)) != len(abis) or not set(abis).issubset(supported_abis):
+                  if not isinstance(abis, list) or len(abis) != 1 or not set(abis).issubset(supported_abis):
                       raise SystemExit(f"Native runtime {plugin_id} must declare supported runtime.abis")
                   if not isinstance(load_order, list) or not load_order or len(set(load_order)) != len(load_order):
                       raise SystemExit(f"Native runtime {plugin_id} must declare a unique runtime.load_order")
