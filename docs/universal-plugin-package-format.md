@@ -63,6 +63,8 @@ Packages have an explicit `package_type`:
 - `data` (default): data/configuration only. APK, DEX, JAR, native libraries, executable binaries, scripts, and code intended to be loaded/executed by Link are rejected.
 - `native_runtime`: a separate, signed, ABI-specific package class. It may contain approved native `.so` libraries under `lib/<abi>/` plus model/data assets. It may not contain APK, DEX, JAR, scripts, or arbitrary executable files.
 
+Each native runtime ZIP currently targets exactly one Android ABI. Publish separate immutable plugin versions/artifacts if another ABI is needed; this keeps the signed load order unambiguous.
+
 Native runtime ZIPs are signed as follows:
 - The workflow requires the GitHub Actions secret `LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY` (Ed25519 PEM) and the matching pinned public key at `keys/native-runtime-ed25519-public.pem`.
 - The canonical JSON representation of the generated root `plugin.json` is signed with Ed25519. The detached Base64 signature is included inside the same ZIP as `plugin.json.sig`, so the user still downloads one archive.
