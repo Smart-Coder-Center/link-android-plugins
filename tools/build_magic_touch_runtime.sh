@@ -151,7 +151,7 @@ def visit(name):
     order.append("lib/arm64-v8a/" + name)
 for name, library in by_name.items():
     header = subprocess.run(["readelf", "-h", str(library)], check=True, text=True, capture_output=True).stdout
-    if "Class:                             ELF64" not in header or "Machine:                           AArch64" not in header:
+    if not re.search(r"Class:\\s+ELF64", header) or not re.search(r"Machine:\\s+AArch64", header):
         raise SystemExit(f"Native library is not a 64-bit ARM ELF: {library.name}")
 for name in sorted(by_name):
     visit(name)
