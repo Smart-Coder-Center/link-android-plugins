@@ -1,0 +1,29 @@
+repositories {
+    google()
+    mavenCentral()
+}
+
+configurations {
+    mediaPipeRuntime
+}
+
+dependencies {
+    mediaPipeRuntime 'com.google.mediapipe:tasks-vision:1.1.1'
+}
+
+tasks.register('copyMediaPipeRuntimeArtifacts') {
+    doLast {
+        def destination = file(project.findProperty('runtimeOutputDir') ?: 'build/mediapipe-artifacts')
+        destination.mkdirs()
+        configurations.mediaPipeRuntime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def extension = artifact.extension ?: artifact.type ?: 'jar'
+            def safeName = "${artifact.moduleVersion.id.group.replace('.', '_')}__${artifact.name}__${artifact.moduleVersion.id.version}.${extension}"
+            copy {
+                from artifact.file
+                into destination
+                rename { safeName }
+            }
+            println("MEDIAPIPE_ARTIFACT ${artifact.moduleVersion.id} ${extension} ${artifact.file.length()}")
+        }
+    }
+}
