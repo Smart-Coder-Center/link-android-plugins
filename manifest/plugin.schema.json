@@ -79,7 +79,7 @@
               "code_files": {
                 "type": "array",
                 "uniqueItems": true,
-                "items": { "type": "string", "pattern": "^code/.+\\.(jar|dex)$" },
+                "items": { "type": "string", "pattern": "^code/[A-Za-z0-9_./+-]+\\.(jar|dex)$" },
                 "description": "Signed DEX files or DEX-containing JARs loaded by Link's verified runtime class loader."
               },
               "entry_class": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$.]*$" },
