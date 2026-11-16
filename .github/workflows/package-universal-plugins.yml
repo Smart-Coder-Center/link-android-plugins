@@ -21,6 +21,26 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Set up Java for MediaPipe DEX packaging
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK for D8
+        uses: android-actions/setup-android@v3
+
+      - name: Install pinned Android platform and build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up pinned Gradle for Maven dependency resolution
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.4'
+
       - name: Acquire pinned upstream plugin payloads
         shell: bash
         run: |
@@ -29,6 +49,7 @@ jobs:
           import hashlib
           import json
           import re
+          import subprocess
           import urllib.parse
           import urllib.request
           import zipfile
@@ -107,6 +128,20 @@ jobs:
                              f"{urllib.parse.quote(relative, safe='/')}")
                       size, _ = download(url, target, hf_hosts)
                       print(f"Acquired {repo}@{revision}:{relative} ({size} bytes)")
+              elif source_type == "mediapipe_magic_touch":
+                  tasks_version = source.get("tasks_version")
+                  model_url = source.get("model_url")
+                  expected_model_url = "https://storage.googleapis.com/mediapipe-models/interactive_segmenter_v2/magic_touch/int8/1/interactive_segmentation.task"
+                  if tasks_version != "1.1.1" or model_url != expected_model_url:
+                      raise SystemExit(f"Magic Touch source must pin MediaPipe 1.1.1 and the reviewed model URL: {manifest_path}")
+                  subprocess.run(["bash", "tools/build_magic_touch_runtime.sh", str(base)], check=True)
+                  generated_path = base / ".link-runtime-generated.json"
+                  if not generated_path.is_file():
+                      raise SystemExit("Magic Touch runtime builder did not produce runtime metadata")
+                  generated_runtime = json.loads(generated_path.read_text(encoding="utf-8"))
+                  metadata.setdefault("runtime", {}).update(generated_runtime)
+                  generated_path.unlink()
+                  print(f"Built complete MediaPipe MagicTouch runtime for {manifest_path}")
               elif source_type == "github_release_zip":
                   url = source.get("url", "")
                   expected_size = source.get("size_bytes")
@@ -270,7 +305,7 @@ jobs:
               for item in sorted(source_dir.rglob("*")):
                   if item.is_symlink():
                       raise SystemExit(f"Symlinks are not allowed in plugin payloads: {item}")
-                  if not item.is_file() or item == source_manifest:
+                  if not item.is_file() or item == source_manifest or item.name == ".link-runtime-generated.json":
                       continue
                   relative = item.relative_to(source_dir).as_posix()
                   suffix = item.suffix.lower()
@@ -452,7 +487,7 @@ jobs:
                       "gh", "release", "create", tag, str(archive),
                       "--title", f"Link plugin {item['id']} {item['version']}",
                       "--target", "main",
-                      "--notes", f"Immutable data-only Link plugin package: {item['id']} {item['version']}."
+                      "--notes", f"Immutable signed Link plugin package: {item['id']} {item['version']}."
                   ])
           PY
 
