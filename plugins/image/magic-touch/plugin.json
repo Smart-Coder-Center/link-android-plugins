@@ -1,0 +1,31 @@
+{
+  "id": "magic-touch",
+  "name": "Magic Touch Photo",
+  "description": "Select and cut out objects in photos with positive and negative touch strokes.",
+  "kind": "image",
+  "language": "und",
+  "version": "1.0.0",
+  "package_type": "native_runtime",
+  "min_link_version": "2.21.0",
+  "runtime": {
+    "engine_id": "mediapipe-interactive-segmenter",
+    "engine_version": "1.1.1",
+    "abis": ["arm64-v8a"],
+    "load_order": ["lib/arm64-v8a/libmediapipe_tasks_vision_jni.so"],
+    "code_files": [],
+    "entry_class": "eu.siacs.link.plugins.magic_touch.MagicTouchPlugin",
+    "code_api_version": 1
+  },
+  "license": {
+    "name": "Apache-2.0",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0",
+    "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
+  },
+  "release_notes": "First signed runtime package. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries."
+  ,
+  "source": {
+    "type": "mediapipe_magic_touch",
+    "tasks_version": "1.1.1",
+    "model_url": "https://storage.googleapis.com/mediapipe-models/interactive_segmenter_v2/magic_touch/int8/1/interactive_segmentation.task"
+  }
+}
