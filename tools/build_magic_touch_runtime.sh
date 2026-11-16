@@ -27,6 +27,43 @@ test -s "$SOURCE_DIR/model/interactive_segmentation.task"
 gradle --no-daemon --stacktrace -b "$REPO_ROOT/tools/mediapipe-runtime.gradle" \
   copyMediaPipeRuntimeArtifacts -PruntimeOutputDir="$WORK_DIR/artifacts"
 
+python3 - "$SOURCE_DIR" "$WORK_DIR/artifacts" "$REPO_ROOT" <<'PY'
+import hashlib, json, os, sys
+from pathlib import Path
+source, artifacts, repo = map(Path, sys.argv[1:])
+def digest(path):
+    h = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(chunk)
+    return {"size_bytes": path.stat().st_size, "sha256": h.hexdigest()}
+model = source / "model/interactive_segmentation.task"
+entries = [{"file": p.name, **digest(p)} for p in sorted(artifacts.iterdir()) if p.is_file()]
+lock = {
+    "tasks_version": "1.1.1",
+    "model": {
+        "url": "https://storage.googleapis.com/mediapipe-models/interactive_segmenter_v2/magic_touch/int8/1/interactive_segmentation.task",
+        **digest(model)
+    },
+    "artifacts": entries
+}
+lock_path = repo / "tools/mediapipe-runtime.lock.json"
+generated = repo / "tools/mediapipe-runtime.lock.generated.json"
+if os.environ.get("MEDIAPIPE_AUDIT_ONLY") == "1":
+    generated.write_text(json.dumps(lock, indent=2) + "\\n", encoding="utf-8")
+    print("MEDIAPIPE_RUNTIME_LOCK=" + json.dumps(lock, sort_keys=True))
+else:
+    if not lock_path.is_file():
+        raise SystemExit("Pinned MediaPipe checksum lock is missing. Run the dedicated audit workflow, review its output, and commit tools/mediapipe-runtime.lock.json first.")
+    expected = json.loads(lock_path.read_text(encoding="utf-8"))
+    if expected != lock:
+        raise SystemExit("MediaPipe upstream artifacts do not match the committed SHA-256 lock.")
+    provenance = source / "provenance"
+    provenance.mkdir(parents=True, exist_ok=True)
+    (provenance / "mediapipe-runtime-lock.json").write_text(
+        json.dumps(lock, indent=2) + "\\n", encoding="utf-8")
+PY
+
 mkdir -p "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
 shopt -s nullglob
 for artifact in "$WORK_DIR"/artifacts/*; do
