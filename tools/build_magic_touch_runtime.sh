@@ -116,6 +116,10 @@ done
 
 mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | sort)
 (("${#JARS[@]}" > 0)) || { echo "No Java runtime JARs resolved" >&2; exit 5; }
+mkdir -p "$SOURCE_DIR/vendor-jars"
+for jar_file in "${JARS[@]}"; do
+  cp "$jar_file" "$SOURCE_DIR/vendor-jars/$(basename "$jar_file")"
+done
 ( find "$SOURCE_DIR/lib/arm64-v8a" -maxdepth 1 -type f -name '*.so' | grep -q . ) || {
   echo "No ARM64 native libraries were found in resolved AARs" >&2
   exit 6
