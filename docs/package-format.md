@@ -86,4 +86,4 @@ The app accepts archive URLs under this repository's GitHub Releases only. Redir
 8. Validate the catalog and download the release asset independently.
 9. Test installation, model initialization, Persian transcription/synthesis, update, fallback, and removal on supported Android devices before treating the package as production-ready.
 
-Downloaded packages must remain data-only. Native speech runtimes stay bundled in the signed Link APK; do not put native libraries or executable content in these ZIPs.
+This legacy speech data-pack format remains data-only. Do not put native libraries or executable content in these speech model ZIPs. Packages that need native libraries must use the separate signed `native_runtime` contract documented in `docs/universal-plugin-package-format.md`, and must not be activated until the Android app verifies the pinned signature and enforces its distribution policy.
