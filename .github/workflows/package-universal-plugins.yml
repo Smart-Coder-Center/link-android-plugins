@@ -237,8 +237,11 @@ jobs:
               if package_type == "native_runtime":
                   runtime = metadata.get("runtime", {})
                   abis = runtime.get("abis", []) if isinstance(runtime, dict) else []
+                  load_order = runtime.get("load_order", []) if isinstance(runtime, dict) else []
                   if not isinstance(abis, list) or not abis or len(set(abis)) != len(abis) or not set(abis).issubset(supported_abis):
                       raise SystemExit(f"Native runtime {plugin_id} must declare supported runtime.abis")
+                  if not isinstance(load_order, list) or not load_order or len(set(load_order)) != len(load_order):
+                      raise SystemExit(f"Native runtime {plugin_id} must declare a unique runtime.load_order")
               dependencies = metadata.get("dependencies", [])
               if not isinstance(dependencies, list) or len(dependencies) > 32:
                   raise SystemExit(f"Invalid dependency list for {plugin_id}")
@@ -286,8 +289,12 @@ jobs:
                   payload.append((relative, item))
               if not payload:
                   raise SystemExit(f"Plugin {plugin_id} has no payload files")
-              if package_type == "native_runtime" and native_library_count == 0:
-                  raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
+              if package_type == "native_runtime":
+                  library_paths = [rel for rel, _ in payload if rel.endswith(".so")]
+                  if native_library_count == 0:
+                      raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
+                  if set(library_paths) != set(load_order) or len(library_paths) != len(load_order):
+                      raise SystemExit(f"Native runtime {plugin_id} runtime.load_order must list every .so payload path exactly once")
               if len(payload) > 10000:
                   raise SystemExit(f"Plugin {plugin_id} exceeds Link's 10,000-file limit")
               if expanded > max_expanded:
