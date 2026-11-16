@@ -291,7 +291,7 @@ jobs:
                                       raise SystemExit(f"Runtime JAR must contain D8-produced classes.dex: {relative}")
                           else:
                               with item.open("rb") as code_file:
-                                  if code_file.read(8)[:4] != b"dex\\n":
+                                  if code_file.read(8)[:4] != b"dex\n":
                                       raise SystemExit(f"Invalid DEX payload: {relative}")
                       elif suffix not in runtime_data_suffixes and item.name.upper() not in {"LICENSE", "NOTICE"}:
                           raise SystemExit(f"Unsupported native runtime payload file type: {relative}")
