@@ -377,7 +377,7 @@ jobs:
                   private_key = os.environ.get("LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY", "").strip()
                   if not private_key or not public_key_path.is_file():
                       raise SystemExit("Native runtime publishing requires the LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY secret and keys/native-runtime-ed25519-public.pem pinned public key.")
-                  manifest_bytes = (json.dumps(generated, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+                  manifest_bytes = json.dumps(generated, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
                   with tempfile.TemporaryDirectory(prefix="link-runtime-sign-") as temp_dir:
                       key_file = Path(temp_dir) / "private.pem"
                       derived_public = Path(temp_dir) / "derived-public.pem"
