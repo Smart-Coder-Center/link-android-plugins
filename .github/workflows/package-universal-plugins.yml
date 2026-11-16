@@ -307,6 +307,12 @@ jobs:
                   declared_code = runtime.get("code_files", [])
                   if not isinstance(declared_code, list) or sorted(declared_code) != code_paths:
                       raise SystemExit(f"Native runtime {plugin_id} runtime.code_files must list every DEX/JAR payload exactly once")
+                  if code_paths:
+                      entry_class = runtime.get("entry_class", "")
+                      if (not isinstance(entry_class, str)
+                              or not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$.]*", entry_class)
+                              or runtime.get("code_api_version") != 1):
+                          raise SystemExit(f"Native runtime {plugin_id} must declare a valid entry_class and code_api_version=1")
                   if native_library_count == 0:
                       raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
                   if set(library_paths) != set(load_order) or len(library_paths) != len(load_order):
