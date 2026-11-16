@@ -154,7 +154,7 @@ if not libraries:
 needed = {}
 for library in libraries:
     result = subprocess.run(["readelf", "-d", str(library)], check=True, text=True, capture_output=True)
-    needed[library.name] = re.findall(r"Shared library: \\[(.+?)\\]", result.stdout)
+    needed[library.name] = re.findall(r"Shared library: \[(.+?)\]", result.stdout)
 by_name = {p.name: p for p in libraries}
 system_prefixes = ("libandroid.", "libc.", "libdl.", "liblog.", "libm.", "libz.", "libEGL.", "libGLES", "libOpenSLES.", "libvulkan.", "libjnigraphics.", "libmediandk.", "libnativewindow.", "libaaudio.", "libstdc++.so", "libatomic.so", "libgcc_s.so", "libGLESv1_CM.so", "libOpenMAXAL.so")
 order, visiting, visited = [], set(), set()
@@ -172,11 +172,11 @@ def visit(name):
     order.append("lib/arm64-v8a/" + name)
 for name, library in by_name.items():
     header = subprocess.run(["readelf", "-h", str(library)], check=True, text=True, capture_output=True).stdout
-    if not re.search(r"Class:\\s+ELF64", header) or not re.search(r"Machine:\\s+AArch64", header):
+    if not re.search(r"Class:\s+ELF64", header) or not re.search(r"Machine:\s+AArch64", header):
         raise SystemExit(f"Native library is not a 64-bit ARM ELF: {library.name}")
 for name in sorted(by_name):
     visit(name)
-dex_files = sorted((root / "code").glob("classes*.dex"), key=lambda p: int(re.search(r"(\\d+)?\\.dex$", p.name).group(1) or 1))
+dex_files = sorted((root / "code").glob("classes*.dex"), key=lambda p: int(re.search(r"(\d+)?\.dex$", p.name).group(1) or 1))
 metadata = {
     "abis": ["arm64-v8a"],
     "load_order": order,
