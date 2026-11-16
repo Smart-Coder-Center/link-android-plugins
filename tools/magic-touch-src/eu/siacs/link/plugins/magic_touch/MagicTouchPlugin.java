@@ -98,6 +98,7 @@ public final class MagicTouchPlugin implements AutoCloseable {
         MPImage mask = segmenter.segment(strokes);
         try {
             FloatBuffer buffer = ByteBufferExtractor.extract(mask).asFloatBuffer();
+            buffer.rewind();
             float[] result = new float[buffer.remaining()];
             buffer.get(result);
             return result;
