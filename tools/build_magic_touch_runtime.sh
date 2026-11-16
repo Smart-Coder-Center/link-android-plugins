@@ -160,7 +160,7 @@ metadata = {
 print(json.dumps({"native_libraries": order, "dex_files": metadata["code_files"]}, indent=2))
 PY
 
-cp "$REPO_ROOT/LICENSE" "$SOURCE_DIR/LICENSE-MEDIAPIPE" 2>/dev/null || true
+curl --fail --location --retry 3 --connect-timeout 20 https://www.apache.org/licenses/LICENSE-2.0.txt -o "$SOURCE_DIR/LICENSE-APACHE-2.0.txt"
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
 Magic Touch Photo includes MediaPipe Tasks Vision and the Google MediaPipe MagicTouch model.
 MediaPipe and model licensing: Apache License 2.0.
