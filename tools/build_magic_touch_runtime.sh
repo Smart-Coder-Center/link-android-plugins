@@ -23,6 +23,9 @@ command -v readelf >/dev/null
 mkdir -p "$SOURCE_DIR/model" "$SOURCE_DIR/lib/arm64-v8a" "$SOURCE_DIR/code" "$WORK_DIR/artifacts"
 curl --fail --location --retry 3 --connect-timeout 20 "$MODEL_URL" -o "$SOURCE_DIR/model/interactive_segmentation.task"
 test -s "$SOURCE_DIR/model/interactive_segmentation.task"
+model_size="$(stat -c %s "$SOURCE_DIR/model/interactive_segmentation.task")"
+(( model_size <= 100 * 1024 * 1024 )) || { echo "MagicTouch model exceeds the 100 MiB safety limit" >&2; exit 8; }
+unzip -tq "$SOURCE_DIR/model/interactive_segmentation.task" >/dev/null
 
 gradle --no-daemon --stacktrace -b "$REPO_ROOT/tools/mediapipe-runtime.gradle" \
   copyMediaPipeRuntimeArtifacts -PruntimeOutputDir="$WORK_DIR/artifacts"
@@ -146,6 +149,10 @@ def visit(name):
     visiting.remove(name)
     visited.add(name)
     order.append("lib/arm64-v8a/" + name)
+for name, library in by_name.items():
+    header = subprocess.run(["readelf", "-h", str(library)], check=True, text=True, capture_output=True).stdout
+    if "Class:                             ELF64" not in header or "Machine:                           AArch64" not in header:
+        raise SystemExit(f"Native library is not a 64-bit ARM ELF: {library.name}")
 for name in sorted(by_name):
     visit(name)
 dex_files = sorted((root / "code").glob("classes*.dex"), key=lambda p: int(re.search(r"(\d+)?\.dex$", p.name).group(1) or 1))
