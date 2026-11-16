@@ -58,7 +58,18 @@ The publisher is manual-dispatch only. Adding or editing source manifests does n
 
 The Action creates a data-only ZIP with a root-level `plugin.json` and all payload files, preserving relative paths. The generated manifest contains the source metadata plus a `files` array with one SHA-256 entry per payload file. The public catalog entry contains the exact release URL, byte size, and SHA-256 of the complete ZIP.
 
-Downloaded packages must contain data only. Do not package APK, DEX, JAR, native libraries, executable binaries, scripts, or code intended to be loaded/executed by Link. Link's signed APK supplies trusted runtime code; plugins supply data/configuration only.
+Packages have an explicit `package_type`:
+
+- `data` (default): data/configuration only. APK, DEX, JAR, native libraries, executable binaries, scripts, and code intended to be loaded/executed by Link are rejected.
+- `native_runtime`: a separate, signed, ABI-specific package class. It may contain approved native `.so` libraries under `lib/<abi>/` plus model/data assets. It may not contain APK, DEX, JAR, scripts, or arbitrary executable files.
+
+Native runtime ZIPs are signed as follows:
+- The workflow requires the GitHub Actions secret `LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY` (Ed25519 PEM) and the matching pinned public key at `keys/native-runtime-ed25519-public.pem`.
+- The canonical JSON representation of the generated root `plugin.json` is signed with Ed25519. The detached Base64 signature is included inside the same ZIP as `plugin.json.sig`, so the user still downloads one archive.
+- The manifest lists SHA-256 for every payload file. The catalog separately pins the complete ZIP's exact size and SHA-256.
+- Native libraries must be placed under `lib/<abi>/`, and every ABI must be declared in `runtime.abis`. The workflow rejects unsupported ABIs and unsafe paths.
+
+**Important:** repository-side packaging is not sufficient to make a runtime safe to load. Before publishing or enabling a native-runtime plugin to users, the Link Android app must embed/pin the matching public key, verify the signature and every hash before extraction/loading, enforce ABI/API/ELF dependency checks, extract only into app-private storage, and make native files read-only before loading. Google Play builds must not download executable native code from outside Play; keep this package type disabled for Play-distributed builds. The runtime workflow fails closed when the signing secret or pinned public key is absent.
 
 ## Automatic dependency declarations
 
@@ -89,15 +100,16 @@ Large archives belong in GitHub Releases, never Git history. The Android app dow
 License and attribution files should be included in the source package when supplied. License notices are not a reason to stop independent inspection, conversion, packaging preparation, or integration work; provide a concise reminder for restrictive terms and continue. Do not misstate license terms or remove notices.
 
 
-## Native runtime dependency packages (planned, separate security class)
+## Native runtime package requirements
 
-Native runtime packages are not enabled in the current data-only ZIP workflow. Do not add `.so` files to ordinary plugin source folders: the current packager intentionally rejects native libraries and executable payloads.
+The publisher now has a separate `native_runtime` package path. Ordinary data plugins remain data-only. Native runtime source packages may include approved `.so` libraries under `lib/<abi>/` and model/data assets in the same plugin ZIP; APK, DEX, JAR, scripts, and arbitrary executable payloads remain forbidden.
 
-A future `package_type: "native_runtime"` contract must be introduced separately and must require:
-- a pinned signing key and detached signature over the exact runtime manifest;
-- ABI, Android API, ELF machine/class, SONAME and `DT_NEEDED` dependency metadata;
-- an allowlist of native library filenames and exact per-file hashes;
-- immutable versioned releases and an explicit dependency graph;
-- a direct-download distribution gate, with no external native-code downloads in Google Play builds.
+Before any native runtime is enabled for users, the Android consumer must independently implement and pass:
+- pinned Ed25519 public-key verification of the canonical root manifest;
+- SHA-256 verification of every payload file and the complete archive;
+- ABI, Android API, ELF machine/class, SONAME and `DT_NEEDED` validation against explicit allowlists;
+- safe extraction (no traversal, symlinks, duplicate paths, or zip bombs) into app-private versioned storage;
+- read-only native library files before loading, plus dependency ordering and rollback-safe installation/removal;
+- a distribution gate that disables remote executable-code packages in Google Play builds.
 
-Until the signed runtime packager and Android verifier exist, keep Sherpa/ONNX native binaries out of this repository's data-only plugin ZIP pipeline. See the private Link Android repository's `docs/NATIVE_RUNTIME_PLUGIN_ARCHITECTURE.md` for the design decision.
+The publisher requires `LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY` as a GitHub Actions secret and its matching public key committed at `keys/native-runtime-ed25519-public.pem`. The public key must also be pinned in the Link APK; a key shipped only inside the downloaded ZIP is not a trust anchor. Until the Android verifier and distribution gate are implemented, do not advertise or activate native runtime packages in production.
