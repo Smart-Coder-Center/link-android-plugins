@@ -8,6 +8,7 @@ import com.google.mediapipe.framework.image.ByteBufferExtractor;
 import com.google.mediapipe.framework.image.MPImage;
 import com.google.mediapipe.tasks.components.containers.NormalizedKeypoint;
 import com.google.mediapipe.tasks.core.BaseOptions;
+import com.google.mediapipe.tasks.core.Delegate;
 import com.google.mediapipe.tasks.vision.interactivesegmenter.InteractiveSegmenter;
 import com.google.mediapipe.tasks.vision.interactivesegmenter.InteractiveSegmenterOptions;
 import com.google.mediapipe.tasks.vision.interactivesegmenter.Stroke;
@@ -31,6 +32,7 @@ public final class MagicTouchPlugin implements AutoCloseable {
         }
         BaseOptions baseOptions = BaseOptions.builder()
                 .setModelAssetPath(model.getAbsolutePath())
+                .setDelegate(Delegate.CPU)
                 .build();
         InteractiveSegmenterOptions options = InteractiveSegmenterOptions.builder()
                 .setBaseOptions(baseOptions)
