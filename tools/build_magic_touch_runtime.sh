@@ -21,7 +21,16 @@ command -v javac >/dev/null
 command -v readelf >/dev/null
 
 mkdir -p "$SOURCE_DIR/model" "$SOURCE_DIR/lib/arm64-v8a" "$SOURCE_DIR/code" "$WORK_DIR/artifacts"
-curl --fail --location --retry 3 --connect-timeout 20 "$MODEL_URL" -o "$SOURCE_DIR/model/interactive_segmentation.task"
+model_final_url="$(curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+  --max-filesize 104857600 --retry 3 --connect-timeout 20 \
+  "$MODEL_URL" -o "$SOURCE_DIR/model/interactive_segmentation.task" -w '%{url_effective}')"
+python3 - "$model_final_url" <<'PY'
+import sys
+from urllib.parse import urlparse
+url = urlparse(sys.argv[1])
+if url.scheme != "https" or url.hostname != "storage.googleapis.com":
+    raise SystemExit("MagicTouch model redirected to an untrusted host")
+PY
 test -s "$SOURCE_DIR/model/interactive_segmentation.task"
 model_size="$(stat -c %s "$SOURCE_DIR/model/interactive_segmentation.task")"
 (( model_size <= 100 * 1024 * 1024 )) || { echo "MagicTouch model exceeds the 100 MiB safety limit" >&2; exit 8; }
@@ -41,7 +50,12 @@ def digest(path):
             h.update(chunk)
     return {"size_bytes": path.stat().st_size, "sha256": h.hexdigest()}
 model = source / "model/interactive_segmentation.task"
-entries = [{"file": p.name, **digest(p)} for p in sorted(artifacts.iterdir()) if p.is_file()]
+artifact_files = sorted(p for p in artifacts.iterdir() if p.is_file())
+if not artifact_files or sum(p.stat().st_size for p in artifact_files) > 2 * 1024**3:
+    raise SystemExit("Resolved MediaPipe artifacts are empty or exceed the 2 GiB safety limit")
+if any(p.suffix.lower() not in {".aar", ".jar"} for p in artifact_files):
+    raise SystemExit("Unexpected file type in resolved MediaPipe artifacts")
+entries = [{"file": p.name, **digest(p)} for p in artifact_files]
 lock = {
     "tasks_version": "1.1.1",
     "model": {
