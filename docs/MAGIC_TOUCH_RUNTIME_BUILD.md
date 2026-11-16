@@ -36,6 +36,7 @@ The audit workflow does not publish a release or update the public catalog.
 
 - `model/interactive_segmentation.task`
 - `code/classes*.dex` (all D8 output shards)
+- `vendor-jars/*.jar` (original resolved Java dependency archives, retained for completeness; runtime executes the DEX output)
 - `lib/arm64-v8a/*.so` (all resolved native runtime libraries)
 - `provenance/mediapipe-runtime-lock.json`
 - `LICENSE-APACHE-2.0.txt`, `LICENSE-BSD-3-Clause.txt`, and `NOTICE`
