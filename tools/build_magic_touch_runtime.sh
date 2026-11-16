@@ -50,7 +50,7 @@ lock = {
 lock_path = repo / "tools/mediapipe-runtime.lock.json"
 generated = repo / "tools/mediapipe-runtime.lock.generated.json"
 if os.environ.get("MEDIAPIPE_AUDIT_ONLY") == "1":
-    generated.write_text(json.dumps(lock, indent=2) + "\\n", encoding="utf-8")
+    generated.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
     print("MEDIAPIPE_RUNTIME_LOCK=" + json.dumps(lock, sort_keys=True))
 else:
     if not lock_path.is_file():
@@ -61,7 +61,7 @@ else:
     provenance = source / "provenance"
     provenance.mkdir(parents=True, exist_ok=True)
     (provenance / "mediapipe-runtime-lock.json").write_text(
-        json.dumps(lock, indent=2) + "\\n", encoding="utf-8")
+        json.dumps(lock, indent=2) + "\n", encoding="utf-8")
 PY
 
 mkdir -p "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
