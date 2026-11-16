@@ -283,8 +283,8 @@ jobs:
                               raise SystemExit(f"Native library must be stored under lib/<declared-abi>/: {relative}")
                           native_library_count += 1
                       elif suffix in runtime_code_suffixes:
-                          if not relative.startswith("code/"):
-                              raise SystemExit(f"Executable DEX/JAR payload must be stored under code/: {relative}")
+                          if not re.fullmatch(r"code/[A-Za-z0-9_./+-]+\\.(jar|dex)", relative):
+                              raise SystemExit(f"Executable DEX/JAR payload has an unsafe path: {relative}")
                           if suffix == ".jar":
                               with zipfile.ZipFile(item) as code_archive:
                                   if "classes.dex" not in code_archive.namelist():
