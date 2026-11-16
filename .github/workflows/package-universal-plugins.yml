@@ -186,7 +186,7 @@ jobs:
           link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
           dependency_types = {"data", "native_runtime", "play_feature"}
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class", ".js", ".mjs", ".cjs", ".rb", ".pl", ".php", ".vbs", ".command", ".exe", ".com"}
-          native_forbidden = forbidden - {".so"}
+          runtime_data_suffixes = {".task", ".tflite", ".onnx", ".model", ".pb", ".bin", ".dat", ".txt", ".json", ".yaml", ".yml", ".md"}
           supported_abis = {"arm64-v8a", "armeabi-v7a", "x86", "x86_64"}
           public_key_path = Path("keys/native-runtime-ed25519-public.pem")
           max_archive = 10 * 1024**3
@@ -262,6 +262,7 @@ jobs:
 
               payload = []
               expanded = 0
+              native_library_count = 0
               for item in sorted(source_dir.rglob("*")):
                   if item.is_symlink():
                       raise SystemExit(f"Symlinks are not allowed in plugin payloads: {item}")
@@ -272,18 +273,21 @@ jobs:
                   if package_type == "data" and suffix in forbidden:
                       raise SystemExit(f"Executable/code payload is not allowed in data packages: {item}")
                   if package_type == "native_runtime":
-                      if suffix in native_forbidden:
-                          raise SystemExit(f"Only native .so libraries and data assets are allowed in native_runtime packages: {item}")
                       if suffix == ".so":
                           parts = relative.split("/")
                           if len(parts) < 3 or parts[0] != "lib" or parts[1] not in abis:
                               raise SystemExit(f"Native library must be stored under lib/<declared-abi>/: {relative}")
+                          native_library_count += 1
+                      elif suffix not in runtime_data_suffixes and item.name.upper() not in {"LICENSE", "NOTICE"}:
+                          raise SystemExit(f"Unsupported native runtime payload file type: {relative}")
                   if relative.startswith("/") or "\\" in relative or any(part in ("", ".", "..") for part in Path(relative).parts):
                       raise SystemExit(f"Unsafe payload path: {relative}")
                   expanded += item.stat().st_size
                   payload.append((relative, item))
               if not payload:
                   raise SystemExit(f"Plugin {plugin_id} has no payload files")
+              if package_type == "native_runtime" and native_library_count == 0:
+                  raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
               if len(payload) > 10000:
                   raise SystemExit(f"Plugin {plugin_id} exceeds Link's 10,000-file limit")
               if expanded > max_expanded:
