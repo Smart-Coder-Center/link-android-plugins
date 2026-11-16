@@ -317,17 +317,27 @@ jobs:
                           if len(parts) < 3 or parts[0] != "lib" or parts[1] not in abis:
                               raise SystemExit(f"Native library must be stored under lib/<declared-abi>/: {relative}")
                           native_library_count += 1
-                      elif suffix in runtime_code_suffixes:
-                          if not re.fullmatch(r"code/[A-Za-z0-9_./+-]+\.(jar|dex)", relative):
-                              raise SystemExit(f"Executable DEX/JAR payload has an unsafe path: {relative}")
-                          if suffix == ".jar":
+                      elif suffix == ".dex":
+                          if not re.fullmatch(r"code/[A-Za-z0-9_./+-]+\\.dex", relative):
+                              raise SystemExit(f"Executable DEX payload has an unsafe path: {relative}")
+                          with item.open("rb") as code_file:
+                              if code_file.read(8)[:4] != b"dex\\n":
+                                  raise SystemExit(f"Invalid DEX payload: {relative}")
+                      elif suffix == ".jar":
+                          if relative.startswith("code/"):
+                              if not re.fullmatch(r"code/[A-Za-z0-9_./+-]+\\.jar", relative):
+                                  raise SystemExit(f"Executable DEX-JAR payload has an unsafe path: {relative}")
                               with zipfile.ZipFile(item) as code_archive:
                                   if "classes.dex" not in code_archive.namelist():
                                       raise SystemExit(f"Runtime JAR must contain D8-produced classes.dex: {relative}")
+                          elif relative.startswith("vendor-jars/"):
+                              if not re.fullmatch(r"vendor-jars/[A-Za-z0-9_.+-]+\\.jar", relative):
+                                  raise SystemExit(f"Archived dependency JAR has an unsafe path: {relative}")
+                              with zipfile.ZipFile(item) as source_archive:
+                                  if source_archive.testzip() is not None or not source_archive.namelist():
+                                      raise SystemExit(f"Archived dependency JAR is corrupt: {relative}")
                           else:
-                              with item.open("rb") as code_file:
-                                  if code_file.read(8)[:4] != b"dex\n":
-                                      raise SystemExit(f"Invalid DEX payload: {relative}")
+                              raise SystemExit(f"JAR payload must be executable under code/ or archived under vendor-jars/: {relative}")
                       elif suffix not in runtime_data_suffixes and item.name.upper() not in {"LICENSE", "NOTICE"}:
                           raise SystemExit(f"Unsupported native runtime payload file type: {relative}")
                   if relative.startswith("/") or "\\" in relative or any(part in ("", ".", "..") for part in Path(relative).parts):
@@ -338,10 +348,10 @@ jobs:
                   raise SystemExit(f"Plugin {plugin_id} has no payload files")
               if package_type == "native_runtime":
                   library_paths = [rel for rel, _ in payload if rel.endswith(".so")]
-                  code_paths = sorted(rel for rel, _ in payload if Path(rel).suffix.lower() in runtime_code_suffixes)
+                  code_paths = sorted(rel for rel, _ in payload if rel.startswith("code/") and Path(rel).suffix.lower() in runtime_code_suffixes)
                   declared_code = runtime.get("code_files", [])
                   if not isinstance(declared_code, list) or sorted(declared_code) != code_paths:
-                      raise SystemExit(f"Native runtime {plugin_id} runtime.code_files must list every DEX/JAR payload exactly once")
+                      raise SystemExit(f"Native runtime {plugin_id} runtime.code_files must list every executable DEX/JAR under code/ exactly once")
                   if code_paths:
                       entry_class = runtime.get("entry_class", "")
                       if (not isinstance(entry_class, str)
