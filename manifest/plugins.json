@@ -1,46 +1,82 @@
 {
   "schema_version": 1,
-  "catalog_version": 9,
+  "catalog_version": 10,
   "plugins": [
-    {
-      "id": "tts.mana.piper.fa",
-      "name": "Read text",
-      "description": "Read text aloud.",
-      "kind": "tts",
-      "language": "fa",
-      "version": "1.0.0",
-      "min_link_version": "2.21.0",
-      "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/speech-v1.0.0/tts-mana-piper-fa-1.0.0.zip",
-        "size_bytes": 67513001,
-        "sha256": "871306697e913bfc7f7ada8eb04391566b3d328562f6ed5423254e81589b8957"
-      },
-      "license": {
-        "name": "MIT + GPL-3.0-or-later",
-        "url": "https://www.gnu.org/licenses/gpl-3.0.html",
-        "attribution": "Mana Persian Piper model (MIT) and eSpeak NG phoneme data (GPL-3.0-or-later)"
-      },
-      "release_notes": "Persian offline TTS voice and phoneme data. Requires the Sherpa-ONNX runtime included in Link."
-    },
     {
       "id": "asr.koochik-rnnt.fa",
       "name": "Voice typing",
-      "description": "Convert speech to text.",
+      "description": "Convert Persian speech to text offline.",
       "kind": "asr",
       "language": "fa",
-      "version": "1.0.0-test.1",
+      "version": "1.0.0-test.2",
       "min_link_version": "2.21.0",
-      "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/koochik-rnnt-test-1.0.0-test.1/koochik-rnnt-fa-1.0.0-test.1.zip",
-        "size_bytes": 136732669,
-        "sha256": "45f4bdf9776bbdd34a1f14128ea5ab209c71b8d88b44e8be6a209d6735519009"
-      },
       "license": {
         "name": "Apache-2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
         "attribution": "Shenava Koochik v1.5 RNNT sherpa-onnx model; upstream revision c46e9af380770a07509a3591169c99e936e0cc96"
       },
-      "release_notes": "Experimental offline Persian RNNT model. Sherpa-ONNX nemo_transducer. Upstream revision c46e9af380770a07509a3591169c99e936e0cc96; author-reported Golden-6669 WER 9.50% / CER 2.60%. Not yet independently benchmarked on Link devices."
+      "release_notes": "Experimental offline Persian RNNT model. Sherpa-ONNX nemo_transducer. Upstream revision c46e9af380770a07509a3591169c99e936e0cc96; author-reported Golden-6669 WER 9.50% / CER 2.60%. Not yet independently benchmarked on Link devices.",
+      "archive": {
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-asr.koochik-rnnt.fa-1.0.0-test.2/asr.koochik-rnnt.fa-1.0.0-test.2.zip",
+        "size_bytes": 100951964,
+        "sha256": "d3decb88501a412bbf2b0639dd4f3a5639f9e65e446708f43ed19dc85d8ce9fb"
+      }
+    },
+    {
+      "id": "magic-touch",
+      "name": "Magic Touch Photo",
+      "description": "Select and cut out objects in photos with positive and negative touch strokes.",
+      "kind": "image",
+      "language": "und",
+      "version": "1.0.0",
+      "package_type": "native_runtime",
+      "min_link_version": "2.21.0",
+      "runtime": {
+        "engine_id": "mediapipe-interactive-segmenter",
+        "engine_version": "1.1.1",
+        "abis": [
+          "arm64-v8a"
+        ],
+        "load_order": [
+          "lib/arm64-v8a/libmediapipe_tasks_jni.so"
+        ],
+        "code_files": [
+          "code/classes.dex"
+        ],
+        "entry_class": "eu.siacs.link.plugins.magic_touch.MagicTouchPlugin",
+        "code_api_version": 1
+      },
+      "license": {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
+      },
+      "release_notes": "First signed runtime package. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries.",
+      "archive": {
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.0/magic-touch-1.0.0.zip",
+        "size_bytes": 40306321,
+        "sha256": "b1abe6079a85e6ea50673c465869bd8a27727e10fb70f27ab533dc8cb44c61ea"
+      }
+    },
+    {
+      "id": "tts.mana.piper.fa",
+      "name": "Read text",
+      "description": "Read Persian text aloud offline.",
+      "kind": "tts",
+      "language": "fa",
+      "version": "1.0.1",
+      "min_link_version": "2.21.0",
+      "license": {
+        "name": "MIT + GPL-3.0-or-later",
+        "url": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "attribution": "Mana Persian Piper model (MIT) and eSpeak NG phoneme data (GPL-3.0-or-later)"
+      },
+      "release_notes": "Migration package reconstructed from the currently published immutable Mana ZIP. Preserves its payload and license notices; upstream source archives and their cryptographic hashes still need to be pinned independently.",
+      "archive": {
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-tts.mana.piper.fa-1.0.1/tts.mana.piper.fa-1.0.1.zip",
+        "size_bytes": 67520476,
+        "sha256": "af298082c86c3f18336435746b76dad9987d898a694bb4c1de191c9fcbaa7a17"
+      }
     }
   ]
 }
