@@ -36,10 +36,10 @@ model_size="$(stat -c %s "$SOURCE_DIR/model/interactive_segmentation.task")"
 (( model_size <= 100 * 1024 * 1024 )) || { echo "MagicTouch model exceeds the 100 MiB safety limit" >&2; exit 8; }
 unzip -tq "$SOURCE_DIR/model/interactive_segmentation.task" >/dev/null
 
-# -b selects the build script but does not reliably set the repository root.
-# Pin -p explicitly so Gradle never treats tools/ as the project directory.
-gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT" \
-  --build-file "$REPO_ROOT/tools/mediapipe-runtime.gradle" \
+# Run from a self-contained Gradle project with an explicit settings.gradle
+# and build.gradle under tools/. This avoids ambiguous root selection when
+# Gradle is invoked from a shell script or with an external build file.
+gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMediaPipeRuntimeArtifacts -PruntimeOutputDir="$WORK_DIR/artifacts"
 
 python3 - "$SOURCE_DIR" "$WORK_DIR/artifacts" "$REPO_ROOT" <<'PY'
