@@ -380,7 +380,9 @@ jobs:
                   private_key = os.environ.get("LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY", "").strip()
                   if not private_key or not public_key_path.is_file():
                       raise SystemExit("Native runtime publishing requires the LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY secret and keys/native-runtime-ed25519-public.pem pinned public key.")
-                  manifest_bytes = json.dumps(generated, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                  # Sign the exact bytes that will be stored as plugin.json in the ZIP.
+              # Verifying raw bytes on Android avoids cross-runtime JSON serializer differences.
+              manifest_bytes = (json.dumps(generated, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
                   with tempfile.TemporaryDirectory(prefix="link-runtime-sign-") as temp_dir:
                       key_file = Path(temp_dir) / "private.pem"
                       derived_public = Path(temp_dir) / "derived-public.pem"
@@ -392,6 +394,9 @@ jobs:
                       if derived_public.read_bytes().strip() != public_key_path.read_bytes().strip():
                           raise SystemExit("Runtime signing private key does not match the repository-pinned public key.")
                       subprocess.run(["openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(key_file), "-in", str(manifest_file), "-out", str(signature_file)], check=True, capture_output=True)
+                      subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey", str(public_key_path),
+                                      "-rawin", "-in", str(manifest_file), "-sigfile", str(signature_file)],
+                                     check=True, capture_output=True)
                       signature_bytes = base64.b64encode(signature_file.read_bytes())
 
               archive_name = f"{plugin_id}-{version}.zip"
@@ -403,7 +408,7 @@ jobs:
                       info.create_system = 3
                       info.external_attr = 0o100644 << 16
                       z.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
-                  add_bytes("plugin.json", json.dumps(generated, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+                  add_bytes("plugin.json", manifest_bytes)
                   if signature_bytes is not None:
                       add_bytes("plugin.json.sig", signature_bytes)
                   for relative, payload_path in payload:
