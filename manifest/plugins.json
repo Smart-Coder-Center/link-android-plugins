@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 10,
+  "catalog_version": 11,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -28,7 +28,7 @@
       "description": "Select and cut out objects in photos with positive and negative touch strokes.",
       "kind": "image",
       "language": "und",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "package_type": "native_runtime",
       "min_link_version": "2.21.0",
       "runtime": {
@@ -51,11 +51,11 @@
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
         "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
       },
-      "release_notes": "First signed runtime package. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries.",
+      "release_notes": "Signed runtime package using exact-byte manifest verification. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries.",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.0/magic-touch-1.0.0.zip",
-        "size_bytes": 40306321,
-        "sha256": "b1abe6079a85e6ea50673c465869bd8a27727e10fb70f27ab533dc8cb44c61ea"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.1/magic-touch-1.0.1.zip",
+        "size_bytes": 40306343,
+        "sha256": "8a67eb63d7925779d44f402ffa709b023a90082d93d606b7fe89a8c64e98f374"
       }
     },
     {
