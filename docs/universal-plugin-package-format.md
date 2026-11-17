@@ -67,7 +67,7 @@ Each native runtime ZIP currently targets exactly one Android ABI. Publish separ
 
 Native runtime ZIPs are signed as follows:
 - The workflow requires the GitHub Actions secret `LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY` (Ed25519 PEM) and the matching pinned public key at `keys/native-runtime-ed25519-public.pem`.
-- The canonical JSON representation of the generated root `plugin.json` is signed with Ed25519. The detached Base64 signature is included inside the same ZIP as `plugin.json.sig`, so the user still downloads one archive.
+- The exact UTF-8 bytes written to the root `plugin.json` entry are signed with Ed25519; the publisher verifies the signature with the pinned public key before packaging. The detached Base64 signature is included as `plugin.json.sig`, so the user still downloads one archive.
 - The manifest lists SHA-256 for every payload file. The catalog separately pins the complete ZIP's exact size and SHA-256.
 - Native libraries must be placed under `lib/<abi>/`, and every ABI must be declared in `runtime.abis`. The source manifest must also declare `runtime.load_order` with every packaged `.so` path exactly once, in dependency-first load order. The workflow rejects unsupported ABIs, incomplete load order and unsafe paths.
 
