@@ -375,14 +375,13 @@ jobs:
               generated.pop("archive", None)
               generated.pop("source", None)
               generated["files"] = [{"path": rel, "sha256": sha(path)} for rel, path in payload]
+              # Use one exact UTF-8 representation for the ZIP entry and its detached signature.
+              manifest_bytes = (json.dumps(generated, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
               signature_bytes = None
               if package_type == "native_runtime":
                   private_key = os.environ.get("LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY", "").strip()
                   if not private_key or not public_key_path.is_file():
                       raise SystemExit("Native runtime publishing requires the LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY secret and keys/native-runtime-ed25519-public.pem pinned public key.")
-                  # Sign the exact bytes that will be stored as plugin.json in the ZIP.
-                  # Verifying raw bytes on Android avoids cross-runtime JSON serializer differences.
-                  manifest_bytes = (json.dumps(generated, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
                   with tempfile.TemporaryDirectory(prefix="link-runtime-sign-") as temp_dir:
                       key_file = Path(temp_dir) / "private.pem"
                       derived_public = Path(temp_dir) / "derived-public.pem"
