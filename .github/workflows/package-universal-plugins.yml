@@ -62,7 +62,7 @@ jobs:
           revision_re = re.compile(r"^[0-9a-f]{40}$")
           hf_hosts = {
               "huggingface.co", "cdn-lfs.huggingface.co", "cas-bridge.xethub.hf.co",
-              "transfer.xethub.hf.co", "hf.co",
+              "transfer.xethub.hf.co", "hf.co", "us.aws.cdn.hf.co",
           }
           github_hosts = {"github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com"}
           max_total = 16 * 1024**3
