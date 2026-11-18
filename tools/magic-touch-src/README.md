@@ -9,7 +9,8 @@ The entry point contract is:
 - class: `eu.siacs.link.plugins.magic_touch.MagicTouchPlugin`
 - factory: `public static MagicTouchPlugin create(Context, File)`
 - `setImage(Bitmap)`
-- `segment(float[] x, float[] y, int[] mode)`, where mode 0 is positive and 1 is negative
+- `segment(float[] x, float[] y, int[] mode)`, where 0 is a stroke separator, 1 is KEEP/POSITIVE,
+  and 2 is REMOVE/NEGATIVE
 - `getMaskWidth()`, `getMaskHeight()`, and `close()`
 
 Only the compiled DEX output, required ABI-scoped native libraries, and the model are packaged.
