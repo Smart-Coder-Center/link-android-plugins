@@ -4,7 +4,7 @@
   "description": "Select and cut out objects in photos with positive and negative touch strokes.",
   "kind": "image",
   "language": "und",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "package_type": "native_runtime",
   "min_link_version": "2.21.0",
   "runtime": {
@@ -21,7 +21,7 @@
     "url": "https://www.apache.org/licenses/LICENSE-2.0",
     "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
   },
-  "release_notes": "Signed runtime package using exact-byte manifest verification. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries."
+  "release_notes": "Fixes explicit Keep/Remove brush mapping and improves touch stroke sampling and smoothing. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries."
   ,
   "source": {
     "type": "mediapipe_magic_touch",
