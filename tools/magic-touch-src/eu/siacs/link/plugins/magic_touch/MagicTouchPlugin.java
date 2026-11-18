@@ -60,8 +60,9 @@ public final class MagicTouchPlugin implements AutoCloseable {
     }
 
     /**
-     * x/y are normalized image coordinates in [0,1]. mode 0 adds foreground;
-     * mode 1 removes foreground. Consecutive points with the same mode form one stroke.
+     * x/y are normalized image coordinates in [0,1]. Mode 1 is KEEP/POSITIVE
+     * (include foreground); mode 2 is REMOVE/NEGATIVE (exclude foreground).
+     * Consecutive points with the same mode form one stroke.
      */
     public synchronized float[] segment(float[] x, float[] y, int[] mode) {
         if (currentImage == null) throw new IllegalStateException("Set an image before segmentation");
@@ -74,7 +75,9 @@ public final class MagicTouchPlugin implements AutoCloseable {
         int start = 0;
         while (start < x.length) {
             int brush = mode[start];
-            if (brush != 0 && brush != 1) throw new IllegalArgumentException("Unknown brush mode");
+            if (brush != 1 && brush != 2) {
+                throw new IllegalArgumentException("Brush mode must be 1 (KEEP) or 2 (REMOVE)");
+            }
             List<NormalizedKeypoint> points = new ArrayList<>();
             int end = start;
             while (end < x.length && mode[end] == brush) {
@@ -85,8 +88,19 @@ public final class MagicTouchPlugin implements AutoCloseable {
                 points.add(NormalizedKeypoint.create(x[end], y[end]));
                 end++;
             }
-            Stroke.BrushMode brushMode = brush == 0
-                    ? Stroke.BrushMode.POSITIVE : Stroke.BrushMode.NEGATIVE;
+            // Keep the bridge contract explicit; never treat an unknown/default
+            // value as REMOVE, which made bad mode data ambiguous.
+            Stroke.BrushMode brushMode;
+            switch (brush) {
+                case 1:
+                    brushMode = Stroke.BrushMode.POSITIVE;
+                    break;
+                case 2:
+                    brushMode = Stroke.BrushMode.NEGATIVE;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown brush mode");
+            }
             strokes.add(Stroke.builder()
                     .setBrushMode(brushMode)
                     .setPoints(points)
