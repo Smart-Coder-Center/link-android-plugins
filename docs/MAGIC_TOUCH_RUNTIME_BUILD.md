@@ -47,7 +47,13 @@ The audit workflow does not publish a release or update the public catalog.
 The entry class is `eu.siacs.link.plugins.magic_touch.MagicTouchPlugin`. Its static factory accepts
 `create(Context, File)`. The returned object exposes `setImage(Bitmap)`,
 `segment(float[] x, float[] y, int[] mode)`, `getMaskWidth()`, `getMaskHeight()`, and `close()`.
-Brush mode 0 means positive/foreground and 1 means negative/background.
+The bridge mode contract is explicit: 0 is a stroke separator, 1 is KEEP/POSITIVE foreground inclusion,
+and 2 is REMOVE/NEGATIVE background exclusion. Separate strokes remain separate even when consecutive
+strokes use the same brush.
+
+The Link editor collects historical touch samples and smooths/resamples the drawn path before passing
+the strokes to MediaPipe. This affects only stroke geometry; the original image and model confidence mask
+are not blurred or altered by the stroke-smoothing step.
 
 The package targets Android API 24+ for MediaPipe; Link's existing Ed25519 runtime verifier currently
 requires Android API 28+. This does not change Link's minSdk. The feature must remain unavailable on
