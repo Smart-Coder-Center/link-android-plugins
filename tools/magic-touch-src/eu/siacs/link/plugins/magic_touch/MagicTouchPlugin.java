@@ -74,6 +74,12 @@ public final class MagicTouchPlugin implements AutoCloseable {
         List<Stroke> strokes = new ArrayList<>();
         int start = 0;
         while (start < x.length) {
+            // Mode zero is a stroke-boundary marker emitted by the Android UI;
+            // it prevents two separate strokes with the same brush from joining.
+            if (mode[start] == 0) {
+                start++;
+                continue;
+            }
             int brush = mode[start];
             if (brush != 1 && brush != 2) {
                 throw new IllegalArgumentException("Brush mode must be 1 (KEEP) or 2 (REMOVE)");
