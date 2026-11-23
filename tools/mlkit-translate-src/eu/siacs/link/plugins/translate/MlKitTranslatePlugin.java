@@ -14,6 +14,7 @@ import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         if (context == null || packageDirectory == null || !packageDirectory.isDirectory()) {
             throw new IllegalArgumentException("Context and installed plugin directory are required");
         }
+        patchResourceIds(context.getApplicationContext());
         return new MlKitTranslatePlugin(context);
     }
 
@@ -71,6 +73,33 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                     identifier.close();
                     fail(callback, error);
                 });
+    }
+
+    /**
+     * The ML Kit AAR resource table is merged into the Link host APK, while its code stays
+     * in this plugin DEX. Patch the generated library R fields to the host resource IDs
+     * before any ML Kit client is initialized.
+     */
+    private static void patchResourceIds(Context context) {
+        patchResourceId(context, "raw", "translate_models_metadata");
+        patchResourceId(context, "xml", "rapid_response_client_defaults");
+    }
+
+    private static void patchResourceId(Context context, String type, String name) {
+        int resourceId = context.getResources().getIdentifier(name, type, context.getPackageName());
+        if (resourceId == 0) {
+            throw new IllegalStateException("Required ML Kit resource is missing: " + type + "/" + name);
+        }
+        try {
+            Class<?> resourceClass = Class.forName(
+                    "com.google.mlkit.nl.translate.R$" + type,
+                    true, MlKitTranslatePlugin.class.getClassLoader());
+            Field field = resourceClass.getDeclaredField(name);
+            field.setAccessible(true);
+            field.setInt(null, resourceId);
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Could not bind ML Kit host resource: " + type + "/" + name, error);
+        }
     }
 
     /** Ensures one language model is present; English is built in and needs no download. */
