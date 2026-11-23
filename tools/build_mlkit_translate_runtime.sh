@@ -18,6 +18,7 @@ command -v gradle >/dev/null
 command -v javac >/dev/null
 command -v python3 >/dev/null
 
+rm -rf "$SOURCE_DIR/lib/arm64-v8a"
 mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
