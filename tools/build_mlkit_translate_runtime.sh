@@ -19,7 +19,7 @@ command -v javac >/dev/null
 command -v python3 >/dev/null
 
 rm -rf "$SOURCE_DIR/lib/arm64-v8a"
-mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
+mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/runtime-jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
@@ -27,12 +27,12 @@ rm -f "$SOURCE_DIR/.link-runtime-generated.json"
 gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMlKitTranslateRuntimeArtifacts -PmlKitOutputDir="$WORK_DIR/artifacts"
 
-python3 - "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$SOURCE_DIR/provenance/mlkit-aar-audit.json" <<'PY'
+python3 - "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$SOURCE_DIR/provenance/mlkit-aar-audit.json" "$WORK_DIR/runtime-jars" <<'PY'
 import json, sys, zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-artifacts, unpacked, jars, report_path = map(Path, sys.argv[1:])
+artifacts, unpacked, jars, report_path, runtime_jars = map(Path, sys.argv[1:])
 files = sorted(p for p in artifacts.iterdir() if p.is_file())
 if not files:
     raise SystemExit("No ML Kit runtime artifacts were resolved")
@@ -54,6 +54,8 @@ for artifact in files:
         if classes.is_file() and classes.stat().st_size:
             destination = jars / (artifact.stem + "-classes.jar")
             destination.write_bytes(classes.read_bytes())
+            if artifact.name.startswith(("com_google_mlkit__translate__", "com_google_mlkit__language-id__")):
+                (runtime_jars / destination.name).write_bytes(classes.read_bytes())
         libs = target / "libs"
         if libs.is_dir():
             for jar in sorted(libs.glob("*.jar")):
@@ -104,6 +106,8 @@ for artifact in files:
                 raise SystemExit(f"Cannot inspect AAR manifest {artifact.name}: {error}")
     elif artifact.suffix.lower() == ".jar":
         (jars / artifact.name).write_bytes(artifact.read_bytes())
+        if artifact.name.startswith(("com_squareup_okhttp3__", "com_squareup_okio__", "org_jetbrains_kotlinx__kotlinx-coroutines-")):
+            (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
         raise SystemExit(f"Unsupported ML Kit dependency artifact: {artifact.name}")
     report["artifacts"].append(record)
@@ -117,7 +121,8 @@ if not (report_path.parent / "translate_models_metadata.json").is_file():
 PY
 
 mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | sort)
-(("${#JARS[@]}" > 0)) || { echo "No ML Kit classes JARs were extracted" >&2; exit 3; }
+mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name '*.jar' | sort)
+(("${#JARS[@]}" > 0 && "${#RUNTIME_JARS[@]}" > 0)) || { echo "ML Kit compile or runtime JAR inputs are missing" >&2; exit 3; }
 CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
 javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
@@ -125,7 +130,7 @@ javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
 jar --create --file "$WORK_DIR/mlkit-translate-adapter.jar" -C "$WORK_DIR/classes" .
 
 "$D8" --min-api 23 --lib "$ANDROID_JAR" --output "$WORK_DIR/dex" \
-  "$WORK_DIR/mlkit-translate-adapter.jar" "${JARS[@]}"
+  "$WORK_DIR/mlkit-translate-adapter.jar" "${RUNTIME_JARS[@]}"
 
 mapfile -t DEX_FILES < <(find "$WORK_DIR/dex" -maxdepth 1 -type f -name 'classes*.dex' | sort -V)
 (("${#DEX_FILES[@]}" > 0)) || { echo "D8 did not produce ML Kit DEX output" >&2; exit 4; }
