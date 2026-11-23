@@ -62,7 +62,6 @@ jobs:
             https://docs.cloud.google.com/static/translate/images/text-attribution.png \
             --output attribution/text-attribution.png
           file attribution/text-attribution.png
-          identify attribution/text-attribution.png
 
       - name: Upload official attribution artwork
         uses: actions/upload-artifact@v4
