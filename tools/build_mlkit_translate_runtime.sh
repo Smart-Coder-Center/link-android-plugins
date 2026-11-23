@@ -39,7 +39,7 @@ if not files:
 if sum(p.stat().st_size for p in files) > 1024**3:
     raise SystemExit("Resolved ML Kit runtime artifacts exceed the 1 GiB safety limit")
 
-report = {"artifacts": [], "aar_resources": [], "aar_components": [], "native_libraries": []}
+report = {"artifacts": [], "aar_resources": [], "aar_components": [], "aar_manifests": [], "native_libraries": []}
 for artifact in files:
     record = {"file": artifact.name, "size_bytes": artifact.stat().st_size}
     if artifact.suffix.lower() == ".aar":
@@ -78,18 +78,27 @@ for artifact in files:
                 })
         manifest = target / "AndroidManifest.xml"
         if manifest.is_file() and manifest.stat().st_size:
+            manifest_text = manifest.read_text(encoding="utf-8")
+            report["aar_manifests"].append({"aar": artifact.name, "xml": manifest_text})
             try:
                 root = ElementTree.parse(manifest).getroot()
                 for child in list(root):
                     tag = child.tag.split("}")[-1]
                     if tag in {"uses-permission", "permission", "uses-feature"}:
-                        report["aar_components"].append({"aar": artifact.name, "element": tag})
+                        report["aar_components"].append({"aar": artifact.name, "element": tag, "attributes": child.attrib})
                     if tag == "application":
                         for component in list(child):
                             report["aar_components"].append({
                                 "aar": artifact.name,
                                 "element": component.tag.split("}")[-1],
-                                "name": component.attrib.get("{http://schemas.android.com/apk/res/android}name", "")
+                                "name": component.attrib.get("{http://schemas.android.com/apk/res/android}name", ""),
+                                "attributes": component.attrib,
+                                "metadata": [
+                                    {"name": meta.attrib.get("{http://schemas.android.com/apk/res/android}name", ""),
+                                     "value": meta.attrib.get("{http://schemas.android.com/apk/res/android}value", ""),
+                                     "resource": meta.attrib.get("{http://schemas.android.com/apk/res/android}resource", "")}
+                                    for meta in list(component) if meta.tag.split("}")[-1] == "meta-data"
+                                ]
                             })
             except ElementTree.ParseError as error:
                 raise SystemExit(f"Cannot inspect AAR manifest {artifact.name}: {error}")
