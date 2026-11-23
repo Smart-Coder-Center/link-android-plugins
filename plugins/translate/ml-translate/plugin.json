@@ -1,0 +1,25 @@
+{
+  "id": "ml-translate",
+  "name": "Translate AI",
+  "description": "Offline text translation with automatic language identification and on-demand language models.",
+  "kind": "translation",
+  "language": "und",
+  "version": "1.0.0",
+  "package_type": "dex_runtime",
+  "min_link_version": "2.21.0",
+  "runtime": {
+    "code_files": [],
+    "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
+    "code_api_version": 1
+  },
+  "license": {
+    "name": "Apache-2.0",
+    "attribution": "Google ML Kit Translation and Language Identification APIs"
+  },
+  "release_notes": "Initial ML Kit translation runtime. Translation models are downloaded on demand and are not bundled in the plugin.",
+  "source": {
+    "type": "mlkit_translate_runtime",
+    "translate_version": "17.0.2",
+    "language_id_version": "17.0.5"
+  }
+}
