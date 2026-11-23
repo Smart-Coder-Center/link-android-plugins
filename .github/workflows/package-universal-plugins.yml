@@ -156,7 +156,7 @@ jobs:
                       raise SystemExit("ML Kit Translate builder did not produce runtime metadata")
                   generated_runtime = json.loads(generated_path.read_text(encoding="utf-8"))
                   metadata.setdefault("runtime", {}).update(generated_runtime)
-                  manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                  manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                   generated_path.unlink()
                   print(f"Built ML Kit Translate DEX runtime for {manifest_path}")
               elif source_type == "github_release_zip":
