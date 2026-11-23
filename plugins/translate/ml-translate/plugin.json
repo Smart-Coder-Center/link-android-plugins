@@ -5,7 +5,7 @@
   "kind": "translation",
   "language": "und",
   "version": "1.0.0",
-  "package_type": "dex_runtime",
+  "package_type": "native_runtime",
   "min_link_version": "2.21.0",
   "runtime": {
     "code_files": [],
