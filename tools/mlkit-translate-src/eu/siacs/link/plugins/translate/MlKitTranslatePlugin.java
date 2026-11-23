@@ -32,6 +32,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     private static final String ENGLISH = "en";
     private final Context context;
     private final ConcurrentHashMap<String, Task<Void>> pendingDownloads = new ConcurrentHashMap<>();
+    private final java.util.Set<String> downloadedModels = ConcurrentHashMap.newKeySet();
 
     private MlKitTranslatePlugin(Context context) {
         this.context = context.getApplicationContext();
@@ -109,7 +110,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             fail(callback, "کد زبان برای دانلود مدل معتبر نیست");
             return;
         }
-        if (ENGLISH.equals(language)) {
+        if (ENGLISH.equals(language) || downloadedModels.contains(language)) {
             success(callback, language);
             return;
         }
@@ -129,6 +130,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         final Task<Void> sharedTask = task;
         sharedTask.addOnCompleteListener(result -> {
             if (result.isSuccessful()) {
+                downloadedModels.add(language);
                 success(callback, language);
             } else {
                 Throwable error = result.getException();
@@ -219,5 +221,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     @Override
     public void close() {
         pendingDownloads.clear();
+        downloadedModels.clear();
     }
 }
