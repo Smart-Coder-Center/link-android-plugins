@@ -27,3 +27,30 @@ tasks.register('copyMediaPipeRuntimeArtifacts') {
         }
     }
 }
+
+
+configurations {
+    mlKitTranslateRuntime
+}
+
+dependencies {
+    mlKitTranslateRuntime 'com.google.mlkit:translate:17.0.2'
+    mlKitTranslateRuntime 'com.google.mlkit:language-id:17.0.5'
+}
+
+tasks.register('copyMlKitTranslateRuntimeArtifacts') {
+    doLast {
+        def destination = file(project.findProperty('mlKitOutputDir') ?: 'build/mlkit-translate-artifacts')
+        destination.mkdirs()
+        configurations.mlKitTranslateRuntime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def extension = artifact.extension ?: artifact.type ?: 'jar'
+            def safeName = "${artifact.moduleVersion.id.group.replace('.', '_')}__${artifact.name}__${artifact.moduleVersion.id.version}.${extension}"
+            copy {
+                from artifact.file
+                into destination
+                rename { safeName }
+            }
+            println("MLKIT_TRANSLATE_ARTIFACT ${artifact.moduleVersion.id} ${extension} ${artifact.file.length()}")
+        }
+    }
+}
