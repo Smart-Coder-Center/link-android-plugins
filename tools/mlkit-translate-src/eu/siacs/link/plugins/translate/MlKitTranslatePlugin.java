@@ -15,6 +15,9 @@ import com.google.mlkit.nl.translate.TranslatorOptions;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +46,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             throw new IllegalArgumentException("Context and installed plugin directory are required");
         }
         patchResourceIds(context.getApplicationContext());
+        initializeMlKitComponents(context.getApplicationContext());
         return new MlKitTranslatePlugin(context);
     }
 
@@ -81,6 +85,57 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
      * in this plugin DEX. Patch the generated library R fields to the host resource IDs
      * before any ML Kit client is initialized.
      */
+    /**
+     * ML Kit's normal manifest discovery runs through the host PathClassLoader, which cannot
+     * see Link's isolated plugin DEX. Remove its automatic initializer from the Pro manifest
+     * and register the public component registrars explicitly with the host MlKitContext.
+     */
+    private static void initializeMlKitComponents(Context context) {
+        try {
+            ClassLoader hostLoader = context.getClassLoader();
+            ClassLoader pluginLoader = MlKitTranslatePlugin.class.getClassLoader();
+            Class<?> mlKitContext = Class.forName(
+                    "com.google.mlkit.common.sdkinternal.MlKitContext", true, hostLoader);
+            try {
+                mlKitContext.getMethod("getInstance").invoke(null);
+                return;
+            } catch (InvocationTargetException notInitialized) {
+                if (!(notInitialized.getCause() instanceof IllegalStateException)) throw notInitialized;
+            }
+
+            Class<?> registrarInterface = Class.forName(
+                    "com.google.firebase.components.ComponentRegistrar", true, hostLoader);
+            List<Object> registrars = new ArrayList<>();
+            registrars.add(createRegistrar(hostLoader,
+                    "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
+            registrars.add(createRegistrar(hostLoader,
+                    "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface));
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar", registrarInterface));
+
+            Method initialize = mlKitContext.getMethod("initialize", Context.class, List.class);
+            initialize.invoke(null, context, registrars);
+        } catch (Exception error) {
+            Throwable cause = error instanceof InvocationTargetException
+                    && ((InvocationTargetException) error).getCause() != null
+                    ? ((InvocationTargetException) error).getCause() : error;
+            throw new IllegalStateException("ML Kit components could not be initialized from the Translate plugin",
+                    cause);
+        }
+    }
+
+    private static Object createRegistrar(ClassLoader loader, String className,
+            Class<?> registrarInterface) throws Exception {
+        Class<?> registrarClass = Class.forName(className, true, loader);
+        Object registrar = registrarClass.getDeclaredConstructor().newInstance();
+        if (!registrarInterface.isInstance(registrar)) {
+            throw new SecurityException("ML Kit registrar was not linked to the host component API: " + className);
+        }
+        return registrar;
+    }
+
     private static void patchResourceIds(Context context) {
         patchResourceId(context, "raw", "translate_models_metadata");
         patchResourceId(context, "xml", "rapid_response_client_defaults");
