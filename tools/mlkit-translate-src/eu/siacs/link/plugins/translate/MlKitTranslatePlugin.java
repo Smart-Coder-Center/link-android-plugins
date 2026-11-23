@@ -1,0 +1,191 @@
+package eu.siacs.link.plugins.translate;
+
+import android.content.Context;
+
+import com.google.android.gms.tasks.Task;
+import com.google.mlkit.common.model.DownloadConditions;
+import com.google.mlkit.common.model.RemoteModelManager;
+import com.google.mlkit.nl.languageid.LanguageIdentification;
+import com.google.mlkit.nl.languageid.LanguageIdentifier;
+import com.google.mlkit.nl.translate.TranslateLanguage;
+import com.google.mlkit.nl.translate.TranslateRemoteModel;
+import com.google.mlkit.nl.translate.Translation;
+import com.google.mlkit.nl.translate.Translator;
+import com.google.mlkit.nl.translate.TranslatorOptions;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
+ * Language models are downloaded by ML Kit on demand and are not included in this ZIP.
+ */
+public final class MlKitTranslatePlugin implements AutoCloseable {
+    public interface Callback {
+        void onSuccess(String value);
+        void onFailure(String message);
+    }
+
+    private static final String ENGLISH = "en";
+    private final Context context;
+    private final ConcurrentHashMap<String, Task<Void>> pendingDownloads = new ConcurrentHashMap<>();
+
+    private MlKitTranslatePlugin(Context context) {
+        this.context = context.getApplicationContext();
+    }
+
+    public static MlKitTranslatePlugin create(Context context, File packageDirectory) {
+        if (context == null || packageDirectory == null || !packageDirectory.isDirectory()) {
+            throw new IllegalArgumentException("Context and installed plugin directory are required");
+        }
+        return new MlKitTranslatePlugin(context);
+    }
+
+    public Set<String> getSupportedLanguages() {
+        return Collections.unmodifiableSet(TranslateLanguage.getAllLanguages());
+    }
+
+    public void identifyLanguage(String text, Callback callback) {
+        if (text == null || text.trim().isEmpty()) {
+            fail(callback, "متنی برای تشخیص زبان وارد نشده است");
+            return;
+        }
+        LanguageIdentifier identifier = LanguageIdentification.getClient();
+        identifier.identifyLanguage(text)
+                .addOnSuccessListener(language -> {
+                    identifier.close();
+                    if (language == null || "und".equals(language)) {
+                        fail(callback, "زبان متن قابل تشخیص نیست؛ زبان را دستی انتخاب کنید");
+                    } else if (!TranslateLanguage.getAllLanguages().contains(language)) {
+                        fail(callback, "این زبان برای ترجمه پشتیبانی نمی‌شود: " + language);
+                    } else {
+                        success(callback, language);
+                    }
+                })
+                .addOnFailureListener(error -> {
+                    identifier.close();
+                    fail(callback, error);
+                });
+    }
+
+    /** Ensures one language model is present; English is built in and needs no download. */
+    public void ensureModel(String language, Callback callback) {
+        if (language == null || language.trim().isEmpty()
+                || !TranslateLanguage.getAllLanguages().contains(language)) {
+            fail(callback, "کد زبان برای دانلود مدل معتبر نیست");
+            return;
+        }
+        if (ENGLISH.equals(language)) {
+            success(callback, language);
+            return;
+        }
+
+        Task<Void> task = pendingDownloads.get(language);
+        if (task == null) {
+            synchronized (pendingDownloads) {
+                task = pendingDownloads.get(language);
+                if (task == null) {
+                    TranslateRemoteModel model = new TranslateRemoteModel.Builder(language).build();
+                    task = RemoteModelManager.getInstance().download(
+                            model, new DownloadConditions.Builder().build());
+                    pendingDownloads.put(language, task);
+                }
+            }
+        }
+        final Task<Void> sharedTask = task;
+        sharedTask.addOnCompleteListener(result -> {
+            if (result.isSuccessful()) {
+                success(callback, language);
+            } else {
+                Throwable error = result.getException();
+                fail(callback, error == null
+                        ? new IllegalStateException("Language model download failed") : error);
+            }
+            if (sharedTask.isComplete()) pendingDownloads.remove(language, sharedTask);
+        });
+    }
+
+    /**
+     * sourceLanguage may be "und" to request automatic detection. Translation models are
+     * prepared before translating; the English model is handled internally by ML Kit.
+     */
+    public void translate(String sourceLanguage, String targetLanguage, String text, Callback callback) {
+        if (text == null || text.trim().isEmpty()) {
+            fail(callback, "متنی برای ترجمه وارد نشده است");
+            return;
+        }
+        if (targetLanguage == null || !TranslateLanguage.getAllLanguages().contains(targetLanguage)) {
+            fail(callback, "زبان مقصد پشتیبانی نمی‌شود");
+            return;
+        }
+        if (sourceLanguage == null || sourceLanguage.trim().isEmpty() || "und".equals(sourceLanguage)) {
+            identifyLanguage(text, new Callback() {
+                @Override public void onSuccess(String detected) {
+                    translateKnownLanguage(detected, targetLanguage, text, callback);
+                }
+                @Override public void onFailure(String message) { fail(callback, message); }
+            });
+            return;
+        }
+        if (!TranslateLanguage.getAllLanguages().contains(sourceLanguage)) {
+            fail(callback, "زبان مبدأ پشتیبانی نمی‌شود");
+            return;
+        }
+        translateKnownLanguage(sourceLanguage, targetLanguage, text, callback);
+    }
+
+    private void translateKnownLanguage(String source, String target, String text, Callback callback) {
+        if (source.equals(target)) {
+            success(callback, text);
+            return;
+        }
+        ensureModel(source, new Callback() {
+            @Override public void onSuccess(String ignored) {
+                ensureModel(target, new Callback() {
+                    @Override public void onSuccess(String ignoredTarget) {
+                        TranslatorOptions options = new TranslatorOptions.Builder()
+                                .setSourceLanguage(source)
+                                .setTargetLanguage(target)
+                                .build();
+                        Translator translator = Translation.getClient(options);
+                        translator.downloadModelIfNeeded()
+                                .continueWithTask(ready -> {
+                                    if (!ready.isSuccessful()) {
+                                        Exception error = ready.getException();
+                                        throw error == null ? new IllegalStateException("Translation model is unavailable") : error;
+                                    }
+                                    return translator.translate(text);
+                                })
+                                .addOnCompleteListener(result -> {
+                                    translator.close();
+                                    if (result.isSuccessful()) success(callback, result.getResult());
+                                    else fail(callback, result.getException());
+                                });
+                    }
+                    @Override public void onFailure(String message) { fail(callback, message); }
+                });
+            }
+            @Override public void onFailure(String message) { fail(callback, message); }
+        });
+    }
+
+    private static void success(Callback callback, String value) {
+        if (callback != null) callback.onSuccess(value == null ? "" : value);
+    }
+
+    private static void fail(Callback callback, Throwable error) {
+        fail(callback, error == null ? "Unknown ML Kit error" : error.getMessage());
+    }
+
+    private static void fail(Callback callback, String message) {
+        if (callback != null) callback.onFailure(
+                message == null || message.trim().isEmpty() ? "ML Kit operation failed" : message);
+    }
+
+    @Override
+    public void close() {
+        pendingDownloads.clear();
+    }
+}
