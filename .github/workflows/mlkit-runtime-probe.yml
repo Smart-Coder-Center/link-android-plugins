@@ -50,6 +50,9 @@ jobs:
           chmod +x tools/build_mlkit_translate_runtime.sh
           tools/build_mlkit_translate_runtime.sh plugins/translate/ml-translate
 
+      - name: Validate signed runtime package contract
+        run: python3 tools/validate_mlkit_translate_runtime.py plugins/translate/ml-translate
+
       - name: Report runtime payload size
         if: always()
         run: |
