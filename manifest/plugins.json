@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 14,
+  "catalog_version": 15,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
