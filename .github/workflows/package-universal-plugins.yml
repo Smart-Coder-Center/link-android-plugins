@@ -145,6 +145,20 @@ jobs:
                   manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                   generated_path.unlink()
                   print(f"Built complete MediaPipe MagicTouch runtime for {manifest_path}")
+              elif source_type == "mlkit_translate_runtime":
+                  translate_version = source.get("translate_version")
+                  language_id_version = source.get("language_id_version")
+                  if translate_version != "17.0.2" or language_id_version != "17.0.5":
+                      raise SystemExit(f"ML Kit Translate source versions are not the reviewed pins: {manifest_path}")
+                  subprocess.run(["bash", "tools/build_mlkit_translate_runtime.sh", str(base)], check=True)
+                  generated_path = base / ".link-runtime-generated.json"
+                  if not generated_path.is_file():
+                      raise SystemExit("ML Kit Translate builder did not produce runtime metadata")
+                  generated_runtime = json.loads(generated_path.read_text(encoding="utf-8"))
+                  metadata.setdefault("runtime", {}).update(generated_runtime)
+                  manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                  generated_path.unlink()
+                  print(f"Built ML Kit Translate DEX runtime for {manifest_path}")
               elif source_type == "github_release_zip":
                   url = source.get("url", "")
                   expected_size = source.get("size_bytes")
