@@ -125,8 +125,34 @@ mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -n
 (("${#JARS[@]}" > 0 && "${#RUNTIME_JARS[@]}" > 0)) || { echo "ML Kit compile or runtime JAR inputs are missing" >&2; exit 3; }
 CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
-javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
-  -d "$WORK_DIR/classes" "$ADAPTER"
+R_SOURCE="$WORK_DIR/r-src/com/google/mlkit/nl/translate/R.java"
+TRANSLATE_CLASSES="$(find "$WORK_DIR/jars" -maxdepth 1 -type f -name 'com_google_mlkit__translate__*-classes.jar' | head -n 1)"
+if [[ -z "$TRANSLATE_CLASSES" ]]; then
+  echo "The pinned Translate AAR classes.jar was not extracted" >&2
+  exit 5
+fi
+if ! jar tf "$TRANSLATE_CLASSES" | grep -q 'com/google/mlkit/nl/translate/R\$raw.class'; then
+  mkdir -p "$(dirname "$R_SOURCE")"
+  cat > "$R_SOURCE" <<'JAVA'
+package com.google.mlkit.nl.translate;
+
+/** Runtime-bound resource IDs for the two Translate AAR resources merged into Link. */
+public final class R {
+    public static final class raw {
+        public static int translate_models_metadata;
+    }
+    public static final class xml {
+        public static int rapid_response_client_defaults;
+    }
+}
+JAVA
+  javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
+    -d "$WORK_DIR/classes" "$R_SOURCE" "$ADAPTER"
+else
+  javap -classpath "$TRANSLATE_CLASSES" 'com.google.mlkit.nl.translate.R$raw' 'com.google.mlkit.nl.translate.R$xml'
+  javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
+    -d "$WORK_DIR/classes" "$ADAPTER"
+fi
 jar --create --file "$WORK_DIR/mlkit-translate-adapter.jar" -C "$WORK_DIR/classes" .
 
 "$D8" --min-api 23 --lib "$ANDROID_JAR" --output "$WORK_DIR/dex" \
