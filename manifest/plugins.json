@@ -59,7 +59,7 @@
       }
     },
     {
-      "description": "Offline text translation with automatic language identification and on-demand language models.",
+      "description": "Translate text on this device with automatic language detection and on-demand offline language models. Requires Link speech-to-text and Persian text-to-speech plugins for voice input and read-aloud.",
       "id": "ml-translate",
       "kind": "translation",
       "language": "und",
@@ -68,7 +68,7 @@
         "name": "Apache-2.0"
       },
       "min_link_version": "2.21.0",
-      "name": "Translate AI",
+      "name": "Offline Smart Translate",
       "package_type": "native_runtime",
       "release_notes": "Initial ML Kit translation runtime. Translation models are downloaded on demand and are not bundled in the plugin.",
       "runtime": {
@@ -90,7 +90,19 @@
         "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.0/ml-translate-1.0.0.zip",
         "size_bytes": 7227377,
         "sha256": "0243f37bce7db400d283d2da0058c9ff76ecc3a3f3c362d3d743e84ec1cda379"
-      }
+      },
+      "dependencies": [
+        {
+          "id": "asr.koochik-rnnt.fa",
+          "version": "1.0.0-test.2",
+          "package_type": "data"
+        },
+        {
+          "id": "tts.mana.piper.fa",
+          "version": "1.0.1",
+          "package_type": "data"
+        }
+      ]
     },
     {
       "id": "tts.mana.piper.fa",
