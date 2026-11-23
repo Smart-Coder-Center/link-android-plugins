@@ -1,17 +1,21 @@
 {
   "id": "magic-touch",
   "name": "Magic Touch Photo",
-  "description": "Select and cut out objects in photos with positive and negative touch strokes.",
+  "description": "Draw a green Keep+ lasso to preserve its selected area, or a red Keep- lasso to remove its selected area.",
   "kind": "image",
   "language": "und",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "package_type": "native_runtime",
   "min_link_version": "2.21.0",
   "runtime": {
     "engine_id": "mediapipe-interactive-segmenter",
     "engine_version": "1.1.1",
-    "abis": ["arm64-v8a"],
-    "load_order": ["lib/arm64-v8a/libmediapipe_tasks_vision_jni.so"],
+    "abis": [
+      "arm64-v8a"
+    ],
+    "load_order": [
+      "lib/arm64-v8a/libmediapipe_tasks_vision_jni.so"
+    ],
     "code_files": [],
     "entry_class": "eu.siacs.link.plugins.magic_touch.MagicTouchPlugin",
     "code_api_version": 1
@@ -21,8 +25,7 @@
     "url": "https://www.apache.org/licenses/LICENSE-2.0",
     "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
   },
-  "release_notes": "Fixes explicit Keep/Remove brush mapping and improves touch stroke sampling and smoothing. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries."
-  ,
+  "release_notes": "Adds true lasso-based Keep+ and Keep- selection. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest. Retains compatibility with legacy positive/negative brush clients.",
   "source": {
     "type": "mediapipe_magic_touch",
     "tasks_version": "1.1.1",
