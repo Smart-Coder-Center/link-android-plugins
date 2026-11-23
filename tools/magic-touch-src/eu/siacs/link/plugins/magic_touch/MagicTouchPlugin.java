@@ -64,6 +64,11 @@ public final class MagicTouchPlugin implements AutoCloseable {
      * (include foreground); mode 2 is REMOVE/NEGATIVE (exclude foreground).
      * Consecutive points with the same mode form one stroke.
      */
+    /**
+     * Modes 1/2 remain supported for older clients as positive/negative brush strokes.
+     * Modes 3/4 are the Link editor's Keep+/Keep- lasso selections. Keep+ keeps
+     * the lasso-selected area; Keep- subtracts its lasso-selected area.
+     */
     public synchronized float[] segment(float[] x, float[] y, int[] mode) {
         if (currentImage == null) throw new IllegalStateException("Set an image before segmentation");
         if (x == null || y == null || mode == null || x.length == 0
@@ -71,18 +76,18 @@ public final class MagicTouchPlugin implements AutoCloseable {
             throw new IllegalArgumentException("Stroke coordinate arrays must have equal non-zero lengths");
         }
 
-        List<Stroke> strokes = new ArrayList<>();
+        List<Stroke> legacyStrokes = new ArrayList<>();
+        List<Stroke> keepLassos = new ArrayList<>();
+        List<Stroke> removeLassos = new ArrayList<>();
         int start = 0;
         while (start < x.length) {
-            // Mode zero is a stroke-boundary marker emitted by the Android UI;
-            // it prevents two separate strokes with the same brush from joining.
             if (mode[start] == 0) {
                 start++;
                 continue;
             }
             int brush = mode[start];
-            if (brush != 1 && brush != 2) {
-                throw new IllegalArgumentException("Brush mode must be 1 (KEEP) or 2 (REMOVE)");
+            if (brush < 1 || brush > 4) {
+                throw new IllegalArgumentException("Brush mode must be 1..4");
             }
             List<NormalizedKeypoint> points = new ArrayList<>();
             int end = start;
@@ -94,37 +99,78 @@ public final class MagicTouchPlugin implements AutoCloseable {
                 points.add(NormalizedKeypoint.create(x[end], y[end]));
                 end++;
             }
-            // Keep the bridge contract explicit; never treat an unknown/default
-            // value as REMOVE, which made bad mode data ambiguous.
+
             Stroke.BrushMode brushMode;
             switch (brush) {
-                case 1:
-                    brushMode = Stroke.BrushMode.POSITIVE;
-                    break;
-                case 2:
-                    brushMode = Stroke.BrushMode.NEGATIVE;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown brush mode");
+                case 1: brushMode = Stroke.BrushMode.POSITIVE; break;
+                case 2: brushMode = Stroke.BrushMode.NEGATIVE; break;
+                case 3:
+                case 4: brushMode = Stroke.BrushMode.LASSO; break;
+                default: throw new IllegalArgumentException("Unknown brush mode");
             }
-            strokes.add(Stroke.builder()
+            Stroke stroke = Stroke.builder()
                     .setBrushMode(brushMode)
                     .setPoints(points)
                     .setCompleted(true)
-                    .build());
+                    .build();
+            if (brush == 1 || brush == 2) {
+                legacyStrokes.add(stroke);
+            } else if (brush == 3) {
+                keepLassos.add(stroke);
+            } else {
+                removeLassos.add(stroke);
+            }
             start = end;
         }
 
+        // Preserve the original positive/negative brush contract for older APKs.
+        if (!legacyStrokes.isEmpty()) {
+            if (!keepLassos.isEmpty() || !removeLassos.isEmpty()) {
+                throw new IllegalArgumentException("Do not mix legacy brush strokes and lasso selections");
+            }
+            return segmentMask(legacyStrokes);
+        }
+
+        // A Keep- only session starts from the complete image, then subtracts
+        // the selected red lasso area. Keep+ selections are unioned by MediaPipe.
+        float[] keepMask = keepLassos.isEmpty()
+                ? filledMask(1f) : segmentMask(keepLassos);
+        float[] removeMask = removeLassos.isEmpty()
+                ? filledMask(0f) : segmentMask(removeLassos);
+        float[] result = new float[maskWidth * maskHeight];
+        for (int i = 0; i < result.length; i++) {
+            float keep = clampConfidence(keepMask[i]);
+            float remove = clampConfidence(removeMask[i]);
+            result[i] = keep * (1f - remove);
+        }
+        return result;
+    }
+
+    private float[] segmentMask(List<Stroke> strokes) {
         MPImage mask = segmenter.segment(strokes);
         try {
             FloatBuffer buffer = ByteBufferExtractor.extract(mask).asFloatBuffer();
             buffer.rewind();
+            if (buffer.remaining() != maskWidth * maskHeight) {
+                throw new IllegalStateException("MediaPipe returned an unexpected confidence-mask size");
+            }
             float[] result = new float[buffer.remaining()];
             buffer.get(result);
             return result;
         } finally {
             mask.close();
         }
+    }
+
+    private float[] filledMask(float value) {
+        float[] result = new float[maskWidth * maskHeight];
+        for (int i = 0; i < result.length; i++) result[i] = value;
+        return result;
+    }
+
+    private float clampConfidence(float value) {
+        if (!Float.isFinite(value)) return 0f;
+        return Math.max(0f, Math.min(1f, value));
     }
 
     public int getMaskWidth() {
