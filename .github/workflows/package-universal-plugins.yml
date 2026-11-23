@@ -157,8 +157,9 @@ jobs:
                   generated_runtime = json.loads(generated_path.read_text(encoding="utf-8"))
                   metadata.setdefault("runtime", {}).update(generated_runtime)
                   manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                  subprocess.run(["python3", "tools/validate_mlkit_translate_runtime.py", str(base)], check=True)
                   generated_path.unlink()
-                  print(f"Built ML Kit Translate DEX runtime for {manifest_path}")
+                  print(f"Built ML Kit Translate native runtime for {manifest_path}")
               elif source_type == "github_release_zip":
                   url = source.get("url", "")
                   expected_size = source.get("size_bytes")
