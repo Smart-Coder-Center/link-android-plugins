@@ -326,7 +326,7 @@ jobs:
               for item in sorted(source_dir.rglob("*")):
                   if item.is_symlink():
                       raise SystemExit(f"Symlinks are not allowed in plugin payloads: {item}")
-                  if not item.is_file() or item == source_manifest or item.name == ".link-runtime-generated.json":
+                  if (not item.is_file() or item == source_manifest or item.name == ".link-runtime-generated.json" or "provenance" in item.relative_to(source_dir).parts):
                       continue
                   relative = item.relative_to(source_dir).as_posix()
                   suffix = item.suffix.lower()
