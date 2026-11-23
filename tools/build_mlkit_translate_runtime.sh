@@ -127,6 +127,8 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
 {
   for type in \
     com.google.mlkit.common.sdkinternal.MlKitContext \
+    com.google.mlkit.common.internal.CommonComponentRegistrar \
+    com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
     com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
