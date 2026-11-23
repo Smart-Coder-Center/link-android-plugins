@@ -124,6 +124,18 @@ mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | so
 mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name '*.jar' | sort)
 (("${#JARS[@]}" > 0 && "${#RUNTIME_JARS[@]}" > 0)) || { echo "ML Kit compile or runtime JAR inputs are missing" >&2; exit 3; }
 CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
+{
+  for type in \
+    com.google.mlkit.common.sdkinternal.MlKitContext \
+    com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
+    com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
+    com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
+    com.google.firebase.components.ComponentDiscoveryService \
+    com.google.firebase.components.ComponentRegistrar; do
+    echo "===== $type ====="
+    javap -classpath "$CLASSPATH:$ANDROID_JAR" -c -p "$type" 2>&1 || true
+  done
+} > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
 R_SOURCE="$WORK_DIR/r-src/com/google/mlkit/nl/translate/R.java"
 TRANSLATE_CLASSES="$(find "$WORK_DIR/jars" -maxdepth 1 -type f -name 'com_google_mlkit__translate__*-classes.jar' | head -n 1)"
