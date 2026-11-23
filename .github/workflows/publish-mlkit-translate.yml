@@ -175,3 +175,5 @@ jobs:
             git rebase --autostash origin/main
             git push origin HEAD:main
           fi
+
+# Keep the dependency-aware catalog publisher validated on every release change.
