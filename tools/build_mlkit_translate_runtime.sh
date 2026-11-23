@@ -54,7 +54,7 @@ for artifact in files:
         if classes.is_file() and classes.stat().st_size:
             destination = jars / (artifact.stem + "-classes.jar")
             destination.write_bytes(classes.read_bytes())
-            if artifact.name.startswith(("com_google_mlkit__translate__", "com_google_mlkit__language-id__")):
+            if artifact.name.startswith(("com_google_mlkit__translate__", "com_google_mlkit__language-id__", "com_google_mlkit__language-id-common__")):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
         libs = target / "libs"
         if libs.is_dir():
