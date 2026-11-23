@@ -85,7 +85,8 @@ with tempfile.TemporaryDirectory(prefix="link-mlkit-sign-") as temp:
     subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey", str(public_key),
                     "-rawin", "-in", str(manifest_path), "-sigfile", str(signature_path)],
                    check=True, capture_output=True)
-    signature_b64 = base64.b64encode(signature_path.read_bytes())
+    signature_raw = signature_path.read_bytes()
+    signature_b64 = base64.b64encode(signature_raw)
 
 with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
     def add_bytes(name, data):
@@ -117,7 +118,7 @@ with zipfile.ZipFile(output) as archive:
         raise SystemExit("Generated plugin ZIP contains missing or unexpected entries")
     if archive.read("plugin.json") != manifest_bytes:
         raise SystemExit("ZIP manifest differs from the signed manifest bytes")
-    if base64.b64decode(archive.read("plugin.json.sig")) != signature_path.read_bytes():
+    if base64.b64decode(archive.read("plugin.json.sig")) != signature_raw:
         raise SystemExit("ZIP signature differs from the verified Ed25519 signature")
 
 digest = hashlib.sha256(output.read_bytes()).hexdigest()
