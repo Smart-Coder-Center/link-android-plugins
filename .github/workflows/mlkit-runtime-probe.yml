@@ -54,3 +54,15 @@ jobs:
         if: always()
         run: |
           du -ah plugins/translate/ml-translate/code plugins/translate/ml-translate/provenance 2>/dev/null || true
+
+      - name: Upload ML Kit AAR audit and extracted resources
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlkit-translate-aar-audit
+          path: |
+            plugins/translate/ml-translate/provenance/**
+            plugins/translate/ml-translate/lib/arm64-v8a/**
+            plugins/translate/ml-translate/code/**
+          if-no-files-found: warn
+          retention-days: 3
