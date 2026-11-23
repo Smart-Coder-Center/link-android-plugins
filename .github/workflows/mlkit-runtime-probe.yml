@@ -1,0 +1,56 @@
+name: ML Kit Translate DEX Runtime Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build.gradle"
+      - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/mlkit-translate-src/**"
+      - "plugins/translate/ml-translate/plugin.json"
+      - ".github/workflows/mlkit-runtime-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlkit-translate-runtime-probe
+  cancel-in-progress: true
+
+jobs:
+  resolve-compile-and-dex:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout plugin repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android platform and D8
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up pinned Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.4"
+
+      - name: Resolve AARs, inspect Android resources and build DEX
+        run: |
+          chmod +x tools/build_mlkit_translate_runtime.sh
+          tools/build_mlkit_translate_runtime.sh plugins/translate/ml-translate
+
+      - name: Report runtime payload size
+        if: always()
+        run: |
+          du -ah plugins/translate/ml-translate/code plugins/translate/ml-translate/provenance 2>/dev/null || true
