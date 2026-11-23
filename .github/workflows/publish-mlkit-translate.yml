@@ -2,6 +2,10 @@ name: Publish ML Kit Translate plugin
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-mlkit-translate.yml'
 
 permissions:
   contents: write
