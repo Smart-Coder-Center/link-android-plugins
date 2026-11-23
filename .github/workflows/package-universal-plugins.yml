@@ -273,14 +273,18 @@ jobs:
               package_type = metadata.get("package_type", "data")
               if package_type not in {"data", "native_runtime", "dex_runtime"}:
                   raise SystemExit(f"Unsupported package_type for {plugin_id}: {package_type}")
+              runtime = metadata.get("runtime", {})
+              if not isinstance(runtime, dict):
+                  raise SystemExit(f"Invalid runtime metadata for {plugin_id}")
+              abis = runtime.get("abis", [])
+              load_order = runtime.get("load_order", [])
               if package_type == "native_runtime":
-                  runtime = metadata.get("runtime", {})
-                  abis = runtime.get("abis", []) if isinstance(runtime, dict) else []
-                  load_order = runtime.get("load_order", []) if isinstance(runtime, dict) else []
                   if not isinstance(abis, list) or len(abis) != 1 or not set(abis).issubset(supported_abis):
                       raise SystemExit(f"Native runtime {plugin_id} must declare supported runtime.abis")
                   if not isinstance(load_order, list) or not load_order or len(set(load_order)) != len(load_order):
                       raise SystemExit(f"Native runtime {plugin_id} must declare a unique runtime.load_order")
+              elif abis or load_order:
+                  raise SystemExit(f"DEX runtime {plugin_id} must not declare native ABI or load order")
               dependencies = metadata.get("dependencies", [])
               if not isinstance(dependencies, list) or len(dependencies) > 32:
                   raise SystemExit(f"Invalid dependency list for {plugin_id}")
@@ -349,22 +353,25 @@ jobs:
                   payload.append((relative, item))
               if not payload:
                   raise SystemExit(f"Plugin {plugin_id} has no payload files")
-              if package_type == "native_runtime":
+              if package_type in {"native_runtime", "dex_runtime"}:
                   library_paths = [rel for rel, _ in payload if rel.endswith(".so")]
                   code_paths = sorted(rel for rel, _ in payload if rel.startswith("code/") and Path(rel).suffix.lower() in runtime_code_suffixes)
                   declared_code = runtime.get("code_files", [])
                   if not isinstance(declared_code, list) or sorted(declared_code) != code_paths:
-                      raise SystemExit(f"Native runtime {plugin_id} runtime.code_files must list every executable DEX/JAR under code/ exactly once")
+                      raise SystemExit(f"Runtime {plugin_id} runtime.code_files must list every executable DEX/JAR under code/ exactly once")
                   if code_paths:
                       entry_class = runtime.get("entry_class", "")
                       if (not isinstance(entry_class, str)
                               or not re.fullmatch(r"eu\.siacs\.link\.plugins\.[A-Za-z_$][A-Za-z0-9_$.]*", entry_class)
                               or runtime.get("code_api_version") != 1):
-                          raise SystemExit(f"Native runtime {plugin_id} must declare a valid entry_class and code_api_version=1")
-                  if native_library_count == 0:
-                      raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
-                  if set(library_paths) != set(load_order) or len(library_paths) != len(load_order):
-                      raise SystemExit(f"Native runtime {plugin_id} runtime.load_order must list every .so payload path exactly once")
+                          raise SystemExit(f"Runtime {plugin_id} must declare a valid entry_class and code_api_version=1")
+                  if package_type == "native_runtime":
+                      if native_library_count == 0:
+                          raise SystemExit(f"Native runtime {plugin_id} must contain at least one ABI-scoped .so library")
+                      if set(library_paths) != set(load_order) or len(library_paths) != len(load_order):
+                          raise SystemExit(f"Native runtime {plugin_id} runtime.load_order must list every .so payload path exactly once")
+                  elif native_library_count != 0 or not code_paths:
+                      raise SystemExit(f"DEX runtime {plugin_id} must contain executable DEX/JAR code and no .so libraries")
               if len(payload) > 10000:
                   raise SystemExit(f"Plugin {plugin_id} exceeds Link's 10,000-file limit")
               if expanded > max_expanded:
