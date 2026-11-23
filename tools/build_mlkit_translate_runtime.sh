@@ -106,7 +106,7 @@ for artifact in files:
                 raise SystemExit(f"Cannot inspect AAR manifest {artifact.name}: {error}")
     elif artifact.suffix.lower() == ".jar":
         (jars / artifact.name).write_bytes(artifact.read_bytes())
-        if artifact.name.startswith(("com_squareup_okhttp3__", "com_squareup_okio__", "org_jetbrains_kotlinx__kotlinx-coroutines-")):
+        if artifact.name.startswith(("com_squareup_okhttp3__", "com_squareup_okio__")):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
         raise SystemExit(f"Unsupported ML Kit dependency artifact: {artifact.name}")
