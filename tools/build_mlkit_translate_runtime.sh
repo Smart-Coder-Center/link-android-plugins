@@ -204,9 +204,8 @@ PY
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
 Link Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
 Translation language models are downloaded on demand by ML Kit and are not included in this archive.
-The runtime dependency coordinates and inspected AAR metadata are recorded in
-provenance/mlkit-aar-audit.json. Third-party notices and licenses remain those of their
-respective upstream projects.
+The runtime dependencies are pinned in the plugin source manifest and build configuration.
+Third-party notices and licenses remain those of their respective upstream projects.
 NOTICE
 
 echo "ML Kit Translate DEX runtime assembled in $SOURCE_DIR"
