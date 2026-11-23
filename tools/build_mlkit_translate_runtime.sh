@@ -18,7 +18,7 @@ command -v gradle >/dev/null
 command -v javac >/dev/null
 command -v python3 >/dev/null
 
-mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
+mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
@@ -61,11 +61,20 @@ for artifact in files:
         if resources.is_dir():
             entries = [p.relative_to(target).as_posix() for p in resources.rglob("*") if p.is_file()]
             report["aar_resources"].extend({"aar": artifact.name, "path": item} for item in entries)
+            for resource in resources.rglob("translate_models_metadata.json"):
+                destination = report_path.parent / "translate_models_metadata.json"
+                destination.write_bytes(resource.read_bytes())
         jni = target / "jni"
         if jni.is_dir():
-            report["native_libraries"].extend(
-                {"aar": artifact.name, "path": p.relative_to(target).as_posix()}
-                for p in jni.rglob("*.so") if p.is_file())
+            for library in sorted((jni / "arm64-v8a").glob("*.so")):
+                destination = report_path.parent.parent / "lib" / "arm64-v8a" / library.name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(library.read_bytes())
+                report["native_libraries"].append({
+                    "aar": artifact.name,
+                    "path": "lib/arm64-v8a/" + library.name,
+                    "size_bytes": library.stat().st_size
+                })
         manifest = target / "AndroidManifest.xml"
         if manifest.is_file() and manifest.stat().st_size:
             try:
@@ -91,12 +100,10 @@ for artifact in files:
 
 report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(report, indent=2))
-if report["aar_resources"]:
-    raise SystemExit("ML Kit AAR resources were found; DEX-only runtime cannot merge Android resources")
-if report["aar_components"]:
-    raise SystemExit("ML Kit AAR manifest components/permissions were found; host manifest integration is required")
-if report["native_libraries"]:
-    raise SystemExit("ML Kit AARs contain native libraries; this DEX-only package cannot load them")
+if not report["native_libraries"]:
+    raise SystemExit("ML Kit AARs did not provide ARM64 JNI libraries")
+if not (report_path.parent / "translate_models_metadata.json").is_file():
+    raise SystemExit("ML Kit translate_models_metadata.json resource was not found")
 PY
 
 mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | sort)
@@ -124,7 +131,12 @@ dex = sorted((root / "code").glob("classes*.dex"),
              key=lambda p: int(re.search(r"(\d+)?\.dex$", p.name).group(1) or 1))
 if not dex:
     raise SystemExit("No DEX output was found")
+libraries = sorted((root / "lib" / "arm64-v8a").glob("*.so"))
+if not libraries:
+    raise SystemExit("No ARM64 ML Kit native libraries were extracted")
 metadata = {
+    "abis": ["arm64-v8a"],
+    "load_order": ["lib/arm64-v8a/" + p.name for p in libraries],
     "code_files": ["code/" + p.name for p in dex],
     "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
     "code_api_version": 1
