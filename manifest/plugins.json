@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 12,
+  "catalog_version": 13,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -56,6 +56,40 @@
         "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.3/magic-touch-1.0.3.zip",
         "size_bytes": 40306794,
         "sha256": "985e27700998602f72e75c31b4e05b71e2e773590e1bb5587d7c7e81e4f49827"
+      }
+    },
+    {
+      "description": "Offline text translation with automatic language identification and on-demand language models.",
+      "id": "ml-translate",
+      "kind": "translation",
+      "language": "und",
+      "license": {
+        "attribution": "Google ML Kit Translation and Language Identification APIs",
+        "name": "Apache-2.0"
+      },
+      "min_link_version": "2.21.0",
+      "name": "Translate AI",
+      "package_type": "native_runtime",
+      "release_notes": "Initial ML Kit translation runtime. Translation models are downloaded on demand and are not bundled in the plugin.",
+      "runtime": {
+        "abis": [
+          "arm64-v8a"
+        ],
+        "code_api_version": 1,
+        "code_files": [
+          "code/classes.dex"
+        ],
+        "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
+        "load_order": [
+          "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
+          "lib/arm64-v8a/libtranslate_jni.so"
+        ]
+      },
+      "version": "1.0.0",
+      "archive": {
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.0/ml-translate-1.0.0.zip",
+        "size_bytes": 7227377,
+        "sha256": "0243f37bce7db400d283d2da0058c9ff76ecc3a3f3c362d3d743e84ec1cda379"
       }
     },
     {
