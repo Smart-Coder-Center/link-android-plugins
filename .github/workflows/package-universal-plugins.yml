@@ -222,7 +222,7 @@ jobs:
           kind_re = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
           version_re = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
           link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-          dependency_types = {"data", "native_runtime", "play_feature"}
+          dependency_types = {"data", "native_runtime", "dex_runtime", "play_feature"}
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class", ".js", ".mjs", ".cjs", ".rb", ".pl", ".php", ".vbs", ".command", ".exe", ".com"}
           runtime_data_suffixes = {".task", ".tflite", ".onnx", ".model", ".pb", ".bin", ".dat", ".txt", ".json", ".yaml", ".yml", ".md"}
           runtime_code_suffixes = {".jar", ".dex"}
@@ -271,7 +271,7 @@ jobs:
               if not link_re.fullmatch(metadata["min_link_version"]):
                   raise SystemExit(f"Invalid min_link_version for {plugin_id}")
               package_type = metadata.get("package_type", "data")
-              if package_type not in {"data", "native_runtime"}:
+              if package_type not in {"data", "native_runtime", "dex_runtime"}:
                   raise SystemExit(f"Unsupported package_type for {plugin_id}: {package_type}")
               if package_type == "native_runtime":
                   runtime = metadata.get("runtime", {})
@@ -378,7 +378,7 @@ jobs:
               # Use one exact UTF-8 representation for the ZIP entry and its detached signature.
               manifest_bytes = (json.dumps(generated, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
               signature_bytes = None
-              if package_type == "native_runtime":
+              if package_type in {"native_runtime", "dex_runtime"}:
                   private_key = os.environ.get("LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY", "").strip()
                   if not private_key or not public_key_path.is_file():
                       raise SystemExit("Native runtime publishing requires the LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY secret and keys/native-runtime-ed25519-public.pem pinned public key.")
