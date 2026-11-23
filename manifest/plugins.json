@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 13,
+  "catalog_version": 14,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -59,6 +59,18 @@
       }
     },
     {
+      "dependencies": [
+        {
+          "id": "asr.koochik-rnnt.fa",
+          "package_type": "data",
+          "version": "1.0.0-test.2"
+        },
+        {
+          "id": "tts.mana.piper.fa",
+          "package_type": "data",
+          "version": "1.0.1"
+        }
+      ],
       "description": "Translate text on this device with automatic language detection and on-demand offline language models. Requires Link speech-to-text and Persian text-to-speech plugins for voice input and read-aloud.",
       "id": "ml-translate",
       "kind": "translation",
@@ -70,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Offline Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Initial ML Kit translation runtime. Translation models are downloaded on demand and are not bundled in the plugin.",
+      "release_notes": "Adds automatic installation of Link speech-to-text and Persian text-to-speech dependencies. Translation models remain downloaded on demand and are not bundled in the plugin.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -85,24 +97,12 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.0",
+      "version": "1.0.1",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.0/ml-translate-1.0.0.zip",
-        "size_bytes": 7227377,
-        "sha256": "0243f37bce7db400d283d2da0058c9ff76ecc3a3f3c362d3d743e84ec1cda379"
-      },
-      "dependencies": [
-        {
-          "id": "asr.koochik-rnnt.fa",
-          "version": "1.0.0-test.2",
-          "package_type": "data"
-        },
-        {
-          "id": "tts.mana.piper.fa",
-          "version": "1.0.1",
-          "package_type": "data"
-        }
-      ]
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.1/ml-translate-1.0.1.zip",
+        "size_bytes": 7227522,
+        "sha256": "43fa8c5fe97400eae7f72d7cbd3b08542688dfd02f93c5425b85ed2e7e3621bd"
+      }
     },
     {
       "id": "tts.mana.piper.fa",
@@ -125,4 +125,4 @@
       }
     }
   ]
-}
+}\n
