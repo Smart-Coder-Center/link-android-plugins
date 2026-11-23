@@ -15,7 +15,7 @@ import com.google.mlkit.nl.translate.TranslatorOptions;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,8 +43,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         return new MlKitTranslatePlugin(context);
     }
 
-    public Set<String> getSupportedLanguages() {
-        return Collections.unmodifiableSet(TranslateLanguage.getAllLanguages());
+    public List<String> getSupportedLanguages() {
+        return Collections.unmodifiableList(TranslateLanguage.getAllLanguages());
     }
 
     public void identifyLanguage(String text, Callback callback) {
@@ -58,10 +58,13 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                     identifier.close();
                     if (language == null || "und".equals(language)) {
                         fail(callback, "زبان متن قابل تشخیص نیست؛ زبان را دستی انتخاب کنید");
-                    } else if (!TranslateLanguage.getAllLanguages().contains(language)) {
-                        fail(callback, "این زبان برای ترجمه پشتیبانی نمی‌شود: " + language);
                     } else {
-                        success(callback, language);
+                        String supportedLanguage = TranslateLanguage.fromLanguageTag(language);
+                        if (supportedLanguage == null) {
+                            fail(callback, "این زبان برای ترجمه پشتیبانی نمی‌شود: " + language);
+                        } else {
+                            success(callback, supportedLanguage);
+                        }
                     }
                 })
                 .addOnFailureListener(error -> {
