@@ -13,6 +13,21 @@ generated = json.loads(generated_path.read_text(encoding="utf-8"))
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
 
+api_report = root / "provenance" / "mlkit-internal-api.txt"
+if not api_report.is_file():
+    raise SystemExit("ML Kit component API audit is missing")
+api_text = api_report.read_text(encoding="utf-8")
+required_api = [
+    "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
+    "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
+    "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
+    "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
+    "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
+]
+missing_api = [signature for signature in required_api if signature not in api_text]
+if missing_api:
+    raise SystemExit("Pinned ML Kit registrar API changed; cannot safely initialize from plugin DEX: " + "; ".join(missing_api))
+
 runtime = dict(manifest.get("runtime") or {})
 runtime.update(generated)
 manifest["runtime"] = runtime
