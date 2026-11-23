@@ -71,7 +71,7 @@
           "version": "1.0.1"
         }
       ],
-      "description": "Translate text on this device with automatic language detection and on-demand offline language models. Requires Link speech-to-text and Persian text-to-speech plugins for voice input and read-aloud.",
+      "description": "Smart Translate detects the source language automatically and translates text on the device using on-demand offline language models. Voice input and read-aloud use Link speech-to-text and Persian text-to-speech plugins.",
       "id": "ml-translate",
       "kind": "translation",
       "language": "und",
@@ -80,7 +80,7 @@
         "name": "Apache-2.0"
       },
       "min_link_version": "2.21.0",
-      "name": "Offline Smart Translate",
+      "name": "Smart Translate",
       "package_type": "native_runtime",
       "release_notes": "Adds automatic installation of Link speech-to-text and Persian text-to-speech dependencies. Translation models remain downloaded on demand and are not bundled in the plugin.",
       "runtime": {
