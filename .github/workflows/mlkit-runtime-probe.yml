@@ -6,6 +6,7 @@ on:
     paths:
       - "tools/build.gradle"
       - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/validate_mlkit_translate_runtime.py"
       - "tools/mlkit-translate-src/**"
       - "plugins/translate/ml-translate/plugin.json"
       - ".github/workflows/mlkit-runtime-probe.yml"
