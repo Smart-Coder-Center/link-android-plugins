@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 11,
+  "catalog_version": 12,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -25,10 +25,10 @@
     {
       "id": "magic-touch",
       "name": "Magic Touch Photo",
-      "description": "Select and cut out objects in photos with positive and negative touch strokes.",
+      "description": "Draw a green Keep+ lasso to preserve its selected area, or a red Keep- lasso to remove its selected area.",
       "kind": "image",
       "language": "und",
-      "version": "1.0.1",
+      "version": "1.0.3",
       "package_type": "native_runtime",
       "min_link_version": "2.21.0",
       "runtime": {
@@ -51,11 +51,11 @@
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
         "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
       },
-      "release_notes": "Signed runtime package using exact-byte manifest verification. Includes the MagicTouch model, MediaPipe Java runtime and required native libraries.",
+      "release_notes": "Adds true lasso-based Keep+ and Keep- selection. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest. Retains compatibility with legacy positive/negative brush clients.",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.1/magic-touch-1.0.1.zip",
-        "size_bytes": 40306343,
-        "sha256": "8a67eb63d7925779d44f402ffa709b023a90082d93d606b7fe89a8c64e98f374"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.3/magic-touch-1.0.3.zip",
+        "size_bytes": 40306794,
+        "sha256": "985e27700998602f72e75c31b4e05b71e2e773590e1bb5587d7c7e81e4f49827"
       }
     },
     {
