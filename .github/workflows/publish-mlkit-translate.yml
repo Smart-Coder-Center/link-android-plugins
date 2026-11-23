@@ -1,0 +1,160 @@
+name: Publish ML Kit Translate plugin
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: universal-plugin-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish-translate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android platform and D8
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up pinned Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.4"
+
+      - name: Build ML Kit DEX and JNI runtime
+        run: |
+          chmod +x tools/build_mlkit_translate_runtime.sh
+          tools/build_mlkit_translate_runtime.sh plugins/translate/ml-translate
+          python3 tools/validate_mlkit_translate_runtime.py plugins/translate/ml-translate
+
+      - name: Build and verify signed plugin ZIP
+        env:
+          LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
+        run: |
+          python3 tools/package_mlkit_translate_runtime.py plugins/translate/ml-translate dist/ml-translate-1.0.0.zip
+
+      - name: Upload signed package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-translate-1.0.0-release-candidate
+          path: dist/ml-translate-1.0.0.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import subprocess
+          import tempfile
+          from pathlib import Path
+
+          archive = Path("dist/ml-translate-1.0.0.zip")
+          tag = "plugin-ml-translate-1.0.0"
+          expected_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+
+          def run(args, check=True):
+              return subprocess.run(args, check=check, text=True, capture_output=True)
+
+          existing = run(["gh", "release", "view", tag, "--json", "assets"], check=False)
+          if existing.returncode == 0:
+              assets = json.loads(existing.stdout).get("assets", [])
+              matches = [asset for asset in assets if asset.get("name") == archive.name]
+              if len(matches) > 1:
+                  raise SystemExit("Release contains duplicate ML Translate asset names")
+              if matches:
+                  with tempfile.TemporaryDirectory(prefix="link-ml-translate-release-") as directory:
+                      run(["gh", "release", "download", tag, "--pattern", archive.name, "--dir", directory])
+                      downloaded = Path(directory) / archive.name
+                      if not downloaded.is_file() or hashlib.sha256(downloaded.read_bytes()).hexdigest() != expected_hash:
+                          raise SystemExit("Existing immutable ML Translate release asset does not match this build")
+              else:
+                  run(["gh", "release", "upload", tag, str(archive)])
+          else:
+              error = (existing.stderr or "").lower()
+              if "not found" not in error and "404" not in error:
+                  raise SystemExit("Could not inspect existing ML Translate release: " + existing.stderr)
+              run([
+                  "gh", "release", "create", tag, str(archive),
+                  "--title", "Link plugin ml-translate 1.0.0",
+                  "--target", "main",
+                  "--notes", "Signed ML Kit Translate runtime for Link. Language models are downloaded on demand by ML Kit and are not bundled in this release."
+              ])
+          print("Published or verified immutable release asset; SHA-256=" + expected_hash)
+          PY
+
+      - name: Add plugin to the public catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import zipfile
+          from pathlib import Path
+
+          archive = Path("dist/ml-translate-1.0.0.zip")
+          catalog_path = Path("manifest/plugins.json")
+          with zipfile.ZipFile(archive) as package:
+              metadata = json.loads(package.read("plugin.json"))
+              if package.testzip() is not None:
+                  raise SystemExit("Published ML Translate ZIP failed CRC validation")
+
+          metadata.pop("files", None)
+          metadata.pop("source", None)
+          metadata["archive"] = {
+              "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.0/ml-translate-1.0.0.zip",
+              "size_bytes": archive.stat().st_size,
+              "sha256": hashlib.sha256(archive.read_bytes()).hexdigest()
+          }
+
+          catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+          plugins = catalog.setdefault("plugins", [])
+          existing = next((item for item in plugins if item.get("id") == "ml-translate"), None)
+          if existing:
+              old = existing.get("archive", {}).get("sha256", "").lower()
+              new = metadata["archive"]["sha256"]
+              if existing.get("version") != metadata.get("version") or old != new:
+                  raise SystemExit("ml-translate 1.0.0 is immutable; refusing to replace an existing catalog entry")
+              print("Catalog already contains the exact immutable ML Translate package")
+          else:
+              plugins.append(metadata)
+              plugins.sort(key=lambda item: (item.get("kind", ""), item.get("id", "")))
+              catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
+              catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+              print("Added ml-translate 1.0.0 to catalog version", catalog["catalog_version"])
+          PY
+
+          if ! git diff --quiet -- manifest/plugins.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add manifest/plugins.json
+            git commit -m "catalog: publish ML Kit Translate plugin 1.0.0"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
