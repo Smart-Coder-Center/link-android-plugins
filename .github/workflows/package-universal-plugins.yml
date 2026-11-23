@@ -318,8 +318,10 @@ jobs:
                   suffix = item.suffix.lower()
                   if package_type == "data" and suffix in forbidden:
                       raise SystemExit(f"Executable/code payload is not allowed in data packages: {item}")
-                  if package_type == "native_runtime":
+                  if package_type in {"native_runtime", "dex_runtime"}:
                       if suffix == ".so":
+                          if package_type == "dex_runtime":
+                              raise SystemExit(f"DEX runtime packages must not contain native libraries: {relative}")
                           parts = relative.split("/")
                           if len(parts) < 3 or parts[0] != "lib" or parts[1] not in abis:
                               raise SystemExit(f"Native library must be stored under lib/<declared-abi>/: {relative}")
