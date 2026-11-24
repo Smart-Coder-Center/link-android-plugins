@@ -52,8 +52,17 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
             return;
         }
-        LanguageIdentifier identifier = LanguageIdentification.getClient();
-        identifier.identifyLanguage(text)
+        final LanguageIdentifier identifier;
+        try {
+            // Client creation can throw synchronously when a registrar or native component
+            // is unavailable. Route that exception through the same detailed diagnostic path.
+            identifier = LanguageIdentification.getClient();
+        } catch (Throwable error) {
+            fail(callback, error);
+            return;
+        }
+        try {
+            identifier.identifyLanguage(text)
                 .addOnSuccessListener(language -> {
                     identifier.close();
                     if (language == null || "und".equals(language)) {
@@ -71,6 +80,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                     identifier.close();
                     fail(callback, error);
                 });
+        } catch (Throwable error) {
+            identifier.close();
+            fail(callback, error);
+        }
     }
 
     /**
@@ -202,11 +215,15 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 .setSourceLanguage(source)
                 .setTargetLanguage(target)
                 .build();
-        Translator translator = Translation.getClient(options);
+        Translator translator = null;
         try {
+            // getClient() itself may throw before a Task exists; keep it inside this
+            // guarded block so the original ML Kit exception reaches fail() with its cause.
+            translator = Translation.getClient(options);
+            final Translator activeTranslator = translator;
             // Let the Translate API download the required pair itself. Avoid the optional
             // RemoteModelManager API, which requires feature-model registration separately.
-            translator.downloadModelIfNeeded()
+            activeTranslator.downloadModelIfNeeded()
                     .continueWithTask(ready -> {
                         if (!ready.isSuccessful()) {
                             Exception error = ready.getException();
@@ -214,15 +231,15 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                                     ? new IllegalStateException("Translation model is unavailable")
                                     : error;
                         }
-                        return translator.translate(text);
+                        return activeTranslator.translate(text);
                     })
                     .addOnCompleteListener(result -> {
-                        translator.close();
+                        activeTranslator.close();
                         if (result.isSuccessful()) success(callback, result.getResult());
                         else fail(callback, result.getException());
                     });
-        } catch (Exception error) {
-            translator.close();
+        } catch (Throwable error) {
+            if (translator != null) translator.close();
             fail(callback, error);
         }
     }
