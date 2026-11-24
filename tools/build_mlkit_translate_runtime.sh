@@ -54,7 +54,19 @@ for artifact in files:
         if classes.is_file() and classes.stat().st_size:
             destination = jars / (artifact.stem + "-classes.jar")
             destination.write_bytes(classes.read_bytes())
-            if artifact.name.startswith(("com_google_mlkit__translate__", "com_google_mlkit__language-id__", "com_google_mlkit__language-id-common__")):
+            # Bundle the entire ML Kit + Firebase component registry in the plugin DEX.
+            # Sharing only ML Kit Common with the host can reuse a singleton that lacks
+            # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
+            runtime_prefixes = (
+                "com_google_mlkit__translate__",
+                "com_google_mlkit__language-id__",
+                "com_google_mlkit__language-id-common__",
+                "com_google_mlkit__common__",
+                "com_google_firebase__firebase-components__",
+                "com_google_firebase__firebase-encoders-json__",
+                "com_google_android_datatransport__",
+            )
+            if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
         libs = target / "libs"
         if libs.is_dir():
@@ -106,7 +118,11 @@ for artifact in files:
                 raise SystemExit(f"Cannot inspect AAR manifest {artifact.name}: {error}")
     elif artifact.suffix.lower() == ".jar":
         (jars / artifact.name).write_bytes(artifact.read_bytes())
-        if artifact.name.startswith(("com_squareup_okhttp3__", "com_squareup_okio__")):
+        if artifact.name.startswith((
+                "com_squareup_okhttp3__", "com_squareup_okio__",
+                "com_google_firebase__firebase-encoders__",
+                "com_google_guava__listenablefuture__",
+            )):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
         raise SystemExit(f"Unsupported ML Kit dependency artifact: {artifact.name}")
