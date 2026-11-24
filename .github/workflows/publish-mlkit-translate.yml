@@ -6,6 +6,12 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/publish-mlkit-translate.yml'
+      - 'tools/build.gradle'
+      - 'tools/build_mlkit_translate_runtime.sh'
+      - 'tools/validate_mlkit_translate_runtime.py'
+      - 'tools/package_mlkit_translate_runtime.py'
+      - 'tools/mlkit-translate-src/**'
+      - 'plugins/translation/ml-translate/plugin.json'
 
 permissions:
   contents: write
