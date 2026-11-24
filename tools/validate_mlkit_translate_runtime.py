@@ -48,9 +48,9 @@ required_isolated = (
     "com_google_android_datatransport__transport-api__2.2.1.aar",
     "com_google_android_datatransport__transport-runtime__2.2.6.aar",
     "com_google_android_datatransport__transport-backend-cct__2.3.3.aar",
-    "com_google_android_gms__play-services-base__18.1.0.aar",
-    "com_google_android_gms__play-services-basement__18.1.0.aar",
-    "com_google_android_gms__play-services-tasks__18.0.2.aar",
+    "com_google_android_gms__play-services-base__18.10.0.aar",
+    "com_google_android_gms__play-services-basement__18.10.0.aar",
+    "com_google_android_gms__play-services-tasks__18.4.1.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
 missing_isolated = sorted(set(required_isolated) - artifact_names)
@@ -99,6 +99,14 @@ if not actual_dex or sorted(runtime.get("code_files", [])) != actual_dex:
     raise SystemExit("runtime.code_files does not match the generated DEX payload")
 if not actual_so or sorted(runtime.get("load_order", [])) != actual_so:
     raise SystemExit("runtime.load_order does not list every ARM64 JNI library exactly once")
+
+# The class that caused the device crash must physically exist in the plugin DEX.
+# Otherwise the host APK's older Preconditions class can silently win resolution.
+dex_bytes = b"".join(path.read_bytes() for path in sorted((root / "code").glob("classes*.dex")))
+if b"Lcom/google/android/gms/common/internal/Preconditions;" not in dex_bytes:
+    raise SystemExit("Plugin DEX does not contain its isolated Google Play Services Preconditions class")
+if b"checkState" not in dex_bytes:
+    raise SystemExit("Plugin DEX is missing the GMS Preconditions.checkState method reference")
 
 payload = []
 for path in sorted(root.rglob("*")):
