@@ -14,7 +14,7 @@ adapter_path = Path(__file__).resolve().parent / "mlkit-translate-src/eu/siacs/l
 adapter_source = adapter_path.read_text(encoding="utf-8")
 if "RemoteModelManager.getInstance()" in adapter_source or "new TranslateRemoteModel" in adapter_source:
     raise SystemExit("Translate runtime must not call the optional RemoteModelManager download API directly")
-if "translator.downloadModelIfNeeded()" not in adapter_source:
+if not any(call in adapter_source for call in ("translator.downloadModelIfNeeded()", "activeTranslator.downloadModelIfNeeded()")):
     raise SystemExit("Translate runtime must delegate on-demand downloads to Translator.downloadModelIfNeeded()")
 
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
