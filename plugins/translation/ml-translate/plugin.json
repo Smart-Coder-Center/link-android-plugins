@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Uses the Translator API's built-in on-demand model download path; removes the separate RemoteModelManager download call and pins ML Kit common to the host runtime.",
+  "release_notes": "Uses the Translator API's on-demand model download path and isolates ML Kit Common plus Firebase component registration inside the plugin class loader to prevent host ML Kit singleton conflicts.",
   "runtime": {
     "abis": [
       "arm64-v8a"
