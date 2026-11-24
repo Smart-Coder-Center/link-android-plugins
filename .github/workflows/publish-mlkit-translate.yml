@@ -55,13 +55,13 @@ jobs:
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.3.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.4.zip
 
       - name: Upload signed package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.3-release-candidate
-          path: dist/ml-translate-1.0.3.zip
+          name: ml-translate-1.0.4-release-candidate
+          path: dist/ml-translate-1.0.4.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -78,8 +78,8 @@ jobs:
           import tempfile
           from pathlib import Path
 
-          archive = Path("dist/ml-translate-1.0.3.zip")
-          tag = "plugin-ml-translate-1.0.3"
+          archive = Path("dist/ml-translate-1.0.4.zip")
+          tag = "plugin-ml-translate-1.0.4"
           expected_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
 
           def run(args, check=True):
@@ -105,7 +105,7 @@ jobs:
                   raise SystemExit("Could not inspect existing ML Translate release: " + existing.stderr)
               run([
                   "gh", "release", "create", tag, str(archive),
-                  "--title", "Link plugin ml-translate 1.0.3",
+                  "--title", "Link plugin ml-translate 1.0.4",
                   "--target", "main",
                   "--notes", "Signed ML Kit Translate runtime for Link. Language models are downloaded on demand by ML Kit and are not bundled in this release."
               ])
@@ -122,7 +122,7 @@ jobs:
           import zipfile
           from pathlib import Path
 
-          archive = Path("dist/ml-translate-1.0.3.zip")
+          archive = Path("dist/ml-translate-1.0.4.zip")
           catalog_path = Path("manifest/plugins.json")
           with zipfile.ZipFile(archive) as package:
               metadata = json.loads(package.read("plugin.json"))
@@ -132,7 +132,7 @@ jobs:
           metadata.pop("files", None)
           metadata.pop("source", None)
           metadata["archive"] = {
-              "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.3/ml-translate-1.0.3.zip",
+              "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.4/ml-translate-1.0.4.zip",
               "size_bytes": archive.stat().st_size,
               "sha256": hashlib.sha256(archive.read_bytes()).hexdigest()
           }
@@ -163,14 +163,14 @@ jobs:
               plugins.sort(key=lambda item: (item.get("kind", ""), item.get("id", "")))
               catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
               catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-              print("Added ml-translate 1.0.3 to catalog version", catalog["catalog_version"])
+              print("Added ml-translate 1.0.4 to catalog version", catalog["catalog_version"])
           PY
 
           if ! git diff --quiet -- manifest/plugins.json; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add manifest/plugins.json
-            git commit -m "catalog: publish ML Kit Translate plugin 1.0.3"
+            git commit -m "catalog: publish ML Kit Translate plugin 1.0.4"
             git fetch origin main
             git rebase --autostash origin/main
             git push origin HEAD:main
