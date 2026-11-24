@@ -185,34 +185,33 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             success(callback, text);
             return;
         }
-        ensureModel(source, new Callback() {
-            @Override public void onSuccess(String ignored) {
-                ensureModel(target, new Callback() {
-                    @Override public void onSuccess(String ignoredTarget) {
-                        TranslatorOptions options = new TranslatorOptions.Builder()
-                                .setSourceLanguage(source)
-                                .setTargetLanguage(target)
-                                .build();
-                        Translator translator = Translation.getClient(options);
-                        translator.downloadModelIfNeeded()
-                                .continueWithTask(ready -> {
-                                    if (!ready.isSuccessful()) {
-                                        Exception error = ready.getException();
-                                        throw error == null ? new IllegalStateException("Translation model is unavailable") : error;
-                                    }
-                                    return translator.translate(text);
-                                })
-                                .addOnCompleteListener(result -> {
-                                    translator.close();
-                                    if (result.isSuccessful()) success(callback, result.getResult());
-                                    else fail(callback, result.getException());
-                                });
-                    }
-                    @Override public void onFailure(String message) { fail(callback, message); }
-                });
-            }
-            @Override public void onFailure(String message) { fail(callback, message); }
-        });
+        TranslatorOptions options = new TranslatorOptions.Builder()
+                .setSourceLanguage(source)
+                .setTargetLanguage(target)
+                .build();
+        Translator translator = Translation.getClient(options);
+        try {
+            // Let the Translate API download the required pair itself. Avoid the optional
+            // RemoteModelManager API, which requires feature-model registration separately.
+            translator.downloadModelIfNeeded()
+                    .continueWithTask(ready -> {
+                        if (!ready.isSuccessful()) {
+                            Exception error = ready.getException();
+                            throw error == null
+                                    ? new IllegalStateException("Translation model is unavailable")
+                                    : error;
+                        }
+                        return translator.translate(text);
+                    })
+                    .addOnCompleteListener(result -> {
+                        translator.close();
+                        if (result.isSuccessful()) success(callback, result.getResult());
+                        else fail(callback, result.getException());
+                    });
+        } catch (Exception error) {
+            translator.close();
+            fail(callback, error);
+        }
     }
 
     private static void success(Callback callback, String value) {
