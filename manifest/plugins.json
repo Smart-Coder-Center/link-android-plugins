@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 18,
+  "catalog_version": 19,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Uses the Translator API's on-demand model download path and isolates ML Kit Common, Firebase registration and a version-aligned Google Play Services runtime inside the plugin class loader.",
+      "release_notes": "Adds detailed ML Kit translation failure diagnostics, including nested causes and ML Kit error codes; retains the isolated plugin-local runtime and on-demand model download path.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -97,11 +97,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.4",
+      "version": "1.0.6",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.4/ml-translate-1.0.4.zip",
-        "size_bytes": 7643633,
-        "sha256": "61edfe94236194214d10492db33cf1f4c25236fdfd12df1e8b6260b6032831c5"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.6/ml-translate-1.0.6.zip",
+        "size_bytes": 7644000,
+        "sha256": "fcb85e3534d16a93c20c82ba172fca07bfe6b79e3e081687b162537837ac51cb"
       }
     },
     {
