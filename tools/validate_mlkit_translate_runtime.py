@@ -48,6 +48,9 @@ required_isolated = (
     "com_google_android_datatransport__transport-api__2.2.1.aar",
     "com_google_android_datatransport__transport-runtime__2.2.6.aar",
     "com_google_android_datatransport__transport-backend-cct__2.3.3.aar",
+    "com_google_android_gms__play-services-base__18.1.0.aar",
+    "com_google_android_gms__play-services-basement__18.1.0.aar",
+    "com_google_android_gms__play-services-tasks__18.0.2.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
 missing_isolated = sorted(set(required_isolated) - artifact_names)
@@ -55,7 +58,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__"):
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
