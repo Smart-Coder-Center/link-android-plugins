@@ -9,7 +9,7 @@ on:
       - "tools/validate_mlkit_translate_runtime.py"
       - "tools/package_mlkit_translate_runtime.py"
       - "tools/mlkit-translate-src/**"
-      - "plugins/translate/ml-translate/plugin.json"
+      - "plugins/translation/ml-translate/plugin.json"
       - ".github/workflows/mlkit-runtime-probe.yml"
   workflow_dispatch:
 
@@ -50,29 +50,29 @@ jobs:
       - name: Resolve AARs, inspect Android resources and build DEX
         run: |
           chmod +x tools/build_mlkit_translate_runtime.sh
-          tools/build_mlkit_translate_runtime.sh plugins/translate/ml-translate
+          tools/build_mlkit_translate_runtime.sh plugins/translation/ml-translate
 
       - name: Validate signed runtime package contract
-        run: python3 tools/validate_mlkit_translate_runtime.py plugins/translate/ml-translate
+        run: python3 tools/validate_mlkit_translate_runtime.py plugins/translation/ml-translate
 
       - name: Build and verify signed ML Kit plugin ZIP
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translate/ml-translate dist/ml-translate-1.0.0.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.2.zip
 
       - name: Upload signed ML Kit plugin ZIP for integration testing
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.0-signed
-          path: dist/ml-translate-1.0.0.zip
+          name: ml-translate-1.0.2-signed
+          path: dist/ml-translate-1.0.2.zip
           if-no-files-found: error
           retention-days: 7
 
       - name: Report runtime payload size
         if: always()
         run: |
-          du -ah plugins/translate/ml-translate/code plugins/translate/ml-translate/provenance 2>/dev/null || true
+          du -ah plugins/translation/ml-translate/code plugins/translation/ml-translate/provenance 2>/dev/null || true
 
       - name: Upload ML Kit AAR audit and extracted resources
         if: always()
@@ -80,8 +80,8 @@ jobs:
         with:
           name: mlkit-translate-aar-audit
           path: |
-            plugins/translate/ml-translate/provenance/**
-            plugins/translate/ml-translate/lib/arm64-v8a/**
-            plugins/translate/ml-translate/code/**
+            plugins/translation/ml-translate/provenance/**
+            plugins/translation/ml-translate/lib/arm64-v8a/**
+            plugins/translation/ml-translate/code/**
           if-no-files-found: warn
           retention-days: 3
