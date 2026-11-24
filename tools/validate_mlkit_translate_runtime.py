@@ -118,7 +118,7 @@ def uleb(data, offset):
 
 def dex_defined_classes(path):
     data = path.read_bytes()
-    if len(data) < 112 or data[:4] != b"dex\\n":
+    if len(data) < 112 or data[:4] != b"dex\n":
         raise SystemExit(f"Invalid DEX header: {path.name}")
     string_count, string_off = struct.unpack_from("<II", data, 56)
     type_count, type_off = struct.unpack_from("<II", data, 64)
