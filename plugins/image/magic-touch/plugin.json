@@ -4,7 +4,7 @@
   "description": "Draw a green Keep+ lasso to preserve its selected area, or a red Keep- lasso to remove its selected area.",
   "kind": "image",
   "language": "und",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "package_type": "native_runtime",
   "min_link_version": "2.21.0",
   "runtime": {
@@ -25,7 +25,7 @@
     "url": "https://www.apache.org/licenses/LICENSE-2.0",
     "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
   },
-  "release_notes": "Adds true lasso-based Keep+ and Keep- selection. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest. Retains compatibility with legacy positive/negative brush clients.",
+  "release_notes": "Repackages the reviewed lasso-based Keep+ and Keep- runtime with its pinned MediaPipe native dependency set. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest.",
   "source": {
     "type": "mediapipe_magic_touch",
     "tasks_version": "1.1.1",
