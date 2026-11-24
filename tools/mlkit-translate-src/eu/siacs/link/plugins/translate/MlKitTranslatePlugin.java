@@ -2,13 +2,9 @@ package eu.siacs.link.plugins.translate;
 
 import android.content.Context;
 
-import com.google.android.gms.tasks.Task;
-import com.google.mlkit.common.model.DownloadConditions;
-import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.mlkit.nl.languageid.LanguageIdentification;
 import com.google.mlkit.nl.languageid.LanguageIdentifier;
 import com.google.mlkit.nl.translate.TranslateLanguage;
-import com.google.mlkit.nl.translate.TranslateRemoteModel;
 import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
@@ -20,7 +16,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
@@ -34,8 +29,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
 
     private static final String ENGLISH = "en";
     private final Context context;
-    private final ConcurrentHashMap<String, Task<Void>> pendingDownloads = new ConcurrentHashMap<>();
-    private final java.util.Set<String> downloadedModels = ConcurrentHashMap.newKeySet();
 
     private MlKitTranslatePlugin(Context context) {
         this.context = context.getApplicationContext();
@@ -158,44 +151,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
     }
 
-    /** Ensures one language model is present; English is built in and needs no download. */
-    public void ensureModel(String language, Callback callback) {
-        if (language == null || language.trim().isEmpty()
-                || !TranslateLanguage.getAllLanguages().contains(language)) {
-            fail(callback, "کد زبان برای دانلود مدل معتبر نیست");
-            return;
-        }
-        if (ENGLISH.equals(language) || downloadedModels.contains(language)) {
-            success(callback, language);
-            return;
-        }
-
-        Task<Void> task = pendingDownloads.get(language);
-        if (task == null) {
-            synchronized (pendingDownloads) {
-                task = pendingDownloads.get(language);
-                if (task == null) {
-                    TranslateRemoteModel model = new TranslateRemoteModel.Builder(language).build();
-                    task = RemoteModelManager.getInstance().download(
-                            model, new DownloadConditions.Builder().build());
-                    pendingDownloads.put(language, task);
-                }
-            }
-        }
-        final Task<Void> sharedTask = task;
-        sharedTask.addOnCompleteListener(result -> {
-            if (result.isSuccessful()) {
-                downloadedModels.add(language);
-                success(callback, language);
-            } else {
-                Throwable error = result.getException();
-                fail(callback, error == null
-                        ? new IllegalStateException("Language model download failed") : error);
-            }
-            if (sharedTask.isComplete()) pendingDownloads.remove(language, sharedTask);
-        });
-    }
-
     /**
      * sourceLanguage may be "und" to request automatic detection. Translation models are
      * prepared before translating; the English model is handled internally by ML Kit.
@@ -275,7 +230,5 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
 
     @Override
     public void close() {
-        pendingDownloads.clear();
-        downloadedModels.clear();
     }
 }
