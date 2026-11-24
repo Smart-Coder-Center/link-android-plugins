@@ -27,7 +27,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         void onFailure(String message);
     }
 
-    private static final String ENGLISH = "en";
     private final Context context;
 
     private MlKitTranslatePlugin(Context context) {
@@ -79,16 +78,16 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
      * before any ML Kit client is initialized.
      */
     /**
-     * ML Kit's normal manifest discovery runs through the host PathClassLoader, which cannot
-     * see Link's isolated plugin DEX. Remove its automatic initializer from the Pro manifest
-     * and register the public component registrars explicitly with the host MlKitContext.
+     * Keep ML Kit Common + Firebase Components inside this plugin's class loader. A host-wide
+     * MlKitContext may already exist without the Translate registrar; reusing it leaves
+     * Translate's RemoteModelManager unregistered. The plugin-local MlKitContext and
+     * ComponentRegistrar API must therefore come from the same DEX loader.
      */
     private static void initializeMlKitComponents(Context context) {
         try {
-            ClassLoader hostLoader = context.getClassLoader();
             ClassLoader pluginLoader = MlKitTranslatePlugin.class.getClassLoader();
             Class<?> mlKitContext = Class.forName(
-                    "com.google.mlkit.common.sdkinternal.MlKitContext", true, hostLoader);
+                    "com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader);
             try {
                 mlKitContext.getMethod("getInstance").invoke(null);
                 return;
@@ -97,9 +96,9 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             }
 
             Class<?> registrarInterface = Class.forName(
-                    "com.google.firebase.components.ComponentRegistrar", true, hostLoader);
+                    "com.google.firebase.components.ComponentRegistrar", true, pluginLoader);
             List<Object> registrars = new ArrayList<>();
-            registrars.add(createRegistrar(hostLoader,
+            registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
@@ -124,7 +123,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         Class<?> registrarClass = Class.forName(className, true, loader);
         Object registrar = registrarClass.getDeclaredConstructor().newInstance();
         if (!registrarInterface.isInstance(registrar)) {
-            throw new SecurityException("ML Kit registrar was not linked to the host component API: " + className);
+            throw new SecurityException("ML Kit registrar was not linked to the plugin-local component API: " + className);
         }
         return registrar;
     }
