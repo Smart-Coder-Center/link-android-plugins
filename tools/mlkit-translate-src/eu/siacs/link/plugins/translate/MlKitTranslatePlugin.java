@@ -86,8 +86,21 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     private static void initializeMlKitComponents(Context context) {
         try {
             ClassLoader pluginLoader = MlKitTranslatePlugin.class.getClassLoader();
+            // Do not let a missing plugin class silently fall back to the APK's older GMS copy.
+            Class<?> preconditions = Class.forName(
+                    "com.google.android.gms.common.internal.Preconditions", false, pluginLoader);
+            if (preconditions.getClassLoader() != pluginLoader) {
+                throw new LinkageError("Google Play Services Preconditions resolved from the host APK, not the Smart Translate plugin DEX");
+            }
+            Method checkState = preconditions.getDeclaredMethod("checkState", boolean.class, Object.class);
+            if (!java.lang.reflect.Modifier.isStatic(checkState.getModifiers())) {
+                throw new LinkageError("Plugin-local Preconditions.checkState(boolean, Object) is not static");
+            }
             Class<?> mlKitContext = Class.forName(
                     "com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader);
+            if (mlKitContext.getClassLoader() != pluginLoader) {
+                throw new LinkageError("ML Kit Common resolved outside the Smart Translate plugin DEX");
+            }
             try {
                 mlKitContext.getMethod("getInstance").invoke(null);
                 return;
