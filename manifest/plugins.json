@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 16,
+  "catalog_version": 17,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -59,18 +59,6 @@
       }
     },
     {
-      "id": "ml-translate",
-      "kind": "translation",
-      "version": "1.0.2",
-      "name": "Smart Translate",
-      "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
-      "language": "und",
-      "min_link_version": "2.21.0",
-      "package_type": "native_runtime",
-      "license": {
-        "name": "Apache-2.0",
-        "attribution": "Google ML Kit Translation and Language Identification APIs"
-      },
       "dependencies": [
         {
           "id": "asr.koochik-rnnt.fa",
@@ -83,25 +71,37 @@
           "version": "1.0.1"
         }
       ],
+      "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
+      "id": "ml-translate",
+      "kind": "translation",
+      "language": "und",
+      "license": {
+        "attribution": "Google ML Kit Translation and Language Identification APIs",
+        "name": "Apache-2.0"
+      },
+      "min_link_version": "2.21.0",
+      "name": "Smart Translate",
+      "package_type": "native_runtime",
       "release_notes": "Uses the Translator API's on-demand model download path and isolates ML Kit Common plus Firebase component registration inside the plugin class loader to prevent host ML Kit singleton conflicts.",
       "runtime": {
         "abis": [
           "arm64-v8a"
         ],
-        "load_order": [
-          "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
-          "lib/arm64-v8a/libtranslate_jni.so"
-        ],
+        "code_api_version": 1,
         "code_files": [
           "code/classes.dex"
         ],
         "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
-        "code_api_version": 1
+        "load_order": [
+          "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
+          "lib/arm64-v8a/libtranslate_jni.so"
+        ]
       },
+      "version": "1.0.3",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.2/ml-translate-1.0.2.zip",
-        "size_bytes": 7402854,
-        "sha256": "95bc62724b39335ef512f83603dbc49efa126759d86f2ea1127f4fc6f7c79be7"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.3/ml-translate-1.0.3.zip",
+        "size_bytes": 7627417,
+        "sha256": "f0ff61553b70d2a7251a6e51675d2eed0ffea5575da7a3b54ba66654e85e8f8e"
       }
     },
     {
