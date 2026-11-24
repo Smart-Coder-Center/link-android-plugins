@@ -1,6 +1,7 @@
 package eu.siacs.link.plugins.translate;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.mlkit.nl.languageid.LanguageIdentification;
 import com.google.mlkit.nl.languageid.LanguageIdentifier;
@@ -231,7 +232,32 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private static void fail(Callback callback, Throwable error) {
-        fail(callback, error == null ? "Unknown ML Kit error" : error.getMessage());
+        if (error == null) {
+            fail(callback, "Unknown ML Kit error");
+            return;
+        }
+        Log.e("LinkSmartTranslate", "ML Kit operation failed", error);
+        StringBuilder details = new StringBuilder();
+        Throwable current = error;
+        int depth = 0;
+        while (current != null && depth++ < 6) {
+            if (details.length() > 0) details.append(" <- ");
+            details.append(current.getClass().getSimpleName());
+            String message = current.getMessage();
+            if (message != null && !message.trim().isEmpty()) {
+                details.append(": ").append(message.trim());
+            }
+            // MlKitException exposes a numeric error code; include it without linking
+            // this adapter to an implementation-specific exception class.
+            try {
+                Method getErrorCode = current.getClass().getMethod("getErrorCode");
+                Object code = getErrorCode.invoke(current);
+                if (code instanceof Number) details.append(" [code=").append(code).append("]");
+            } catch (Exception ignored) {
+            }
+            current = current.getCause();
+        }
+        fail(callback, details.toString());
     }
 
     private static void fail(Callback callback, String message) {
