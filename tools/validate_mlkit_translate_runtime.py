@@ -39,6 +39,31 @@ if common_artifacts != [expected_common]:
         + expected_common + ", resolved " + repr(common_artifacts)
     )
 
+# The plugin must own the registry classes, not just Translate's front-end classes.
+required_isolated = (
+    "com_google_mlkit__language-id-common__16.1.0.aar",
+    "com_google_firebase__firebase-components__16.1.0.aar",
+    "com_google_firebase__firebase-encoders-json__17.1.0.aar",
+    "com_google_firebase__firebase-encoders__16.1.0.jar",
+    "com_google_android_datatransport__transport-api__2.2.1.aar",
+    "com_google_android_datatransport__transport-runtime__2.2.6.aar",
+    "com_google_android_datatransport__transport-backend-cct__2.3.3.aar",
+)
+artifact_names = {item.get("file", "") for item in artifacts}
+missing_isolated = sorted(set(required_isolated) - artifact_names)
+if missing_isolated:
+    raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
+
+build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__"):
+    if required not in build_script:
+        raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
+
+if '"com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader' not in adapter_source:
+    raise SystemExit("MlKitContext must be loaded from the isolated plugin class loader")
+if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not in adapter_source:
+    raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
+
 api_report = root / "provenance" / "mlkit-internal-api.txt"
 if not api_report.is_file():
     raise SystemExit("ML Kit component API audit is missing")
