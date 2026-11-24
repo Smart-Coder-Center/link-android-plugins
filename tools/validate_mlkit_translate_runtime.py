@@ -10,6 +10,13 @@ generated_path = root / ".link-runtime-generated.json"
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 generated = json.loads(generated_path.read_text(encoding="utf-8"))
 
+adapter_path = Path(__file__).resolve().parent / "mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
+adapter_source = adapter_path.read_text(encoding="utf-8")
+if "RemoteModelManager.getInstance()" in adapter_source or "new TranslateRemoteModel" in adapter_source:
+    raise SystemExit("Translate runtime must not call the optional RemoteModelManager download API directly")
+if "translator.downloadModelIfNeeded()" not in adapter_source:
+    raise SystemExit("Translate runtime must delegate on-demand downloads to Translator.downloadModelIfNeeded()")
+
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
 
