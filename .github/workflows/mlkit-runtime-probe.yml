@@ -59,13 +59,13 @@ jobs:
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.3.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.4.zip
 
       - name: Upload signed ML Kit plugin ZIP for integration testing
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.3-signed
-          path: dist/ml-translate-1.0.3.zip
+          name: ml-translate-1.0.4-signed
+          path: dist/ml-translate-1.0.4.zip
           if-no-files-found: error
           retention-days: 7
 
