@@ -1,0 +1,46 @@
+{
+  "id": "ml-translate",
+  "kind": "translation",
+  "version": "1.0.2",
+  "name": "Smart Translate",
+  "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
+  "language": "und",
+  "min_link_version": "2.21.0",
+  "package_type": "native_runtime",
+  "license": {
+    "name": "Apache-2.0",
+    "attribution": "Google ML Kit Translation and Language Identification APIs"
+  },
+  "dependencies": [
+    {
+      "id": "asr.koochik-rnnt.fa",
+      "package_type": "data",
+      "version": "1.0.0-test.2"
+    },
+    {
+      "id": "tts.mana.piper.fa",
+      "package_type": "data",
+      "version": "1.0.1"
+    }
+  ],
+  "release_notes": "Uses the Translator API's built-in on-demand model download path; removes the separate RemoteModelManager download call.",
+  "runtime": {
+    "abis": [
+      "arm64-v8a"
+    ],
+    "load_order": [
+      "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
+      "lib/arm64-v8a/libtranslate_jni.so"
+    ],
+    "code_files": [
+      "code/classes.dex"
+    ],
+    "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
+    "code_api_version": 1
+  },
+  "source": {
+    "type": "mlkit_translate_runtime",
+    "translate_version": "17.0.2",
+    "language_id_version": "17.0.5"
+  }
+}
