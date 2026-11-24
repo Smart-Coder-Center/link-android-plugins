@@ -20,6 +20,25 @@ if "translator.downloadModelIfNeeded()" not in adapter_source:
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
 
+source = manifest.get("source") or {}
+common_version = source.get("common_version")
+if not common_version:
+    raise SystemExit("The shared ML Kit common runtime version must be pinned in plugin.json")
+aar_report = root / "provenance" / "mlkit-aar-audit.json"
+if not aar_report.is_file():
+    raise SystemExit("ML Kit AAR dependency audit is missing")
+artifacts = json.loads(aar_report.read_text(encoding="utf-8")).get("artifacts", [])
+common_artifacts = [
+    item.get("file", "") for item in artifacts
+    if item.get("file", "").startswith("com_google_mlkit__common__")
+]
+expected_common = f"com_google_mlkit__common__{common_version}.aar"
+if common_artifacts != [expected_common]:
+    raise SystemExit(
+        "ML Kit common dependency mismatch: expected exactly "
+        + expected_common + ", resolved " + repr(common_artifacts)
+    )
+
 api_report = root / "provenance" / "mlkit-internal-api.txt"
 if not api_report.is_file():
     raise SystemExit("ML Kit component API audit is missing")
