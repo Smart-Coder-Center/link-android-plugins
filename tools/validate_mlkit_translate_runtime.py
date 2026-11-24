@@ -100,13 +100,52 @@ if not actual_dex or sorted(runtime.get("code_files", [])) != actual_dex:
 if not actual_so or sorted(runtime.get("load_order", [])) != actual_so:
     raise SystemExit("runtime.load_order does not list every ARM64 JNI library exactly once")
 
-# The class that caused the device crash must physically exist in the plugin DEX.
-# Otherwise the host APK's older Preconditions class can silently win resolution.
-dex_bytes = b"".join(path.read_bytes() for path in sorted((root / "code").glob("classes*.dex")))
-if b"Lcom/google/android/gms/common/internal/Preconditions;" not in dex_bytes:
-    raise SystemExit("Plugin DEX does not contain its isolated Google Play Services Preconditions class")
-if b"checkState" not in dex_bytes:
-    raise SystemExit("Plugin DEX is missing the GMS Preconditions.checkState method reference")
+# Parse DEX class_defs. A descriptor string or method reference is not proof that
+# the class is actually defined in the plugin; the previous check accepted that false positive.
+import struct
+
+def uleb(data, offset):
+    value = shift = 0
+    while True:
+        byte = data[offset]
+        offset += 1
+        value |= (byte & 0x7f) << shift
+        if not byte & 0x80:
+            return value, offset
+        shift += 7
+        if shift > 35:
+            raise SystemExit("Malformed ULEB128 in plugin DEX")
+
+def dex_defined_classes(path):
+    data = path.read_bytes()
+    if len(data) < 112 or data[:4] != b"dex\\n":
+        raise SystemExit(f"Invalid DEX header: {path.name}")
+    string_count, string_off = struct.unpack_from("<II", data, 56)
+    type_count, type_off = struct.unpack_from("<II", data, 64)
+    class_count, class_off = struct.unpack_from("<II", data, 96)
+    strings = []
+    for index in range(string_count):
+        offset = struct.unpack_from("<I", data, string_off + index * 4)[0]
+        _, offset = uleb(data, offset)
+        end = data.index(0, offset)
+        strings.append(data[offset:end].decode("utf-8", errors="replace"))
+    types = [
+        strings[struct.unpack_from("<I", data, type_off + index * 4)[0]]
+        for index in range(type_count)
+    ]
+    defined = set()
+    for index in range(class_count):
+        class_index = struct.unpack_from("<I", data, class_off + index * 32)[0]
+        if class_index >= len(types):
+            raise SystemExit("Invalid class_idx in plugin DEX class_defs")
+        defined.add(types[class_index])
+    return defined
+
+dex_files = sorted((root / "code").glob("classes*.dex"))
+defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
+required_class = "Lcom/google/android/gms/common/internal/Preconditions;"
+if required_class not in defined_classes:
+    raise SystemExit("Plugin DEX does not DEFINE GMS Preconditions; a host APK fallback would reproduce the crash")
 
 payload = []
 for path in sorted(root.rglob("*")):
