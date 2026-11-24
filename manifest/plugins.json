@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 15,
+  "catalog_version": 16,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -28,7 +28,7 @@
       "description": "Draw a green Keep+ lasso to preserve its selected area, or a red Keep- lasso to remove its selected area.",
       "kind": "image",
       "language": "und",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "package_type": "native_runtime",
       "min_link_version": "2.21.0",
       "runtime": {
@@ -51,14 +51,26 @@
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
         "attribution": "MediaPipe Tasks Vision and MagicTouch model by Google"
       },
-      "release_notes": "Adds true lasso-based Keep+ and Keep- selection. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest. Retains compatibility with legacy positive/negative brush clients.",
+      "release_notes": "Repackages the reviewed lasso-based Keep+ and Keep- runtime with its pinned MediaPipe native dependency set. Keep+ preserves the selected area; Keep- removes the selected area while preserving the rest.",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.3/magic-touch-1.0.3.zip",
-        "size_bytes": 40306794,
-        "sha256": "985e27700998602f72e75c31b4e05b71e2e773590e1bb5587d7c7e81e4f49827"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-magic-touch-1.0.4/magic-touch-1.0.4.zip",
+        "size_bytes": 40304908,
+        "sha256": "dd71654934c775bf678f713beeeb259a1908040daa240506f143bb9f2397333d"
       }
     },
     {
+      "id": "ml-translate",
+      "kind": "translation",
+      "version": "1.0.2",
+      "name": "Smart Translate",
+      "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
+      "language": "und",
+      "min_link_version": "2.21.0",
+      "package_type": "native_runtime",
+      "license": {
+        "name": "Apache-2.0",
+        "attribution": "Google ML Kit Translation and Language Identification APIs"
+      },
       "dependencies": [
         {
           "id": "asr.koochik-rnnt.fa",
@@ -71,37 +83,25 @@
           "version": "1.0.1"
         }
       ],
-      "description": "Smart Translate detects the source language automatically and translates text on the device using on-demand offline language models. Voice input and read-aloud use Link speech-to-text and Persian text-to-speech plugins.",
-      "id": "ml-translate",
-      "kind": "translation",
-      "language": "und",
-      "license": {
-        "attribution": "Google ML Kit Translation and Language Identification APIs",
-        "name": "Apache-2.0"
-      },
-      "min_link_version": "2.21.0",
-      "name": "Smart Translate",
-      "package_type": "native_runtime",
-      "release_notes": "Adds automatic installation of Link speech-to-text and Persian text-to-speech dependencies. Translation models remain downloaded on demand and are not bundled in the plugin.",
+      "release_notes": "Uses the Translator API's on-demand model download path and isolates ML Kit Common plus Firebase component registration inside the plugin class loader to prevent host ML Kit singleton conflicts.",
       "runtime": {
         "abis": [
           "arm64-v8a"
         ],
-        "code_api_version": 1,
+        "load_order": [
+          "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
+          "lib/arm64-v8a/libtranslate_jni.so"
+        ],
         "code_files": [
           "code/classes.dex"
         ],
         "entry_class": "eu.siacs.link.plugins.translate.MlKitTranslatePlugin",
-        "load_order": [
-          "lib/arm64-v8a/liblanguage_id_l2c_jni.so",
-          "lib/arm64-v8a/libtranslate_jni.so"
-        ]
+        "code_api_version": 1
       },
-      "version": "1.0.1",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.1/ml-translate-1.0.1.zip",
-        "size_bytes": 7227522,
-        "sha256": "43fa8c5fe97400eae7f72d7cbd3b08542688dfd02f93c5425b85ed2e7e3621bd"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.2/ml-translate-1.0.2.zip",
+        "size_bytes": 7402854,
+        "sha256": "95bc62724b39335ef512f83603dbc49efa126759d86f2ea1127f4fc6f7c79be7"
       }
     },
     {
