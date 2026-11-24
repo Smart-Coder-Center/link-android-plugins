@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "name": "Smart Translate",
   "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Uses the Translator API's on-demand model download path and isolates ML Kit Common, Firebase registration and a version-aligned Google Play Services runtime inside the plugin class loader, with verified plugin-local class definitions.",
+  "release_notes": "Adds detailed ML Kit translation failure diagnostics, including nested causes and ML Kit error codes; retains the isolated plugin-local runtime and on-demand model download path.",
   "runtime": {
     "abis": [
       "arm64-v8a"
