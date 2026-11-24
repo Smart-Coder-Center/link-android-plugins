@@ -141,6 +141,21 @@ if not (report_path.parent / "translate_models_metadata.json").is_file():
     raise SystemExit("ML Kit translate_models_metadata.json resource was not found")
 PY
 
+# Fail before D8 if the exact class/method that crashed is absent from the pinned GMS AAR.
+BASEMENT_JAR="$(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name 'com_google_android_gms__play-services-basement__*-classes.jar' | head -n 1)"
+if [[ -z "$BASEMENT_JAR" ]]; then
+  echo "Pinned play-services-basement classes.jar was not copied into the plugin runtime" >&2
+  exit 6
+fi
+if ! jar tf "$BASEMENT_JAR" | grep -Fxq 'com/google/android/gms/common/internal/Preconditions.class'; then
+  echo "Pinned play-services-basement does not define Preconditions.class" >&2
+  exit 6
+fi
+if ! javap -classpath "$BASEMENT_JAR" -p -s com.google.android.gms.common.internal.Preconditions | grep -Fq '(ZLjava/lang/Object;)V'; then
+  echo "Pinned Preconditions does not define checkState(boolean, Object)" >&2
+  exit 6
+fi
+
 mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | sort)
 mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name '*.jar' | sort)
 (("${#JARS[@]}" > 0 && "${#RUNTIME_JARS[@]}" > 0)) || { echo "ML Kit compile or runtime JAR inputs are missing" >&2; exit 3; }
