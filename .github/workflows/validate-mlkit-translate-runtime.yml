@@ -1,0 +1,61 @@
+name: Validate Smart Translate runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build.gradle"
+      - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/mlkit-translate-src/**"
+      - "tools/validate_mlkit_translate_runtime.py"
+      - "plugins/translation/ml-translate/plugin.json"
+      - ".github/workflows/validate-mlkit-translate-runtime.yml"
+  pull_request:
+    paths:
+      - "tools/build.gradle"
+      - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/mlkit-translate-src/**"
+      - "tools/validate_mlkit_translate_runtime.py"
+      - "plugins/translation/ml-translate/plugin.json"
+      - ".github/workflows/validate-mlkit-translate-runtime.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-mlkit-translate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install pinned Android platform and build tools
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up pinned Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.4"
+
+      - name: Build isolated ML Kit runtime
+        run: bash tools/build_mlkit_translate_runtime.sh plugins/translation/ml-translate
+
+      - name: Validate runtime contract
+        run: python3 tools/validate_mlkit_translate_runtime.py plugins/translation/ml-translate
