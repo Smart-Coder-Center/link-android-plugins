@@ -65,6 +65,11 @@ for artifact in files:
                 "com_google_firebase__firebase-components__",
                 "com_google_firebase__firebase-encoders-json__",
                 "com_google_android_datatransport__",
+                # Google Play Services classes are also plugin-owned: host R8 may strip
+                # methods only referenced by dynamically loaded ML Kit DEX code.
+                "com_google_android_gms__play-services-base__",
+                "com_google_android_gms__play-services-basement__",
+                "com_google_android_gms__play-services-tasks__",
             )
             if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
