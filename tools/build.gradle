@@ -36,7 +36,7 @@ configurations {
 dependencies {
     mlKitTranslateRuntime 'com.google.mlkit:translate:17.0.2'
     mlKitTranslateRuntime 'com.google.mlkit:language-id:17.0.5'
-    // Must match the shared ML Kit common layer pinned in Link Pro's host APK.
+    // Pin ML Kit Common for the isolated plugin DEX; it must not reuse Link's host singleton.
     mlKitTranslateRuntime 'com.google.mlkit:common:18.10.0'
 }
 
