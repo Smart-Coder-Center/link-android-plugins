@@ -165,6 +165,23 @@ if ! javap -classpath "$BASEMENT_JAR" -p -s com.google.android.gms.common.intern
   exit 6
 fi
 
+# ML Kit Translate 17.x calls the OkHttp 3 static MediaType.parse(String) API.
+# Link host APK uses OkHttp 5, so this class must be packaged in the plugin DEX.
+OKHTTP_JAR="$(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name 'com_squareup_okhttp3__okhttp__3.12.13.jar' | head -n 1)"
+OKIO_JAR="$(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name 'com_squareup_okio__okio__1.15.0.jar' | head -n 1)"
+if [[ -z "$OKHTTP_JAR" || -z "$OKIO_JAR" ]]; then
+  echo "Pinned OkHttp 3.12.13 / Okio 1.15.0 runtime JARs are missing" >&2
+  exit 8
+fi
+if ! jar tf "$OKHTTP_JAR" | grep -Fxq 'okhttp3/MediaType.class'; then
+  echo "Pinned OkHttp runtime does not contain okhttp3.MediaType" >&2
+  exit 8
+fi
+if ! javap -classpath "$OKHTTP_JAR:$OKIO_JAR" -p -s okhttp3.MediaType | grep -Fq '(Ljava/lang/String;)Lokhttp3/MediaType;'; then
+  echo "Pinned OkHttp runtime does not expose MediaType.parse(String)" >&2
+  exit 8
+fi
+
 mapfile -t JARS < <(find "$WORK_DIR/jars" -maxdepth 1 -type f -name '*.jar' | sort)
 mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name '*.jar' | sort)
 (("${#JARS[@]}" > 0 && "${#RUNTIME_JARS[@]}" > 0)) || { echo "ML Kit compile or runtime JAR inputs are missing" >&2; exit 3; }
