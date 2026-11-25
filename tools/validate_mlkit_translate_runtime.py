@@ -42,6 +42,8 @@ source = manifest.get("source") or {}
 common_version = source.get("common_version")
 if not common_version:
     raise SystemExit("The shared ML Kit common runtime version must be pinned in plugin.json")
+if source.get("okhttp_version") != "3.12.13" or source.get("okio_version") != "1.15.0":
+    raise SystemExit("Plugin-local OkHttp/Okio versions must match the pinned ML Kit-compatible runtime")
 aar_report = root / "provenance" / "mlkit-aar-audit.json"
 if not aar_report.is_file():
     raise SystemExit("ML Kit AAR dependency audit is missing")
