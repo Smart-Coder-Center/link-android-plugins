@@ -57,6 +57,12 @@ collection_artifacts = sorted(
     name for name in artifact_names
     if name.startswith("androidx_collection__collection-jvm__") and name.endswith(".jar")
 )
+kotlin_stdlib_artifacts = sorted(
+    name for name in artifact_names
+    if name.startswith("org_jetbrains_kotlin__kotlin-stdlib__") and name.endswith(".jar")
+)
+if len(kotlin_stdlib_artifacts) != 1:
+    raise SystemExit("Expected exactly one resolved Kotlin stdlib JAR; got " + repr(kotlin_stdlib_artifacts))
 if len(collection_artifacts) != 1:
     raise SystemExit("Expected exactly one resolved AndroidX Collection JVM JAR for plugin isolation; got " + repr(collection_artifacts))
 missing_isolated = sorted(set(required_isolated) - artifact_names)
@@ -64,7 +70,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection-jvm__"):
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -152,11 +158,12 @@ defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files)
 required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
     "Landroidx/collection/ArraySet;",
+    "Lkotlin/jvm/internal/markers/KMutableCollection;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
     raise SystemExit(
-        "Plugin DEX does not DEFINE required plugin-local GMS/AndroidX classes; "
+        "Plugin DEX does not DEFINE required plugin-local GMS/AndroidX/Kotlin classes; "
         "parent-loader fallback can reproduce the crash: " + ", ".join(missing_classes)
     )
 
