@@ -3,7 +3,7 @@
   "kind": "translation",
   "version": "1.0.15",
   "name": "Smart Translate",
-  "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
+  "description": "Detects source language and translates on-device with managed offline language models. Link asks before downloading missing models and lets users keep or remove downloaded languages.",
   "language": "und",
   "min_link_version": "2.21.0",
   "package_type": "native_runtime",
