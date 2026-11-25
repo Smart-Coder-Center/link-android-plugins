@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "name": "Smart Translate",
   "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Fixes Google Play Services and AndroidX Collection class-loader mismatch by bundling ArraySet in the isolated Translate DEX runtime.",
+  "release_notes": "Bundles Kotlin stdlib marker interfaces in the isolated Translate DEX runtime, fixing missing KMutableCollection.",
   "runtime": {
     "abis": [
       "arm64-v8a"
