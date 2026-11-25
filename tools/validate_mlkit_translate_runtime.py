@@ -28,6 +28,18 @@ aar_report = root / "provenance" / "mlkit-aar-audit.json"
 if not aar_report.is_file():
     raise SystemExit("ML Kit AAR dependency audit is missing")
 artifacts = json.loads(aar_report.read_text(encoding="utf-8")).get("artifacts", [])
+aar_components = json.loads(aar_report.read_text(encoding="utf-8")).get("aar_components", [])
+thin_registrar_declared = any(
+    component.get("aar") == "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar"
+    and any(
+        item.get("name") == "com.google.firebase.components:com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar"
+        and item.get("value") == "com.google.firebase.components"
+        for item in component.get("metadata", [])
+    )
+    for component in aar_components
+)
+if not thin_registrar_declared:
+    raise SystemExit("Pinned unbundled Play Services AAR does not declare ThinLanguageIdRegistrar in its manifest")
 common_artifacts = [
     item.get("file", "") for item in artifacts
     if item.get("file", "").startswith("com_google_mlkit__common__")
@@ -81,7 +93,7 @@ if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
 if 'com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar' not in adapter_source:
     raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar")
-if 'createRegistrar(pluginLoader,\\n                    "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar"' in adapter_source:
+if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' in adapter_source:
     raise SystemExit("Bundled LanguageIdRegistrar must not be used with the unbundled Play Services dependency")
 
 api_report = root / "provenance" / "mlkit-internal-api.txt"
