@@ -70,6 +70,8 @@ for artifact in files:
                 "com_google_android_gms__play-services-base__",
                 "com_google_android_gms__play-services-basement__",
                 "com_google_android_gms__play-services-tasks__",
+                # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
+                "androidx_collection__collection__",
             )
             if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
