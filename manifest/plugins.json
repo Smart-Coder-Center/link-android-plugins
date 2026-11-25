@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 24,
+  "catalog_version": 25,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Bundles the Language ID API facade alongside the Google Play Services-managed unbundled model; no bundled TFLite model is shipped. Keeps Kotlin stdlib marker interfaces in the isolated DEX runtime.",
+      "release_notes": "Registers the Language ID component explicitly in the isolated ML Kit context, bundles and validates its implementation factory, and keeps the pinned runtime dependencies plugin-local.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -96,11 +96,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.11",
+      "version": "1.0.12",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.11/ml-translate-1.0.11.zip",
-        "size_bytes": 8240597,
-        "sha256": "356db2555e27a78ebab695c59c455ed88e8d72d0dc8933f98c2b684fbab201f6"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.12/ml-translate-1.0.12.zip",
+        "size_bytes": 8240720,
+        "sha256": "bceb59ad760cf24c5449d77686b7d3cdb963475f44f86a054f0fb2b7a8850428"
       }
     },
     {
