@@ -87,6 +87,7 @@ api_text = api_report.read_text(encoding="utf-8")
 required_api = [
     "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
+    "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
 ]
 missing_api = [signature for signature in required_api if signature not in api_text]
@@ -159,6 +160,8 @@ required_classes = (
     "Landroidx/collection/ArraySet;",
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
+    "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
+    "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
