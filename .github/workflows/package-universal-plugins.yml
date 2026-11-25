@@ -148,7 +148,7 @@ jobs:
               elif source_type == "mlkit_translate_runtime":
                   translate_version = source.get("translate_version")
                   language_id_version = source.get("language_id_version")
-                  if translate_version != "17.0.2" or language_id_version != "17.0.5":
+                  if translate_version != "17.0.2" or language_id_version != "17.0.0":
                       raise SystemExit(f"ML Kit Translate source versions are not the reviewed pins: {manifest_path}")
                   subprocess.run(["bash", "tools/build_mlkit_translate_runtime.sh", str(base)], check=True)
                   generated_path = base / ".link-runtime-generated.json"
