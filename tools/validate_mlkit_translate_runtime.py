@@ -33,7 +33,7 @@ thin_registrar_declared = any(
     component.get("aar") == "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar"
     and any(
         item.get("name") == "com.google.firebase.components:com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar"
-        and item.get("value") == "com.google.firebase.components"
+        and item.get("value") == "com.google.firebase.components.ComponentRegistrar"
         for item in component.get("metadata", [])
     )
     for component in aar_components
