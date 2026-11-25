@@ -127,6 +127,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             List<Object> registrars = new ArrayList<>();
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
+            // LanguageIdentification.getClient() resolves LanguageIdentifierFactory from
+            // MlKitContext. Without this registrar the API facade loads but its factory is null.
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar", registrarInterface));
 
