@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 20,
+  "catalog_version": 21,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Fixes synchronous ML Kit client initialization failures being reduced to a generic error; reports the original exception and nested causes from language identification and translation client creation.",
+      "release_notes": "Fixes Google Play Services and AndroidX Collection class-loader mismatch by bundling ArraySet in the isolated Translate DEX runtime.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -97,11 +97,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.7",
+      "version": "1.0.8",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.7/ml-translate-1.0.7.zip",
-        "size_bytes": 7644006,
-        "sha256": "6a8103cc3223dac0cca7839eb8539e1c771da2ff54ad5a47a5d2960b4b199535"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.8/ml-translate-1.0.8.zip",
+        "size_bytes": 7961896,
+        "sha256": "286f8c93ee6f386a7c9648868aa2d607f6cbed04e1f51a84679ccbe5beb722bf"
       }
     },
     {
