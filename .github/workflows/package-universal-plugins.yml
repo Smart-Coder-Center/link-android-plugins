@@ -552,8 +552,62 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add manifest/plugins.json
-          git commit -m "catalog: publish universal plugin package versions"
-          git push origin HEAD:main
+          # Keep the newly generated release matrix outside the Git worktree while
+          # refreshing main. This avoids pushing a catalog based on a stale checkout.
+          cp dist/universal-plugins/release-matrix.json /tmp/link-plugin-release-matrix.json
+
+          for attempt in 1 2 3; do
+            echo "Catalog synchronization attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          catalog_path = Path("manifest/plugins.json")
+          catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+          matrix = json.loads(Path("/tmp/link-plugin-release-matrix.json").read_text(encoding="utf-8"))
+          if not isinstance(catalog.get("plugins"), list):
+              raise SystemExit("Public catalog has an invalid plugins list")
+
+          by_id = {entry["id"]: entry for entry in catalog["plugins"]}
+          changed = False
+          for item in matrix:
+              entry = item.get("entry")
+              if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+                  raise SystemExit("Release matrix contains an invalid plugin entry")
+              previous = by_id.get(entry["id"])
+              if previous != entry:
+                  by_id[entry["id"]] = entry
+                  changed = True
+
+          if changed:
+              catalog["plugins"] = sorted(by_id.values(), key=lambda value: (value["kind"], value["id"]))
+              catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
+              catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+              print("Merged newly published plugin entries into the latest main catalog.")
+          else:
+              print("The latest main catalog already contains all published plugin entries.")
+          PY
+
+            git add manifest/plugins.json
+            if git diff --cached --quiet; then
+              echo "Catalog is already up to date."
+              exit 0
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "catalog: publish universal plugin package versions"
+
+            if git push origin HEAD:main; then
+              echo "Catalog update pushed successfully."
+              exit 0
+            fi
+
+            echo "Push raced with another main update; refreshing and retrying."
+          done
+
+          echo "Could not update catalog after 3 synchronization attempts."
+          exit 1
