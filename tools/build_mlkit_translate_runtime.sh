@@ -129,6 +129,8 @@ for artifact in files:
                 "com_squareup_okhttp3__", "com_squareup_okio__",
                 "com_google_firebase__firebase-encoders__",
                 "com_google_guava__listenablefuture__",
+                # AndroidX Collection resolves as collection-jvm JAR on this Gradle variant.
+                "androidx_collection__collection-jvm__",
             )):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
