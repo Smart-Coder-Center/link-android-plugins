@@ -111,7 +111,7 @@ jobs:
                   raise SystemExit("Could not inspect existing ML Translate release: " + existing.stderr)
               run([
                   "gh", "release", "create", tag, str(archive),
-                  "--title", "Link plugin ml-translate 1.0.12",
+                  "--title", "Link plugin ml-translate 1.0.13",
                   "--target", "main",
                   "--notes", "Signed ML Kit Translate runtime for Link. Language models are downloaded on demand by ML Kit and are not bundled in this release."
               ])
@@ -169,14 +169,14 @@ jobs:
               plugins.sort(key=lambda item: (item.get("kind", ""), item.get("id", "")))
               catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
               catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-              print("Added ml-translate 1.0.12 to catalog version", catalog["catalog_version"])
+              print("Added ml-translate 1.0.13 to catalog version", catalog["catalog_version"])
           PY
 
           if ! git diff --quiet -- manifest/plugins.json; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add manifest/plugins.json
-            git commit -m "catalog: publish ML Kit Translate plugin 1.0.12"
+            git commit -m "catalog: publish ML Kit Translate plugin 1.0.13"
             git fetch origin main
             git rebase --autostash origin/main
             git push origin HEAD:main
