@@ -1,26 +1,6 @@
 name: ML Kit Translate DEX Runtime Probe
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "tools/build.gradle"
-      - "tools/build_mlkit_translate_runtime.sh"
-      - "tools/validate_mlkit_translate_runtime.py"
-      - "tools/package_mlkit_translate_runtime.py"
-      - "tools/mlkit-translate-src/**"
-      - "plugins/translation/ml-translate/plugin.json"
-      - ".github/workflows/mlkit-runtime-probe.yml"
-  push:
-    branches: [main]
-    paths:
-      - "tools/build.gradle"
-      - "tools/build_mlkit_translate_runtime.sh"
-      - "tools/validate_mlkit_translate_runtime.py"
-      - "tools/package_mlkit_translate_runtime.py"
-      - "tools/mlkit-translate-src/**"
-      - "plugins/translation/ml-translate/plugin.json"
-      - ".github/workflows/mlkit-runtime-probe.yml"
   workflow_dispatch:
 
 permissions:
