@@ -97,7 +97,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
      * Translate's RemoteModelManager unregistered. The plugin-local MlKitContext and
      * ComponentRegistrar API must therefore come from the same DEX loader.
      */
-    private static void initializeMlKitComponents(Context context) {
+    private static synchronized void initializeMlKitComponents(Context context) {
         try {
             ClassLoader pluginLoader = MlKitTranslatePlugin.class.getClassLoader();
             // Do not let a missing plugin class silently fall back to the APK's older GMS copy.
@@ -116,7 +116,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 throw new LinkageError("ML Kit Common resolved outside the Smart Translate plugin DEX");
             }
             try {
-                mlKitContext.getMethod("getInstance").invoke(null);
+                Object existingContext = mlKitContext.getMethod("getInstance").invoke(null);
+                verifyLanguageIdFactory(pluginLoader, mlKitContext, existingContext);
                 return;
             } catch (InvocationTargetException notInitialized) {
                 if (!(notInitialized.getCause() instanceof IllegalStateException)) throw notInitialized;
@@ -139,8 +140,9 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                     "com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar", registrarInterface));
 
             Method initialize = mlKitContext.getMethod("initialize", Context.class, List.class);
-            initialize.invoke(null, context, registrars);
-        } catch (Exception error) {
+            Object initializedContext = initialize.invoke(null, context, registrars);
+            verifyLanguageIdFactory(pluginLoader, mlKitContext, initializedContext);
+        } catch (Exception | LinkageError error) {
             Throwable cause = error instanceof InvocationTargetException
                     && ((InvocationTargetException) error).getCause() != null
                     ? ((InvocationTargetException) error).getCause() : error;
@@ -149,9 +151,40 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
     }
 
+    private static void verifyLanguageIdFactory(ClassLoader loader, Class<?> mlKitContextClass,
+            Object mlKitContextInstance) throws Exception {
+        if (LanguageIdentification.class.getClassLoader() != loader
+                || LanguageIdentifier.class.getClassLoader() != loader) {
+            throw new LinkageError("Language ID API classes were not loaded from the Smart Translate plugin DEX");
+        }
+        Class<?> factoryClass = Class.forName(
+                "com.google.mlkit.nl.languageid.internal.LanguageIdentifierImpl$Factory", true, loader);
+        if (factoryClass.getClassLoader() != loader) {
+            throw new LinkageError("LanguageIdentifierImpl.Factory was not loaded from the Smart Translate plugin DEX");
+        }
+        Method getComponent = mlKitContextClass.getMethod("get", Class.class);
+        Object factory = getComponent.invoke(mlKitContextInstance, factoryClass);
+        if (factory == null) {
+            throw new IllegalStateException("ML Kit Language ID Factory is not registered in the plugin-local MlKitContext");
+        }
+        // Force Factory.create() now so a missing unbundled Play Services delegate is reported
+        // during plugin initialization, rather than later as an opaque translation failure.
+        LanguageIdentifier identifier = LanguageIdentification.getClient();
+        if (identifier == null) {
+            throw new IllegalStateException("ML Kit Language ID Factory returned a null client");
+        }
+        identifier.close();
+    }
+
     private static Object createRegistrar(ClassLoader loader, String className,
             Class<?> registrarInterface) throws Exception {
+        if (registrarInterface.getClassLoader() != loader) {
+            throw new SecurityException("ComponentRegistrar interface was not loaded from the plugin DEX");
+        }
         Class<?> registrarClass = Class.forName(className, true, loader);
+        if (registrarClass.getClassLoader() != loader) {
+            throw new SecurityException("ML Kit registrar was not loaded from the plugin DEX: " + className);
+        }
         Object registrar = registrarClass.getDeclaredConstructor().newInstance();
         if (!registrarInterface.isInstance(registrar)) {
             throw new SecurityException("ML Kit registrar was not linked to the plugin-local component API: " + className);
