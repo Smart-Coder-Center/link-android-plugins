@@ -104,8 +104,8 @@ jobs:
                       if not downloaded.is_file() or hashlib.sha256(downloaded.read_bytes()).hexdigest() != expected_hash:
                           raise SystemExit("Existing immutable ML Translate release asset does not match this build")
               else:
-              else:
-              run(["gh", "release", "upload", tag, str(archive)])
+                  run(["gh", "release", "upload", tag, str(archive)])
+          else:
               error = (existing.stderr or "").lower()
               if "not found" not in error and "404" not in error:
                   raise SystemExit("Could not inspect existing ML Translate release: " + existing.stderr)
