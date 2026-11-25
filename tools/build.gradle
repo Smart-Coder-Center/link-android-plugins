@@ -42,6 +42,9 @@ dependencies {
     mlKitTranslateRuntime 'com.google.android.gms:play-services-base:18.10.0'
     mlKitTranslateRuntime 'com.google.android.gms:play-services-basement:18.10.0'
     mlKitTranslateRuntime 'com.google.android.gms:play-services-tasks:18.4.1'
+    // GMS ClientSettings uses ArraySet; bundle it in the same isolated plugin DEX,
+    // rather than resolving a potentially R8-modified host copy at runtime.
+    mlKitTranslateRuntime 'androidx.collection:collection:1.5.0'
 }
 
 tasks.register('copyMlKitTranslateRuntimeArtifacts') {
