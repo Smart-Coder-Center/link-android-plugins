@@ -96,12 +96,34 @@ if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInte
 if '"com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface' not in adapter_source:
     raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar as the creator delegate")
 
+# Verify both the existing-context and fresh-initialization paths before exposing the plugin.
+if "private static synchronized void initializeMlKitComponents(Context context)" not in adapter_source:
+    raise SystemExit("ML Kit component initialization must be synchronized")
+if adapter_source.count("verifyLanguageIdFactory(pluginLoader, mlKitContext,") != 2:
+    raise SystemExit("Both existing and freshly initialized MlKitContext paths must verify Language ID Factory")
+for required in (
+    '"com.google.mlkit.nl.languageid.internal.LanguageIdentifierImpl$Factory", true, loader',
+    'mlKitContextClass.getMethod("get", Class.class)',
+    'LanguageIdentification.getClient()',
+    'identifier.close()',
+    'factoryClass.getClassLoader() != loader',
+    'LanguageIdentification.class.getClassLoader() != loader',
+    'LanguageIdentifier.class.getClassLoader() != loader',
+    'registrarInterface.getClassLoader() != loader',
+    'registrarClass.getClassLoader() != loader',
+    'catch (Exception | LinkageError error)',
+):
+    if required not in adapter_source:
+        raise SystemExit("ML Kit runtime Factory/class-loader verification is incomplete: " + required)
+
 api_report = root / "provenance" / "mlkit-internal-api.txt"
 if not api_report.is_file():
     raise SystemExit("ML Kit component API audit is missing")
 api_text = api_report.read_text(encoding="utf-8")
 required_api = [
     "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
+    "public static com.google.mlkit.common.sdkinternal.MlKitContext getInstance();",
+    "public <T> T get(java.lang.Class<T>);",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();",
