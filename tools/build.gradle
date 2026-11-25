@@ -1,5 +1,11 @@
 repositories {
     google()
+    // Maven Central's primary endpoint can temporarily return HTTP 429 on hosted runners.
+    // Use Google's read-only mirror first, then retain the canonical endpoint as fallback.
+    maven {
+        name = 'GoogleMavenCentralMirror'
+        url = uri('https://maven-central.storage-download.googleapis.com/maven2/')
+    }
     mavenCentral()
 }
 
