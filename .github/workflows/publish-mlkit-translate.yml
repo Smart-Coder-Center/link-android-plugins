@@ -61,13 +61,13 @@ jobs:
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.12.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.13.zip
 
       - name: Upload signed package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.12-release-candidate
-          path: dist/ml-translate-1.0.12.zip
+          name: ml-translate-1.0.13-release-candidate
+          path: dist/ml-translate-1.0.13.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -84,8 +84,8 @@ jobs:
           import tempfile
           from pathlib import Path
 
-          archive = Path("dist/ml-translate-1.0.12.zip")
-          tag = "plugin-ml-translate-1.0.12"
+          archive = Path("dist/ml-translate-1.0.13.zip")
+          tag = "plugin-ml-translate-1.0.13"
           expected_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
 
           def run(args, check=True):
@@ -128,7 +128,7 @@ jobs:
           import zipfile
           from pathlib import Path
 
-          archive = Path("dist/ml-translate-1.0.12.zip")
+          archive = Path("dist/ml-translate-1.0.13.zip")
           catalog_path = Path("manifest/plugins.json")
           with zipfile.ZipFile(archive) as package:
               metadata = json.loads(package.read("plugin.json"))
@@ -138,7 +138,7 @@ jobs:
           metadata.pop("files", None)
           metadata.pop("source", None)
           metadata["archive"] = {
-              "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.12/ml-translate-1.0.12.zip",
+              "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.13/ml-translate-1.0.13.zip",
               "size_bytes": archive.stat().st_size,
               "sha256": hashlib.sha256(archive.read_bytes()).hexdigest()
           }

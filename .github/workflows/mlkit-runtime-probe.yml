@@ -1,6 +1,16 @@
 name: ML Kit Translate DEX Runtime Probe
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/build.gradle"
+      - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/validate_mlkit_translate_runtime.py"
+      - "tools/package_mlkit_translate_runtime.py"
+      - "tools/mlkit-translate-src/**"
+      - "plugins/translation/ml-translate/plugin.json"
+      - ".github/workflows/mlkit-runtime-probe.yml"
   push:
     branches: [main]
     paths:
@@ -59,13 +69,13 @@ jobs:
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.12.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.13.zip
 
       - name: Upload signed ML Kit plugin ZIP for integration testing
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.12-signed
-          path: dist/ml-translate-1.0.12.zip
+          name: ml-translate-1.0.13-signed
+          path: dist/ml-translate-1.0.13.zip
           if-no-files-found: error
           retention-days: 7
 
