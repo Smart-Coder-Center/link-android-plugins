@@ -53,6 +53,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     private final LinkedHashMap<String, CachedTranslator> translatorCache =
             new LinkedHashMap<>(4, 0.75f, true);
     private Task<Void> languageIdPreparationTask;
+    private TaskCompletionSource<Void> languageIdPreparationCompletion;
     private InstallStatusListener activeInstallListener;
     private boolean languageIdReady;
     private boolean closed;
@@ -147,6 +148,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             if (languageIdPreparationTask != null) return languageIdPreparationTask;
             completion = new TaskCompletionSource<>();
             languageIdPreparationTask = completion.getTask();
+            languageIdPreparationCompletion = completion;
         }
 
         try {
@@ -216,6 +218,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         synchronized (this) {
             if (languageIdPreparationTask != completion.getTask()) return;
             languageIdPreparationTask = null;
+            languageIdPreparationCompletion = null;
             if (error == null) languageIdReady = true;
             activeInstallListener = null;
         }
@@ -389,9 +392,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 .setSourceLanguage(source)
                 .setTargetLanguage(target)
                 .build();
-        final CachedTranslator cached;
+        CachedTranslator acquired = null;
         try {
-            cached = acquireTranslator(source + "->" + target, options);
+            acquired = acquireTranslator(source + "->" + target, options);
+            final CachedTranslator cached = acquired;
             ensureTranslatorModel(cached)
                     .continueWithTask(ready -> {
                         if (!ready.isSuccessful()) {
@@ -408,6 +412,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                         else fail(callback, result.getException());
                     });
         } catch (Throwable error) {
+            if (acquired != null) releaseTranslator(acquired);
             fail(callback, error);
         }
     }
@@ -479,6 +484,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 || !TranslateLanguage.getAllLanguages().contains(source)
                 || !TranslateLanguage.getAllLanguages().contains(target)) {
             fail(callback, "زبان مبدأ یا مقصد پشتیبانی نمی‌شود");
+            return;
+        }
+        if (source.equals(target)) {
+            success(callback, "[]");
             return;
         }
         final Set<String> required = new java.util.LinkedHashSet<>();
@@ -606,11 +615,15 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     public void close() {
         List<Translator> translatorsToClose = new ArrayList<>();
         InstallStatusListener listener;
+        TaskCompletionSource<Void> pendingPreparation;
         synchronized (this) {
             if (closed) return;
             closed = true;
             listener = activeInstallListener;
             activeInstallListener = null;
+            pendingPreparation = languageIdPreparationCompletion;
+            languageIdPreparationCompletion = null;
+            languageIdPreparationTask = null;
             for (CachedTranslator cached : translatorCache.values()) {
                 cached.evicted = true;
                 if (cached.activeOperations == 0) translatorsToClose.add(cached.translator);
@@ -619,6 +632,9 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
         if (listener != null) {
             try { moduleInstallClient.unregisterListener(listener); } catch (Exception ignored) {}
+        }
+        if (pendingPreparation != null) {
+            pendingPreparation.trySetException(new IllegalStateException("Smart Translate is closed"));
         }
         for (Translator translator : translatorsToClose) {
             try { translator.close(); } catch (Exception ignored) {}
