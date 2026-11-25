@@ -79,6 +79,10 @@ if '"com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader' not 
     raise SystemExit("MlKitContext must be loaded from the isolated plugin class loader")
 if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not in adapter_source:
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
+if 'com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar' not in adapter_source:
+    raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar")
+if 'createRegistrar(pluginLoader,\\n                    "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar"' in adapter_source:
+    raise SystemExit("Bundled LanguageIdRegistrar must not be used with the unbundled Play Services dependency")
 
 api_report = root / "provenance" / "mlkit-internal-api.txt"
 if not api_report.is_file():
@@ -88,6 +92,7 @@ required_api = [
     "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
+    "public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
 ]
 missing_api = [signature for signature in required_api if signature not in api_text]
@@ -161,6 +166,8 @@ required_classes = (
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
+    "Lcom/google/mlkit/nl/languageid/thin/internal/ThinLanguageIdRegistrar;",
+    "Lcom/google/mlkit/nl/languageid/thin/internal/ThinLanguageIdentifierCreator;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
