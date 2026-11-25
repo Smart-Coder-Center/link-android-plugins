@@ -59,6 +59,8 @@ for artifact in files:
             # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
             runtime_prefixes = (
                 "com_google_mlkit__translate__",
+                # Language ID API facade required by the unbundled Play Services implementation.
+                "com_google_mlkit__language-id-common__",
                 # Unbundled Language ID implementation and its GMS support classes.
                 "com_google_android_gms__play-services-mlkit-",
                 "com_google_mlkit__common__",
