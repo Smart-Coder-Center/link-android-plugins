@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "name": "Smart Translate",
   "description": "Detects source language and translates on-device with managed offline language models. Link asks before downloading missing models and lets users keep or remove downloaded languages.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Uses the Google Play services consent UI to install the optional Language ID module, waits for confirmed availability, and keeps explicit download/keep/remove controls for translation language models; caches LanguageIdentifier and Translator clients to reduce repeated setup and translation latency.",
+  "release_notes": "Uses the Google Play services consent UI to install the optional Language ID module, waits for confirmed availability, and keeps explicit download/keep/remove controls for translation language models; caches LanguageIdentifier and Translator clients to reduce repeated setup and translation latency; isolates the OkHttp 3 transport required by ML Kit from Link’s OkHttp 5 host runtime.",
   "runtime": {
     "abis": [
       "arm64-v8a"
@@ -42,6 +42,8 @@
     "translate_version": "17.0.2",
     "language_id_version": "17.0.0",
     "language_id_provider": "com.google.android.gms:play-services-mlkit-language-id",
-    "common_version": "18.10.0"
+    "common_version": "18.10.0",
+    "okhttp_version": "3.12.13",
+    "okio_version": "1.15.0"
   }
 }
