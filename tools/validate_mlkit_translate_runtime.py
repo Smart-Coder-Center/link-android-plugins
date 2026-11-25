@@ -41,7 +41,6 @@ if common_artifacts != [expected_common]:
 
 # The plugin must own the registry classes, not just Translate's front-end classes.
 required_isolated = (
-    "com_google_mlkit__language-id-common__16.1.0.aar",
     "com_google_firebase__firebase-components__16.1.0.aar",
     "com_google_firebase__firebase-encoders-json__17.1.0.aar",
     "com_google_firebase__firebase-encoders__16.1.0.jar",
@@ -51,6 +50,7 @@ required_isolated = (
     "com_google_android_gms__play-services-base__18.10.0.aar",
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
+    "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
 collection_artifacts = sorted(
@@ -70,7 +70,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__"):
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -86,8 +86,6 @@ api_text = api_report.read_text(encoding="utf-8")
 required_api = [
     "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
-    "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
-    "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
 ]
 missing_api = [signature for signature in required_api if signature not in api_text]
@@ -159,6 +157,7 @@ required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
     "Landroidx/collection/ArraySet;",
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
+    "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
