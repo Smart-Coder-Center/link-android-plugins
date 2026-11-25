@@ -72,6 +72,7 @@ for artifact in files:
                 "com_google_android_gms__play-services-tasks__",
                 # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
                 "androidx_collection__collection__",
+                "org_jetbrains_kotlin__kotlin-stdlib__",
             )
             if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
@@ -131,6 +132,7 @@ for artifact in files:
                 "com_google_guava__listenablefuture__",
                 # AndroidX Collection resolves as collection-jvm JAR on this Gradle variant.
                 "androidx_collection__collection-jvm__",
+                "org_jetbrains_kotlin__kotlin-stdlib__",
             )):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
