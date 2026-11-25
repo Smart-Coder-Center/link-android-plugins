@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 23,
+  "catalog_version": 24,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -98,7 +98,7 @@
       },
       "version": "1.0.11",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.10/ml-translate-1.0.10.zip",
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.11/ml-translate-1.0.11.zip",
         "size_bytes": 8240597,
         "sha256": "356db2555e27a78ebab695c59c455ed88e8d72d0dc8933f98c2b684fbab201f6"
       }
