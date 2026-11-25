@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "name": "Smart Translate",
   "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Bundles the Language ID API facade alongside the Google Play Services-managed unbundled model; no bundled TFLite model is shipped. Keeps Kotlin stdlib marker interfaces in the isolated DEX runtime.",
+  "release_notes": "Registers the Language ID component explicitly in the isolated ML Kit context, bundles and validates its implementation factory, and keeps the pinned runtime dependencies plugin-local.",
   "runtime": {
     "abis": [
       "arm64-v8a"
