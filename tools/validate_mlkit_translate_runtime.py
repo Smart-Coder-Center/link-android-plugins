@@ -51,6 +51,7 @@ required_isolated = (
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
     "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar",
+    "com_google_mlkit__language-id-common__16.1.0.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
 collection_artifacts = sorted(
@@ -70,7 +71,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
