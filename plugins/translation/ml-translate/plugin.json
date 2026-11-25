@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "name": "Smart Translate",
   "description": "Detects the source language automatically and translates text on the device using ML Kit's on-demand offline language models. Voice input and Persian read-aloud use Link speech and text-to-speech plugins.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Registers both LanguageIdRegistrar (Factory provider) and ThinLanguageIdRegistrar (unbundled Play Services creator delegate).",
+  "release_notes": "Requests and waits for the Google Play services Language ID optional module; explicitly lists, downloads and removes translation language models; caches LanguageIdentifier and Translator clients to avoid rebuilding them for each translation.",
   "runtime": {
     "abis": [
       "arm64-v8a"

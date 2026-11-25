@@ -12,10 +12,27 @@ generated = json.loads(generated_path.read_text(encoding="utf-8"))
 
 adapter_path = Path(__file__).resolve().parent / "mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
 adapter_source = adapter_path.read_text(encoding="utf-8")
-if "RemoteModelManager.getInstance()" in adapter_source or "new TranslateRemoteModel" in adapter_source:
-    raise SystemExit("Translate runtime must not call the optional RemoteModelManager download API directly")
-if not any(call in adapter_source for call in ("translator.downloadModelIfNeeded()", "activeTranslator.downloadModelIfNeeded()")):
-    raise SystemExit("Translate runtime must delegate on-demand downloads to Translator.downloadModelIfNeeded()")
+required_runtime_behaviors = (
+    "ModuleInstall.getClient(this.context)",
+    "moduleInstallClient.areModulesAvailable(languageIdentifier)",
+    "ModuleInstallRequest.newBuilder()",
+    ".addApi(languageIdentifier)",
+    ".setListener(listener)",
+    "ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED",
+    "RemoteModelManager.getInstance()",
+    "getDownloadedModels(TranslateRemoteModel.class)",
+    "new TranslateRemoteModel.Builder(language).build()",
+    "RemoteModelManager.getInstance().download(model, conditions.build())",
+    "RemoteModelManager.getInstance().deleteDownloadedModel(model)",
+    "cached.translator.downloadModelIfNeeded()",
+    "MAX_CACHED_TRANSLATORS",
+    "languageIdentifier.close()",
+    "cached.translator.close()",
+)
+missing_behaviors = [item for item in required_runtime_behaviors if item not in adapter_source]
+if missing_behaviors:
+    raise SystemExit("Translate runtime is missing managed module/model lifecycle or translator caching: "
+                     + ", ".join(missing_behaviors))
 
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
@@ -196,6 +213,14 @@ dex_files = sorted((root / "code").glob("classes*.dex"))
 defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
 required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstall;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallClient;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallRequest;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallStatusUpdate;",
+    "Lcom/google/android/gms/common/moduleinstall/InstallStatusListener;",
+    "Lcom/google/mlkit/common/model/RemoteModelManager;",
+    "Lcom/google/mlkit/common/model/DownloadConditions;",
+    "Lcom/google/mlkit/nl/translate/TranslateRemoteModel;",
     "Landroidx/collection/ArraySet;",
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",

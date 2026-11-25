@@ -65,17 +65,23 @@ jobs:
       - name: Validate signed runtime package contract
         run: python3 tools/validate_mlkit_translate_runtime.py plugins/translation/ml-translate
 
+      - name: Read ML Kit plugin version
+        id: plugin-version
+        run: |
+          VERSION="$(python3 -c 'import json; print(json.load(open("plugins/translation/ml-translate/plugin.json", encoding="utf-8"))["version"])')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build and verify signed ML Kit plugin ZIP
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate dist/ml-translate-1.0.14.zip
+          python3 tools/package_mlkit_translate_runtime.py plugins/translation/ml-translate "dist/ml-translate-${{ steps.plugin-version.outputs.version }}.zip"
 
       - name: Upload signed ML Kit plugin ZIP for integration testing
         uses: actions/upload-artifact@v4
         with:
-          name: ml-translate-1.0.14-signed
-          path: dist/ml-translate-1.0.14.zip
+          name: ml-translate-${{ steps.plugin-version.outputs.version }}-signed
+          path: dist/ml-translate-${{ steps.plugin-version.outputs.version }}.zip
           if-no-files-found: error
           retention-days: 7
 
