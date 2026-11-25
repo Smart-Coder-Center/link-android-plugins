@@ -48,6 +48,10 @@ dependencies {
     mlKitTranslateRuntime 'androidx.collection:collection:1.5.0'
     // ML Kit references Kotlin collection marker interfaces; keep stdlib inside plugin DEX.
     mlKitTranslateRuntime 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
+    // ML Kit's internal translate transport still calls the OkHttp 3 static MediaType.parse API.
+    // Link's host APK uses OkHttp 5, so ship this compatible transport inside the isolated plugin DEX.
+    mlKitTranslateRuntime 'com.squareup.okhttp3:okhttp:3.12.13'
+    mlKitTranslateRuntime 'com.squareup.okio:okio:1.15.0'
 }
 
 tasks.register('copyMlKitTranslateRuntimeArtifacts') {
