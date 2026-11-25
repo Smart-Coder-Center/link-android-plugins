@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 26,
+  "catalog_version": 27,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Uses the ThinLanguageIdRegistrar declared by the unbundled Play Services Language ID AAR; the bundled registrar is not compatible with this runtime.",
+      "release_notes": "Registers both LanguageIdRegistrar (Factory provider) and ThinLanguageIdRegistrar (unbundled Play Services creator delegate).",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -96,11 +96,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.13",
+      "version": "1.0.14",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.13/ml-translate-1.0.13.zip",
-        "size_bytes": 8240662,
-        "sha256": "8ae242d332f995a5b0bc2c9825fee650681ec8775acf6a65ef12b6c959018fe0"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.14/ml-translate-1.0.14.zip",
+        "size_bytes": 8241277,
+        "sha256": "79384031aa09e09eb6b3b0bc69c9bfc3ff432427fa54d93a74340023ebad6441"
       }
     },
     {
