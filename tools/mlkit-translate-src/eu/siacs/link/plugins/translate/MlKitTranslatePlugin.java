@@ -3,12 +3,25 @@ package eu.siacs.link.plugins.translate;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.android.gms.common.moduleinstall.InstallStatusListener;
+import com.google.android.gms.common.moduleinstall.ModuleInstall;
+import com.google.android.gms.common.moduleinstall.ModuleInstallClient;
+import com.google.android.gms.common.moduleinstall.ModuleInstallRequest;
+import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.mlkit.common.model.DownloadConditions;
+import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.mlkit.nl.languageid.LanguageIdentification;
 import com.google.mlkit.nl.languageid.LanguageIdentifier;
 import com.google.mlkit.nl.translate.TranslateLanguage;
 import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
+import com.google.mlkit.nl.translate.TranslateRemoteModel;
+
+import org.json.JSONArray;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -16,7 +29,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
@@ -28,10 +45,34 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         void onFailure(String message);
     }
 
+    private static final int MAX_CACHED_TRANSLATORS = 4;
+
     private final Context context;
+    private final ModuleInstallClient moduleInstallClient;
+    private final LanguageIdentifier languageIdentifier;
+    private final LinkedHashMap<String, CachedTranslator> translatorCache =
+            new LinkedHashMap<>(4, 0.75f, true);
+    private Task<Void> languageIdPreparationTask;
+    private InstallStatusListener activeInstallListener;
+    private boolean languageIdReady;
+    private boolean closed;
+
+    private static final class CachedTranslator {
+        final Translator translator;
+        int activeOperations;
+        boolean evicted;
+        boolean modelReady;
+        Task<Void> modelDownloadTask;
+
+        CachedTranslator(Translator translator) {
+            this.translator = translator;
+        }
+    }
 
     private MlKitTranslatePlugin(Context context) {
         this.context = context.getApplicationContext();
+        this.moduleInstallClient = ModuleInstall.getClient(this.context);
+        this.languageIdentifier = LanguageIdentification.getClient();
     }
 
     public static MlKitTranslatePlugin create(Context context, File packageDirectory) {
@@ -47,43 +88,139 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         return Collections.unmodifiableList(TranslateLanguage.getAllLanguages());
     }
 
+    /**
+     * Explicitly prepare Google Play services' optional Language ID module.
+     * The system may display its own consent/download UI. Completion is reported only
+     * after the module is confirmed available, not when the request is merely accepted.
+     */
+    public void prepareLanguageIdModule(Callback callback) {
+        ensureLanguageIdModule()
+                .addOnSuccessListener(ignored -> success(callback, "ready"))
+                .addOnFailureListener(error -> fail(callback, error));
+    }
+
     public void identifyLanguage(String text, Callback callback) {
         if (text == null || text.trim().isEmpty()) {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
             return;
         }
+        ensureLanguageIdModule()
+                .addOnSuccessListener(ignored -> identifyLanguageWhenReady(text, callback))
+                .addOnFailureListener(error -> fail(callback, error));
+    }
+
+    private void identifyLanguageWhenReady(String text, Callback callback) {
         final LanguageIdentifier identifier;
-        try {
-            // Client creation can throw synchronously when a registrar or native component
-            // is unavailable. Route that exception through the same detailed diagnostic path.
-            identifier = LanguageIdentification.getClient();
-        } catch (Throwable error) {
-            fail(callback, error);
-            return;
+        synchronized (this) {
+            if (closed) {
+                fail(callback, "Smart Translate is closed");
+                return;
+            }
+            identifier = languageIdentifier;
         }
         try {
             identifier.identifyLanguage(text)
-                .addOnSuccessListener(language -> {
-                    identifier.close();
-                    if (language == null || "und".equals(language)) {
-                        fail(callback, "زبان متن قابل تشخیص نیست؛ زبان را دستی انتخاب کنید");
-                    } else {
-                        String supportedLanguage = TranslateLanguage.fromLanguageTag(language);
-                        if (supportedLanguage == null) {
-                            fail(callback, "این زبان برای ترجمه پشتیبانی نمی‌شود: " + language);
+                    .addOnSuccessListener(language -> {
+                        if (language == null || "und".equals(language)) {
+                            fail(callback, "زبان متن قابل تشخیص نیست؛ زبان را دستی انتخاب کنید");
                         } else {
-                            success(callback, supportedLanguage);
+                            String supportedLanguage = TranslateLanguage.fromLanguageTag(language);
+                            if (supportedLanguage == null) {
+                                fail(callback, "این زبان برای ترجمه پشتیبانی نمی‌شود: " + language);
+                            } else {
+                                success(callback, supportedLanguage);
+                            }
                         }
-                    }
-                })
-                .addOnFailureListener(error -> {
-                    identifier.close();
-                    fail(callback, error);
-                });
+                    })
+                    .addOnFailureListener(error -> fail(callback, error));
         } catch (Throwable error) {
-            identifier.close();
             fail(callback, error);
         }
+    }
+
+    private Task<Void> ensureLanguageIdModule() {
+        final TaskCompletionSource<Void> completion;
+        synchronized (this) {
+            if (closed) return Tasks.forException(
+                    new IllegalStateException("Smart Translate is closed"));
+            if (languageIdReady) return Tasks.forResult(null);
+            if (languageIdPreparationTask != null) return languageIdPreparationTask;
+            completion = new TaskCompletionSource<>();
+            languageIdPreparationTask = completion.getTask();
+        }
+
+        try {
+            moduleInstallClient.areModulesAvailable(languageIdentifier)
+                    .addOnSuccessListener(availability -> {
+                        if (availability.areModulesAvailable()) {
+                            completeLanguageIdPreparation(completion, null);
+                            return;
+                        }
+                        InstallStatusListener listener = new InstallStatusListener() {
+                            @Override
+                            public void onInstallStatusUpdated(ModuleInstallStatusUpdate update) {
+                                int state = update.getInstallState();
+                                if (state == ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED) {
+                                    moduleInstallClient.unregisterListener(this);
+                                    moduleInstallClient.areModulesAvailable(languageIdentifier)
+                                            .addOnSuccessListener(check -> completeLanguageIdPreparation(
+                                                    completion, check.areModulesAvailable() ? null
+                                                            : new IllegalStateException(
+                                                                    "Google Play services reported completion but Language ID is still unavailable")))
+                                            .addOnFailureListener(error ->
+                                                    completeLanguageIdPreparation(completion, error));
+                                } else if (state == ModuleInstallStatusUpdate.InstallState.STATE_FAILED
+                                        || state == ModuleInstallStatusUpdate.InstallState.STATE_CANCELED) {
+                                    moduleInstallClient.unregisterListener(this);
+                                    completeLanguageIdPreparation(completion,
+                                            new IllegalStateException("Language ID module installation ended with state " + state));
+                                }
+                            }
+                        };
+                        synchronized (MlKitTranslatePlugin.this) {
+                            if (closed) {
+                                moduleInstallClient.unregisterListener(listener);
+                                completeLanguageIdPreparation(completion,
+                                        new IllegalStateException("Smart Translate is closed"));
+                                return;
+                            }
+                            activeInstallListener = listener;
+                        }
+                        ModuleInstallRequest request = ModuleInstallRequest.newBuilder()
+                                .addApi(languageIdentifier)
+                                .setListener(listener)
+                                .build();
+                        moduleInstallClient.installModules(request)
+                                .addOnSuccessListener(response -> {
+                                    if (response.areModulesAlreadyInstalled()) {
+                                        moduleInstallClient.unregisterListener(listener);
+                                        completeLanguageIdPreparation(completion, null);
+                                    }
+                                    // Otherwise the status listener completes this task only
+                                    // after the module is actually installed.
+                                })
+                                .addOnFailureListener(error -> {
+                                    moduleInstallClient.unregisterListener(listener);
+                                    completeLanguageIdPreparation(completion, error);
+                                });
+                    })
+                    .addOnFailureListener(error -> completeLanguageIdPreparation(completion, error));
+        } catch (Throwable error) {
+            completeLanguageIdPreparation(completion,
+                    error instanceof Exception ? (Exception) error : new IllegalStateException(error));
+        }
+        return completion.getTask();
+    }
+
+    private void completeLanguageIdPreparation(TaskCompletionSource<Void> completion, Exception error) {
+        synchronized (this) {
+            if (languageIdPreparationTask != completion.getTask()) return;
+            languageIdPreparationTask = null;
+            if (error == null) languageIdReady = true;
+            activeInstallListener = null;
+        }
+        if (error == null) completion.trySetResult(null);
+        else completion.trySetException(error);
     }
 
     /**
@@ -252,15 +389,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 .setSourceLanguage(source)
                 .setTargetLanguage(target)
                 .build();
-        Translator translator = null;
+        final CachedTranslator cached;
         try {
-            // getClient() itself may throw before a Task exists; keep it inside this
-            // guarded block so the original ML Kit exception reaches fail() with its cause.
-            translator = Translation.getClient(options);
-            final Translator activeTranslator = translator;
-            // Let the Translate API download the required pair itself. Avoid the optional
-            // RemoteModelManager API, which requires feature-model registration separately.
-            activeTranslator.downloadModelIfNeeded()
+            cached = acquireTranslator(source + "->" + target, options);
+            ensureTranslatorModel(cached)
                     .continueWithTask(ready -> {
                         if (!ready.isSuccessful()) {
                             Exception error = ready.getException();
@@ -268,15 +400,166 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                                     ? new IllegalStateException("Translation model is unavailable")
                                     : error;
                         }
-                        return activeTranslator.translate(text);
+                        return cached.translator.translate(text);
                     })
                     .addOnCompleteListener(result -> {
-                        activeTranslator.close();
+                        releaseTranslator(cached);
                         if (result.isSuccessful()) success(callback, result.getResult());
                         else fail(callback, result.getException());
                     });
         } catch (Throwable error) {
-            if (translator != null) translator.close();
+            fail(callback, error);
+        }
+    }
+
+    private synchronized CachedTranslator acquireTranslator(String key, TranslatorOptions options) {
+        if (closed) throw new IllegalStateException("Smart Translate is closed");
+        CachedTranslator cached = translatorCache.get(key);
+        if (cached == null) {
+            cached = new CachedTranslator(Translation.getClient(options));
+            translatorCache.put(key, cached);
+        }
+        cached.activeOperations++;
+        while (translatorCache.size() > MAX_CACHED_TRANSLATORS) {
+            Iterator<Map.Entry<String, CachedTranslator>> iterator =
+                    translatorCache.entrySet().iterator();
+            if (!iterator.hasNext()) break;
+            CachedTranslator oldest = iterator.next().getValue();
+            iterator.remove();
+            oldest.evicted = true;
+            if (oldest.activeOperations == 0) oldest.translator.close();
+        }
+        return cached;
+    }
+
+    private Task<Void> ensureTranslatorModel(CachedTranslator cached) {
+        synchronized (this) {
+            if (cached.modelReady) return Tasks.forResult(null);
+            if (cached.modelDownloadTask != null && !cached.modelDownloadTask.isComplete()) {
+                return cached.modelDownloadTask;
+            }
+            cached.modelDownloadTask = cached.translator.downloadModelIfNeeded();
+            cached.modelDownloadTask.addOnCompleteListener(result -> {
+                synchronized (MlKitTranslatePlugin.this) {
+                    if (result.isSuccessful()) cached.modelReady = true;
+                    else cached.modelDownloadTask = null;
+                }
+            });
+            return cached.modelDownloadTask;
+        }
+    }
+
+    private synchronized void releaseTranslator(CachedTranslator cached) {
+        if (cached.activeOperations > 0) cached.activeOperations--;
+        if (cached.evicted && cached.activeOperations == 0) cached.translator.close();
+    }
+
+    /** Returns a JSON array of downloaded translation language codes. */
+    public void getDownloadedTranslationModels(Callback callback) {
+        try {
+            RemoteModelManager.getInstance()
+                    .getDownloadedModels(TranslateRemoteModel.class)
+                    .addOnSuccessListener(models -> {
+                        JSONArray languages = new JSONArray();
+                        for (TranslateRemoteModel model : models) {
+                            String language = model.getLanguage();
+                            if (language != null) languages.put(language);
+                        }
+                        success(callback, languages.toString());
+                    })
+                    .addOnFailureListener(error -> fail(callback, error));
+        } catch (Throwable error) {
+            fail(callback, error);
+        }
+    }
+
+    /** Returns a JSON array of model codes that must be downloaded for this pair. */
+    public void getMissingTranslationModels(String source, String target, Callback callback) {
+        if (source == null || target == null
+                || !TranslateLanguage.getAllLanguages().contains(source)
+                || !TranslateLanguage.getAllLanguages().contains(target)) {
+            fail(callback, "زبان مبدأ یا مقصد پشتیبانی نمی‌شود");
+            return;
+        }
+        final Set<String> required = new java.util.LinkedHashSet<>();
+        if (!TranslateLanguage.ENGLISH.equals(source)) required.add(source);
+        if (!TranslateLanguage.ENGLISH.equals(target)) required.add(target);
+        if (required.isEmpty()) {
+            success(callback, "[]");
+            return;
+        }
+        try {
+            RemoteModelManager.getInstance()
+                    .getDownloadedModels(TranslateRemoteModel.class)
+                    .addOnSuccessListener(models -> {
+                        Set<String> downloaded = new java.util.HashSet<>();
+                        for (TranslateRemoteModel model : models) downloaded.add(model.getLanguage());
+                        JSONArray missing = new JSONArray();
+                        for (String language : required) {
+                            if (!downloaded.contains(language)) missing.put(language);
+                        }
+                        success(callback, missing.toString());
+                    })
+                    .addOnFailureListener(error -> fail(callback, error));
+        } catch (Throwable error) {
+            fail(callback, error);
+        }
+    }
+
+    /** Starts an explicit, user-approved language-model download. */
+    public void downloadTranslationModel(String language, boolean requireWifi, Callback callback) {
+        if (language == null || !TranslateLanguage.getAllLanguages().contains(language)) {
+            fail(callback, "زبان مدل پشتیبانی نمی‌شود");
+            return;
+        }
+        if (TranslateLanguage.ENGLISH.equals(language)) {
+            success(callback, language);
+            return;
+        }
+        try {
+            DownloadConditions.Builder conditions = new DownloadConditions.Builder();
+            if (requireWifi) conditions.requireWifi();
+            TranslateRemoteModel model = new TranslateRemoteModel.Builder(language).build();
+            RemoteModelManager.getInstance().download(model, conditions.build())
+                    .addOnSuccessListener(ignored -> success(callback, language))
+                    .addOnFailureListener(error -> fail(callback, error));
+        } catch (Throwable error) {
+            fail(callback, error);
+        }
+    }
+
+    /** Deletes a downloaded language model after the user unchecks it in model settings. */
+    public void deleteTranslationModel(String language, Callback callback) {
+        if (language == null || !TranslateLanguage.getAllLanguages().contains(language)) {
+            fail(callback, "زبان مدل پشتیبانی نمی‌شود");
+            return;
+        }
+        if (TranslateLanguage.ENGLISH.equals(language)) {
+            fail(callback, "مدل انگلیسی داخلی است و قابل حذف نیست");
+            return;
+        }
+        try {
+            TranslateRemoteModel model = new TranslateRemoteModel.Builder(language).build();
+            RemoteModelManager.getInstance().deleteDownloadedModel(model)
+                    .addOnSuccessListener(ignored -> {
+                        synchronized (MlKitTranslatePlugin.this) {
+                            Iterator<Map.Entry<String, CachedTranslator>> iterator =
+                                    translatorCache.entrySet().iterator();
+                            while (iterator.hasNext()) {
+                                Map.Entry<String, CachedTranslator> entry = iterator.next();
+                                if (entry.getKey().startsWith(language + "->")
+                                        || entry.getKey().endsWith("->" + language)) {
+                                    CachedTranslator cached = entry.getValue();
+                                    iterator.remove();
+                                    cached.evicted = true;
+                                    if (cached.activeOperations == 0) cached.translator.close();
+                                }
+                            }
+                        }
+                        success(callback, language);
+                    })
+                    .addOnFailureListener(error -> fail(callback, error));
+        } catch (Throwable error) {
             fail(callback, error);
         }
     }
@@ -321,5 +604,25 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
 
     @Override
     public void close() {
+        List<Translator> translatorsToClose = new ArrayList<>();
+        InstallStatusListener listener;
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            listener = activeInstallListener;
+            activeInstallListener = null;
+            for (CachedTranslator cached : translatorCache.values()) {
+                cached.evicted = true;
+                if (cached.activeOperations == 0) translatorsToClose.add(cached.translator);
+            }
+            translatorCache.clear();
+        }
+        if (listener != null) {
+            try { moduleInstallClient.unregisterListener(listener); } catch (Exception ignored) {}
+        }
+        for (Translator translator : translatorsToClose) {
+            try { translator.close(); } catch (Exception ignored) {}
+        }
+        try { languageIdentifier.close(); } catch (Exception ignored) {}
     }
 }
