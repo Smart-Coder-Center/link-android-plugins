@@ -2,6 +2,15 @@ name: Package and publish universal Link plugins
 
 on:
   workflow_dispatch:
+  # Temporary release trigger for the reviewed Smart Translate 1.0.15 update.
+  push:
+    branches: [main]
+    paths:
+      - "plugins/translation/ml-translate/plugin.json"
+      - "tools/mlkit-translate-src/**"
+      - "tools/build_mlkit_translate_runtime.sh"
+      - "tools/validate_mlkit_translate_runtime.py"
+      - "tools/build.gradle"
 
 permissions:
   contents: write
