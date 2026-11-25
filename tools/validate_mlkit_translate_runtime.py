@@ -213,6 +213,10 @@ dex_files = sorted((root / "code").glob("classes*.dex"))
 defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
 required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstall;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallClient;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallRequest;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallStatusUpdate;",
     "Landroidx/collection/ArraySet;",
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
