@@ -585,7 +585,7 @@ jobs:
           if changed:
               catalog["plugins"] = sorted(by_id.values(), key=lambda value: (value["kind"], value["id"]))
               catalog["catalog_version"] = int(catalog.get("catalog_version", 0)) + 1
-              catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+              catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
               print("Merged newly published plugin entries into the latest main catalog.")
           else:
               print("The latest main catalog already contains all published plugin entries.")
