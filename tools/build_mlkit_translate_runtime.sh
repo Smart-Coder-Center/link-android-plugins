@@ -183,6 +183,10 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     javap -classpath "$CLASSPATH:$ANDROID_JAR" -c -p "$type" 2>&1 || true
   done
 } > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
+if ! grep -Fq 'public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
+  echo "Pinned Language ID runtime does not expose the registrar required to create LanguageIdentifierFactory" >&2
+  exit 7
+fi
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
 R_SOURCE="$WORK_DIR/r-src/com/google/mlkit/nl/translate/R.java"
 TRANSLATE_CLASSES="$(find "$WORK_DIR/jars" -maxdepth 1 -type f -name 'com_google_mlkit__translate__*-classes.jar' | head -n 1)"
