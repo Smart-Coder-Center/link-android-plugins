@@ -104,7 +104,8 @@ jobs:
                       if not downloaded.is_file() or hashlib.sha256(downloaded.read_bytes()).hexdigest() != expected_hash:
                           raise SystemExit("Existing immutable ML Translate release asset does not match this build")
               else:
-                  run(["gh", "release", "upload", tag, str(archive)])
+                  run(["gh", "release", "edit", tag, "--title", "Link plugin ml-translate 1.0.13"])
+              run(["gh", "release", "upload", tag, str(archive)])
           else:
               error = (existing.stderr or "").lower()
               if "not found" not in error and "404" not in error:
@@ -115,6 +116,7 @@ jobs:
                   "--target", "main",
                   "--notes", "Signed ML Kit Translate runtime for Link. Language models are downloaded on demand by ML Kit and are not bundled in this release."
               ])
+          run(["gh", "release", "edit", tag, "--title", "Link plugin ml-translate 1.0.13"])
           print("Published or verified immutable release asset; SHA-256=" + expected_hash)
           PY
 
