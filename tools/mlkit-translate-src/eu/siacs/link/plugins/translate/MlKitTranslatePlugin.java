@@ -127,10 +127,12 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             List<Object> registrars = new ArrayList<>();
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
-            // The selected dependency is the UNBUNDLED Play Services Language ID API.
-            // Its AAR manifest declares ThinLanguageIdRegistrar. The common LanguageIdRegistrar
-            // is for the bundled implementation and requires a LanguageIdentifierCreatorDelegate
-            // provider that this unbundled runtime does not supply (No delegate creator registered).
+            // LanguageIdRegistrar owns the LanguageIdentifierImpl.Factory component.
+            // ThinLanguageIdRegistrar contributes the unbundled Play Services creator delegate.
+            // Both are required: omitting the former leaves Factory null; omitting the latter
+            // makes Factory creation fail with "No delegate creator registered".
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
