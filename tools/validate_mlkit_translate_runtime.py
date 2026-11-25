@@ -53,12 +53,18 @@ required_isolated = (
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
+collection_artifacts = sorted(
+    name for name in artifact_names
+    if name.startswith("androidx_collection__collection__") and name.endswith(".aar")
+)
+if len(collection_artifacts) != 1:
+    raise SystemExit("Expected exactly one resolved AndroidX Collection AAR for plugin isolation; got " + repr(collection_artifacts))
 missing_isolated = sorted(set(required_isolated) - artifact_names)
 if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__"):
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -143,9 +149,16 @@ def dex_defined_classes(path):
 
 dex_files = sorted((root / "code").glob("classes*.dex"))
 defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
-required_class = "Lcom/google/android/gms/common/internal/Preconditions;"
-if required_class not in defined_classes:
-    raise SystemExit("Plugin DEX does not DEFINE GMS Preconditions; a host APK fallback would reproduce the crash")
+required_classes = (
+    "Lcom/google/android/gms/common/internal/Preconditions;",
+    "Landroidx/collection/ArraySet;",
+)
+missing_classes = [name for name in required_classes if name not in defined_classes]
+if missing_classes:
+    raise SystemExit(
+        "Plugin DEX does not DEFINE required plugin-local GMS/AndroidX classes; "
+        "parent-loader fallback can reproduce the crash: " + ", ".join(missing_classes)
+    )
 
 payload = []
 for path in sorted(root.rglob("*")):
