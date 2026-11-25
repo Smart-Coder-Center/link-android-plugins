@@ -55,16 +55,16 @@ required_isolated = (
 artifact_names = {item.get("file", "") for item in artifacts}
 collection_artifacts = sorted(
     name for name in artifact_names
-    if name.startswith("androidx_collection__collection__") and name.endswith(".aar")
+    if name.startswith("androidx_collection__collection-jvm__") and name.endswith(".jar")
 )
 if len(collection_artifacts) != 1:
-    raise SystemExit("Expected exactly one resolved AndroidX Collection AAR for plugin isolation; got " + repr(collection_artifacts))
+    raise SystemExit("Expected exactly one resolved AndroidX Collection JVM JAR for plugin isolation; got " + repr(collection_artifacts))
 missing_isolated = sorted(set(required_isolated) - artifact_names)
 if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection__"):
+for required in ("com_google_mlkit__common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "androidx_collection__collection-jvm__"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
