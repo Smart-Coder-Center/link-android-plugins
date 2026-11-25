@@ -1,23 +1,7 @@
 name: Validate Smart Translate runtime
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "tools/build.gradle"
-      - "tools/build_mlkit_translate_runtime.sh"
-      - "tools/mlkit-translate-src/**"
-      - "tools/validate_mlkit_translate_runtime.py"
-      - "plugins/translation/ml-translate/plugin.json"
-      - ".github/workflows/validate-mlkit-translate-runtime.yml"
-  pull_request:
-    paths:
-      - "tools/build.gradle"
-      - "tools/build_mlkit_translate_runtime.sh"
-      - "tools/mlkit-translate-src/**"
-      - "tools/validate_mlkit_translate_runtime.py"
-      - "plugins/translation/ml-translate/plugin.json"
-      - ".github/workflows/validate-mlkit-translate-runtime.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
