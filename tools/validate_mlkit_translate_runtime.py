@@ -91,10 +91,10 @@ if '"com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader' not 
     raise SystemExit("MlKitContext must be loaded from the isolated plugin class loader")
 if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not in adapter_source:
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
-if 'com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar' not in adapter_source:
-    raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar")
-if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' in adapter_source:
-    raise SystemExit("Bundled LanguageIdRegistrar must not be used with the unbundled Play Services dependency")
+if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' not in adapter_source:
+    raise SystemExit("LanguageIdRegistrar must register LanguageIdentifierImpl.Factory")
+if '"com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface' not in adapter_source:
+    raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar as the creator delegate")
 
 api_report = root / "provenance" / "mlkit-internal-api.txt"
 if not api_report.is_file():
