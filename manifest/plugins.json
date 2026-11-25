@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 21,
+  "catalog_version": 22,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Fixes Google Play Services and AndroidX Collection class-loader mismatch by bundling ArraySet in the isolated Translate DEX runtime.",
+      "release_notes": "Bundles Kotlin stdlib marker interfaces in the isolated Translate DEX runtime, fixing missing KMutableCollection.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -97,11 +97,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.8",
+      "version": "1.0.9",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.8/ml-translate-1.0.8.zip",
-        "size_bytes": 7961896,
-        "sha256": "286f8c93ee6f386a7c9648868aa2d607f6cbed04e1f51a84679ccbe5beb722bf"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.9/ml-translate-1.0.9.zip",
+        "size_bytes": 8647275,
+        "sha256": "d208a7cbf4f8c11ff68b680bdde0567e36cd7550f190a5cfa343d7c65c8bfc56"
       }
     },
     {
