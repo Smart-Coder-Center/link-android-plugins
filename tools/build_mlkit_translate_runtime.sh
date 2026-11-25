@@ -59,8 +59,8 @@ for artifact in files:
             # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
             runtime_prefixes = (
                 "com_google_mlkit__translate__",
-                "com_google_mlkit__language-id__",
-                "com_google_mlkit__language-id-common__",
+                # Unbundled Language ID implementation and its GMS support classes.
+                "com_google_android_gms__play-services-mlkit-",
                 "com_google_mlkit__common__",
                 "com_google_firebase__firebase-components__",
                 "com_google_firebase__firebase-encoders-json__",
@@ -70,6 +70,7 @@ for artifact in files:
                 "com_google_android_gms__play-services-base__",
                 "com_google_android_gms__play-services-basement__",
                 "com_google_android_gms__play-services-tasks__",
+                "com_google_android_gms__play-services-mlkit-",
                 # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
                 "androidx_collection__collection__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
