@@ -174,6 +174,7 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     com.google.mlkit.common.sdkinternal.MlKitContext \
     com.google.mlkit.common.internal.CommonComponentRegistrar \
     com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
+    com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
     com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
@@ -183,8 +184,8 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     javap -classpath "$CLASSPATH:$ANDROID_JAR" -c -p "$type" 2>&1 || true
   done
 } > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
-if ! grep -Fq 'public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
-  echo "Pinned Language ID runtime does not expose the registrar required to create LanguageIdentifierFactory" >&2
+if ! grep -Fq 'public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
+  echo "Pinned unbundled Play Services Language ID runtime does not expose ThinLanguageIdRegistrar" >&2
   exit 7
 fi
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
