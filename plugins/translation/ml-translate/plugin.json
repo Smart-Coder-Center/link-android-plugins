@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Requests and waits for the Google Play services Language ID optional module; requires explicit user confirmation before downloading missing translation language models; provides in-app keep/remove controls; caches LanguageIdentifier and Translator clients to reduce repeated setup and translation latency.",
+  "release_notes": "Requests and waits for the Google Play services Language ID optional module; requires explicit user confirmation before downloading missing translation language models; provides in-app keep/remove controls; downloaded models persist until removed; caches LanguageIdentifier and Translator clients to reduce repeated setup and translation latency.",
   "runtime": {
     "abis": [
       "arm64-v8a"
