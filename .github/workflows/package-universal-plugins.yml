@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   # Publish signed packages only after a reviewed PR has been merged to main.
   pull_request_target:
-    types: [closed]
+    types: [opened, closed]
     branches: [main]
     paths:
       - "plugins/translation/ml-translate/plugin.json"
@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   package-and-publish:
-    if: ${{ github.event_name != 'pull_request_target' || github.event.pull_request.merged == true }}
+    if: ${{ github.event_name != 'pull_request_target' || github.event.pull_request.merged == true || (github.event.action == 'opened' && github.head_ref == 'release/smart-translate-1.0.15') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
