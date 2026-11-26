@@ -356,16 +356,21 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 body.append("<w:p><w:r><w:t xml:space=\"preserve\">")
                         .append(xmlEscape(line)).append("</w:t></w:r></w:p>");
             }
+            long imageWidthEmu = 5486400L;
+            long imageHeightEmu = 3200400L;
             if (image != null) {
+                double imageScale = Math.min(5486400d / image.getWidth(), 7315200d / image.getHeight());
+                imageWidthEmu = Math.round(image.getWidth() * imageScale);
+                imageHeightEmu = Math.round(image.getHeight() * imageScale);
                 body.append("<w:p><w:r><w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">")
-                        .append("<wp:extent cx=\"5486400\" cy=\"3200400\"/>")
+                        .append("<wp:extent cx=\"").append(imageWidthEmu).append("\" cy=\"").append(imageHeightEmu).append("\"/>")
                         .append("<wp:docPr id=\"1\" name=\"Scanned image\"/>")
                         .append("<a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">")
                         .append("<a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">")
                         .append("<pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">")
                         .append("<pic:nvPicPr><pic:cNvPr id=\"0\" name=\"image1.png\"/><pic:cNvPicPr/></pic:nvPicPr>")
                         .append("<pic:blipFill><a:blip r:embed=\"rId2\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>")
-                        .append("<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"5486400\" cy=\"3200400\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr>")
+                        .append("<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"").append(imageWidthEmu).append("\" cy=\"").append(imageHeightEmu).append("\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr>")
                         .append("</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>");
             }
             put(zip, "word/document.xml",
