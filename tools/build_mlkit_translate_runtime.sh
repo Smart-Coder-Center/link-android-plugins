@@ -156,6 +156,14 @@ report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(report, indent=2))
 if not report["native_libraries"]:
     raise SystemExit("ML Kit AARs did not provide ARM64 JNI libraries")
+if not any(item["aar"] == "com_google_mlkit__language-id__17.0.6.aar"
+           and item["path"] == "lib/arm64-v8a/liblanguage_id_l2c_jni.so"
+           for item in report["native_libraries"]):
+    raise SystemExit("Bundled Language ID JNI library liblanguage_id_l2c_jni.so is missing")
+if not any(item["aar"] == "com_google_mlkit__language-id__17.0.6.aar"
+           and item["path"] == "assets/tflite_langid.tflite.jpg"
+           for item in report["aar_assets"]):
+    raise SystemExit("Bundled Language ID model asset assets/tflite_langid.tflite.jpg is missing")
 if not (report_path.parent / "translate_models_metadata.json").is_file():
     raise SystemExit("ML Kit translate_models_metadata.json resource was not found")
 PY
