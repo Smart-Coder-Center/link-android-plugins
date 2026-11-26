@@ -43,8 +43,19 @@ if source.get("okhttp_version") != "3.12.13" or source.get("okio_version") != "1
 aar_report = root / "provenance" / "mlkit-aar-audit.json"
 if not aar_report.is_file():
     raise SystemExit("ML Kit AAR dependency audit is missing")
-artifacts = json.loads(aar_report.read_text(encoding="utf-8")).get("artifacts", [])
-aar_components = json.loads(aar_report.read_text(encoding="utf-8")).get("aar_components", [])
+aar_audit = json.loads(aar_report.read_text(encoding="utf-8"))
+artifacts = aar_audit.get("artifacts", [])
+aar_components = aar_audit.get("aar_components", [])
+aar_assets = aar_audit.get("aar_assets", [])
+native_libraries = aar_audit.get("native_libraries", [])
+if not any(item.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
+           and item.get("path") == "assets/tflite_langid.tflite.jpg"
+           for item in aar_assets):
+    raise SystemExit("Bundled Language ID model asset is absent from the audited AAR")
+if not any(item.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
+           and item.get("path") == "lib/arm64-v8a/liblanguage_id_l2c_jni.so"
+           for item in native_libraries):
+    raise SystemExit("Bundled Language ID JNI library is absent from the audited AAR")
 bundled_registrar_declared = any(
     component.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
     and any(
