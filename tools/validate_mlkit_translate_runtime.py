@@ -195,6 +195,8 @@ required_api = [
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
+    "public static int translate_models_metadata;",
+    "public static int rapid_response_client_defaults;",
 ]
 missing_api = [signature for signature in required_api if signature not in api_text]
 if missing_api:
