@@ -37,6 +37,8 @@ if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
 source = manifest.get("source") or {}
 if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
     raise SystemExit("Language ID must be pinned to the bundled com.google.mlkit:language-id:17.0.6 artifact")
+if source.get("translate_version") != "17.0.2":
+    raise SystemExit("Translate must be pinned to com.google.mlkit:translate:17.0.2")
 common_version = source.get("common_version")
 if not common_version:
     raise SystemExit("The shared ML Kit common runtime version must be pinned in plugin.json")
@@ -97,6 +99,7 @@ if common_artifacts != [expected_common]:
 
 # The plugin must own the registry classes, not just Translate's front-end classes.
 required_isolated = (
+    "com_google_mlkit__translate__17.0.2.aar",
     "com_google_firebase__firebase-components__16.1.0.aar",
     "com_google_firebase__firebase-encoders-json__17.1.0.aar",
     "com_google_firebase__firebase-encoders__16.1.0.jar",
