@@ -47,6 +47,7 @@
     "okhttp_version": "3.12.13",
     "okio_version": "1.15.0",
     "text_recognition_version": "19.0.1",
+    "text_recognition_common_version": "19.1.0",
     "ocr_model_delivery": "play_services_on_demand",
     "language_id_flow": "bundled_model"
   }
