@@ -14,8 +14,6 @@ adapter_path = Path(__file__).resolve().parent / "mlkit-translate-src/eu/siacs/l
 adapter_source = adapter_path.read_text(encoding="utf-8")
 required_runtime_behaviors = (
     "languageIdentifier.identifyLanguage(text)",
-    "MAX_LANGUAGE_ID_RETRIES",
-    "mainHandler.postDelayed",
     "RemoteModelManager.getInstance()",
     "getDownloadedModels(TranslateRemoteModel.class)",
     "new TranslateRemoteModel.Builder(language).build()",
@@ -33,6 +31,8 @@ if missing_behaviors:
 
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
+if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
+    raise SystemExit("Language ID must use the bundled model runtime for release 1.0.19")
 
 source = manifest.get("source") or {}
 common_version = source.get("common_version")
@@ -221,7 +221,7 @@ required_classes = (
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
-    "Lcom/google/mlkit/nl/languageid/thin/internal/ThickLanguageIdRegistrar;",
+    "Lcom/google/mlkit/nl/languageid/bundled/internal/ThickLanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
