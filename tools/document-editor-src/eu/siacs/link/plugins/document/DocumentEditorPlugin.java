@@ -170,12 +170,12 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                     }
                 }
             }
-            String pdfMessage = "";
+            boolean pdfSaved = false;
             if (result != null && result.getPdf() != null && result.getPdf().getUri() != null) {
                 savePdfToDownloads(result.getPdf().getUri());
-                pdfMessage = " PDF saved to Downloads/Link.";
+                pdfSaved = true;
             }
-            if (savedPages == 0 && pdfMessage.isEmpty()) {
+            if (savedPages == 0 && !pdfSaved) {
                 throw new IOException("The scanner returned no pages or PDF.");
             }
             Callback callback;
@@ -183,7 +183,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 callback = pendingDocumentCallback;
                 pendingDocumentCallback = null;
             }
-            success(callback, "Saved " + savedPages + " scanned page(s) to Pictures/Link Scans." + pdfMessage);
+            success(callback, "DOCUMENT_SCAN_SAVED:" + savedPages + ":" + (pdfSaved ? "1" : "0"));
         } catch (Throwable error) {
             completeDocumentFailure(safeMessage(error));
         }
@@ -315,7 +315,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                     if (output == null) throw new IOException("Could not open the PDF destination.");
                     document.writeTo(output);
                 }
-                success(callback, "PDF saved successfully.");
+                success(callback, "PDF_SAVED");
             } catch (Throwable error) {
                 fail(callback, safeMessage(error));
             } finally {
@@ -342,7 +342,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                     if (raw == null) throw new IOException("Could not open the Word document destination.");
                     writeDocx(raw, text == null ? "" : text, bitmap);
                 }
-                success(callback, "Word document saved successfully.");
+                success(callback, "DOCX_SAVED");
             } catch (Throwable error) {
                 fail(callback, safeMessage(error));
             } finally {
