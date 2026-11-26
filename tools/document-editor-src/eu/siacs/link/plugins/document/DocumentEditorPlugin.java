@@ -162,35 +162,41 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             completeDocumentFailure("Document scanning was cancelled.");
             return true;
         }
+        final GmsDocumentScanningResult result;
         try {
-            GmsDocumentScanningResult result =
-                    GmsDocumentScanningResult.fromActivityResultIntent(data);
-            int savedPages = 0;
-            if (result != null && result.getPages() != null) {
-                for (GmsDocumentScanningResult.Page page : result.getPages()) {
-                    Uri image = page.getImageUri();
-                    if (image != null) {
-                        saveImageToGallery(image, ++savedPages);
-                    }
-                }
-            }
-            boolean pdfSaved = false;
-            if (result != null && result.getPdf() != null && result.getPdf().getUri() != null) {
-                savePdfToDownloads(result.getPdf().getUri());
-                pdfSaved = true;
-            }
-            if (savedPages == 0 && !pdfSaved) {
-                throw new IOException("The scanner returned no pages or PDF.");
-            }
-            Callback callback;
-            synchronized (this) {
-                callback = pendingDocumentCallback;
-                pendingDocumentCallback = null;
-            }
-            success(callback, "DOCUMENT_SCAN_SAVED:" + savedPages + ":" + (pdfSaved ? "1" : "0"));
+            result = GmsDocumentScanningResult.fromActivityResultIntent(data);
+            if (result == null) throw new IOException("The scanner returned no result.");
         } catch (Throwable error) {
             completeDocumentFailure(safeMessage(error));
+            return true;
         }
+        final Callback callback;
+        synchronized (this) {
+            callback = pendingDocumentCallback;
+            pendingDocumentCallback = null;
+        }
+        worker.execute(() -> {
+            try {
+                int savedPages = 0;
+                if (result.getPages() != null) {
+                    for (GmsDocumentScanningResult.Page page : result.getPages()) {
+                        Uri image = page.getImageUri();
+                        if (image != null) saveImageToGallery(image, ++savedPages);
+                    }
+                }
+                boolean pdfSaved = false;
+                if (result.getPdf() != null && result.getPdf().getUri() != null) {
+                    savePdfToDownloads(result.getPdf().getUri());
+                    pdfSaved = true;
+                }
+                if (savedPages == 0 && !pdfSaved) {
+                    throw new IOException("The scanner returned no pages or PDF.");
+                }
+                success(callback, "DOCUMENT_SCAN_SAVED:" + savedPages + ":" + (pdfSaved ? "1" : "0"));
+            } catch (Throwable error) {
+                fail(callback, safeMessage(error));
+            }
+        });
         return true;
     }
 
