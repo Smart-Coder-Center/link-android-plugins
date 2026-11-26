@@ -124,6 +124,10 @@ jobs:
       - name: Install Link compile SDK
         run: sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0"
 
+      - name: Make Gradle wrapper executable
+        working-directory: android-host
+        run: chmod +x ./gradlew
+
       - name: Run only the Pro ML Kit resource extraction task (no APK build)
         working-directory: android-host
         run: ./gradlew --no-daemon --stacktrace extractMlKitTranslateResources
@@ -177,4 +181,3 @@ jobs:
               raise SystemExit("Pro host APK asset is not byte-identical to the audited Language ID AAR model")
           print(f"Bundled Language ID model extracted and matched: {model.stat().st_size} bytes sha256={digest}")
           PY
-
