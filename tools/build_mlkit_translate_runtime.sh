@@ -65,7 +65,6 @@ for artifact in files:
             runtime_prefixes = (
                 "com_google_mlkit__translate__",
                 "com_google_mlkit__vision-common__",
-                "com_google_mlkit__text-recognition-common__",
                 # Language ID API facade required by the bundled implementation.
                 "com_google_mlkit__language-id-common__",
                 # Bundled Language ID implementation and its model resources.
@@ -326,6 +325,7 @@ PY
 
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
 Link Smart Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
+English image OCR uses the unbundled Google ML Kit Text Recognition API; its model is downloaded on demand by Google Play services and is not bundled in the Link APK.
 The Language ID model is bundled in the Pro host APK assets; it is not downloaded as an optional Play Services module.
 Translation language models are downloaded on demand by ML Kit and remain user-managed.
 The runtime dependencies are pinned in the plugin source manifest and build configuration.
