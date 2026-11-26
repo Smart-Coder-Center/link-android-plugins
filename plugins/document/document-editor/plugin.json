@@ -8,7 +8,7 @@
   "min_link_version": "2.21.0",
   "package_type": "native_runtime",
   "license": {
-    "name": "Apache-2.0 and BSD-2-Clause",
+    "name": "Apache-2.0, BSD-2-Clause, libpng and IJG",
     "url": "https://www.apache.org/licenses/LICENSE-2.0",
     "attribution": "Tesseract OCR 5.5.1, Tesseract4Android 4.9.0, tessdata_fast Persian/English models, Google ML Kit Document Scanner and Google Code Scanner. Leptonica retains its BSD-2-Clause notice."
   },
