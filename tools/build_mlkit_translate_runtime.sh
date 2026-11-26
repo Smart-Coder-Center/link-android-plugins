@@ -65,6 +65,8 @@ for artifact in files:
             runtime_prefixes = (
                 "com_google_mlkit__translate__",
                 "com_google_mlkit__vision-common__",
+                # Text Recognition API inheritance: Detector is defined in vision-interfaces.
+                "com_google_mlkit__vision-interfaces__",
                 # Language ID API facade required by the bundled implementation.
                 "com_google_mlkit__language-id-common__",
                 # Bundled Language ID implementation and its model resources.
