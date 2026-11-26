@@ -138,7 +138,6 @@ public final class DocumentEditorPlugin implements AutoCloseable {
         GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
                 .setGalleryImportAllowed(true)
                 .setPageLimit(30)
-                .setCaptureMode(GmsDocumentScannerOptions.CAPTURE_MODE_AUTO)
                 .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
                         GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
                 .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
