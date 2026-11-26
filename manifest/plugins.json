@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 32,
+  "catalog_version": 33,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -82,7 +82,7 @@
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Adds English Latin-script image OCR through the unbundled ML Kit Text Recognition API. The OCR model is delivered on demand by Google Play services and is not packaged in the Link APK. Existing bundled Language ID and user-managed translation models are unchanged.",
+      "release_notes": "Fixes plugin-local ML Kit vision runtime packaging for the Text Recognition Detector API. The OCR model is delivered on demand by Google Play services and is not packaged in the Link APK. Existing bundled Language ID and user-managed translation models are unchanged.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -97,11 +97,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.20",
+      "version": "1.0.21",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.20/ml-translate-1.0.20.zip",
-        "size_bytes": 8798724,
-        "sha256": "8341abeafb66981899c243ceaaf1b49d90c06401cb2b8d32c347dbf4b9ad8b5d"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.21/ml-translate-1.0.21.zip",
+        "size_bytes": 8799065,
+        "sha256": "d6640d02639838561c596ecb3d0a6b7d13e1090eb9ec47b7140bec31536197b8"
       }
     },
     {
