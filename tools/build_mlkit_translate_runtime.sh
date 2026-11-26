@@ -288,6 +288,13 @@ for dex in "${DEX_FILES[@]}"; do
   cp "$dex" "$SOURCE_DIR/code/$(basename "$dex")"
 done
 
+# Detect every AndroidX API that the isolated DEX expects from the host class loader.
+# Fail packaging if a future plugin change adds an API not reviewed by the Android host.
+python3 "$REPO_ROOT/tools/audit_dex_androidx_parent_api.py" \
+  "$SOURCE_DIR/code" \
+  "$REPO_ROOT/tools/mlkit-androidx-parent-api-baseline.json" \
+  "$SOURCE_DIR/provenance"
+
 python3 - "$SOURCE_DIR" <<'PY'
 import json, re, sys
 from pathlib import Path
