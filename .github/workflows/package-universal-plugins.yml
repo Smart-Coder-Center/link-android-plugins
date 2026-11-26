@@ -160,6 +160,26 @@ jobs:
                   subprocess.run(["python3", "tools/validate_mlkit_translate_runtime.py", str(base)], check=True)
                   generated_path.unlink()
                   print(f"Built ML Kit Translate native runtime for {manifest_path}")
+              elif source_type == "document_editor_runtime":
+                  expected = {
+                      "tesseract4android_version": "4.9.0",
+                      "document_scanner_version": "16.0.0",
+                      "code_scanner_version": "16.1.0",
+                      "tessdata_fast_revision": "87416418657359cb625c412a48b6e1d6d41c29bd",
+                      "languages": ["fas", "eng"]
+                  }
+                  actual = {key: source.get(key) for key in expected}
+                  if actual != expected:
+                      raise SystemExit(f"Document Editor upstream versions/models are not the reviewed immutable pins: {manifest_path}")
+                  subprocess.run(["bash", "tools/build_document_editor_runtime.sh", str(base)], check=True)
+                  generated_path = base / ".link-runtime-generated.json"
+                  if not generated_path.is_file():
+                      raise SystemExit("Document Editor builder did not produce runtime metadata")
+                  generated_runtime = json.loads(generated_path.read_text(encoding="utf-8"))
+                  metadata.setdefault("runtime", {}).update(generated_runtime)
+                  manifest_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                  generated_path.unlink()
+                  print(f"Built Persian/English OCR and scanner runtime for {manifest_path}")
               elif source_type == "github_release_zip":
                   url = source.get("url", "")
                   expected_size = source.get("size_bytes")
