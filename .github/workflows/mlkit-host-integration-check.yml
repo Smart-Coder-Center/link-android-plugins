@@ -48,6 +48,12 @@ jobs:
           path: android-host
           token: ${{ secrets.LINK_ANDROID_REPO_READ_TOKEN }}
 
+      - name: Check out plugin audit tools
+        uses: actions/checkout@v4
+        with:
+          path: plugin-tools
+          token: ${{ github.token }}
+
       - name: Download AAR audit into the Android host workspace
         uses: actions/download-artifact@v4
         with:
@@ -63,7 +69,7 @@ jobs:
           test -s plugin-audit/provenance/mlkit-aar-audit.json
           test -s plugin-audit/provenance/mlkit-internal-api.txt
           test -s plugin-audit/provenance/androidx-parent-api-audit.json
-          python3 ../tools/verify_androidx_keep_rules.py \
+          python3 ../plugin-tools/tools/verify_androidx_keep_rules.py \
             --audit plugin-audit/provenance/androidx-parent-api-audit.json \
             --rules proguard-rules.pro
 
