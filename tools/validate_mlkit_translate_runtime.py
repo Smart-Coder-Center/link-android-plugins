@@ -23,6 +23,8 @@ required_runtime_behaviors = (
     "MAX_CACHED_TRANSLATORS",
     "languageIdentifier.close()",
     "cached.translator.close()",
+    "TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)",
+    "recognizer.process(image)",
 )
 missing_behaviors = [item for item in required_runtime_behaviors if item not in adapter_source]
 if missing_behaviors:
@@ -49,6 +51,8 @@ if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
 source = manifest.get("source") or {}
 if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
     raise SystemExit("Language ID must be pinned to the bundled com.google.mlkit:language-id:17.0.6 artifact")
+if source.get("text_recognition_version") != "19.0.1" or source.get("ocr_model_delivery") != "play_services_on_demand":
+    raise SystemExit("English OCR must use the pinned unbundled Play services Text Recognition API")
 if source.get("translate_version") != "17.0.2":
     raise SystemExit("Translate must be pinned to com.google.mlkit:translate:17.0.2")
 common_version = source.get("common_version")
@@ -143,7 +147,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "com_google_mlkit__vision-common__", "com_google_mlkit__text-recognition-common__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -286,6 +290,10 @@ required_classes = (
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/bundled/internal/ThickLanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
+    "Lcom/google/mlkit/vision/text/TextRecognition;",
+    "Lcom/google/mlkit/vision/text/TextRecognizer;",
+    "Lcom/google/mlkit/vision/text/latin/TextRecognizerOptions;",
+    "Lcom/google/mlkit/vision/common/InputImage;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
