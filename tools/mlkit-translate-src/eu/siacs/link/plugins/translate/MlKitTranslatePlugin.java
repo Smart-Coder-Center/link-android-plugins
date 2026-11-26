@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
- * Language models are downloaded by ML Kit on demand and are not included in this ZIP.
+ * Language ID is bundled with Pro host resources; translation models remain on-demand.
  */
 public final class MlKitTranslatePlugin implements AutoCloseable {
     public interface Callback {
@@ -43,7 +43,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private static final int MAX_CACHED_TRANSLATORS = 4;
-    private static final int MAX_LANGUAGE_ID_RETRIES = 120;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final LanguageIdentifier languageIdentifier;
@@ -85,12 +84,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
             return;
         }
-        // Match the standalone ML Translate flow: invoke Language ID directly.
-        // The unbundled SDK manages first-use model availability through Play services.
-        identifyLanguageAttempt(text, callback, 0);
-    }
-
-    private void identifyLanguageAttempt(String text, Callback callback, int attempt) {
         synchronized (this) {
             if (closed) {
                 fail(callback, "Smart Translate is closed");
@@ -98,6 +91,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             }
         }
         try {
+            // The bundled model is packaged with the Pro host APK; no optional-module
+            // download or retry loop is required before the first identification.
             languageIdentifier.identifyLanguage(text)
                     .addOnSuccessListener(language -> {
                         if (language == null || "und".equals(language)) {
@@ -111,19 +106,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                             }
                         }
                     })
-                    .addOnFailureListener(error -> {
-                        // The unbundled model may report code 14 while Play services
-                        // completes its first-use download. Retry that state only.
-                        if (error instanceof MlKitException
-                                && ((MlKitException) error).getErrorCode() == 14
-                                && attempt < MAX_LANGUAGE_ID_RETRIES) {
-                            mainHandler.postDelayed(
-                                    () -> identifyLanguageAttempt(text, callback, attempt + 1),
-                                    1000L);
-                        } else {
-                            fail(callback, error);
-                        }
-                    });
+                    .addOnFailureListener(error -> fail(callback, error));
         } catch (Throwable error) {
             fail(callback, error);
         }
@@ -172,13 +155,13 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
             // LanguageIdRegistrar owns the LanguageIdentifierImpl.Factory component.
-            // ThinLanguageIdRegistrar contributes the unbundled Play Services creator delegate.
+            // ThickLanguageIdRegistrar provides the bundled model implementation.
             // Both are required: omitting the former leaves Factory null; omitting the latter
             // makes Factory creation fail with "No delegate creator registered".
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
-                    "com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface));
+                    "com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar", registrarInterface));
 
@@ -210,8 +193,29 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         if (factory == null) {
             throw new IllegalStateException("ML Kit Language ID Factory is not registered in the plugin-local MlKitContext");
         }
-        // Force Factory.create() now so a missing unbundled Play Services delegate is reported
-        // during plugin initialization, rather than later as an opaque translation failure.
+        if (RemoteModelManager.class.getClassLoader() != loader
+                || TranslateRemoteModel.class.getClassLoader() != loader) {
+            throw new LinkageError("Translate model-management classes were not loaded from the Smart Translate plugin DEX");
+        }
+        // Force the Translate component graph as well. A pre-existing MlKitContext that
+        // has Language ID but lacks NaturalLanguageTranslateRegistrar must not be accepted.
+        RemoteModelManager manager = RemoteModelManager.getInstance();
+        if (manager == null || manager.getDownloadedModels(TranslateRemoteModel.class) == null) {
+            throw new IllegalStateException("ML Kit Translate RemoteModelManager is not registered in the plugin-local MlKitContext");
+        }
+        // Construct a translator without downloading any language model. This proves that
+        // NaturalLanguageTranslateRegistrar is present in an existing as well as fresh context.
+        TranslatorOptions smokeOptions = new TranslatorOptions.Builder()
+                .setSourceLanguage("en")
+                .setTargetLanguage("es")
+                .build();
+        Translator smokeTranslator = Translation.getClient(smokeOptions);
+        if (smokeTranslator == null) {
+            throw new IllegalStateException("ML Kit Translate registrar did not create a Translator");
+        }
+        smokeTranslator.close();
+        // Force Factory.create() during plugin initialization so a missing bundled-model
+        // delegate is reported immediately rather than as an opaque first-use failure.
         LanguageIdentifier identifier = LanguageIdentification.getClient();
         if (identifier == null) {
             throw new IllegalStateException("ML Kit Language ID Factory returned a null client");

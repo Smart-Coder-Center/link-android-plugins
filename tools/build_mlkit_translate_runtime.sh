@@ -23,12 +23,15 @@ mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
+rm -f "$SOURCE_DIR/provenance/mlkit-aar-audit.json" \
+  "$SOURCE_DIR/provenance/mlkit-internal-api.txt" \
+  "$SOURCE_DIR/provenance/translate_models_metadata.json"
 
 gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMlKitTranslateRuntimeArtifacts -PmlKitOutputDir="$WORK_DIR/artifacts"
 
 python3 - "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$SOURCE_DIR/provenance/mlkit-aar-audit.json" "$WORK_DIR/runtime-jars" <<'PY'
-import json, sys, zipfile
+import hashlib, json, sys, zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -39,7 +42,7 @@ if not files:
 if sum(p.stat().st_size for p in files) > 1024**3:
     raise SystemExit("Resolved ML Kit runtime artifacts exceed the 1 GiB safety limit")
 
-report = {"artifacts": [], "aar_resources": [], "aar_components": [], "aar_manifests": [], "native_libraries": []}
+report = {"artifacts": [], "aar_resources": [], "aar_assets": [], "aar_resource_symbols": [], "aar_components": [], "aar_manifests": [], "native_libraries": []}
 for artifact in files:
     record = {"file": artifact.name, "size_bytes": artifact.stat().st_size}
     if artifact.suffix.lower() == ".aar":
@@ -59,10 +62,10 @@ for artifact in files:
             # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
             runtime_prefixes = (
                 "com_google_mlkit__translate__",
-                # Language ID API facade required by the unbundled Play Services implementation.
+                # Language ID API facade required by the bundled implementation.
                 "com_google_mlkit__language-id-common__",
-                # Unbundled Language ID implementation and its GMS support classes.
-                "com_google_android_gms__play-services-mlkit-",
+                # Bundled Language ID implementation and its model resources.
+                "com_google_mlkit__language-id__",
                 "com_google_mlkit__common__",
                 "com_google_firebase__firebase-components__",
                 "com_google_firebase__firebase-encoders-json__",
@@ -76,6 +79,7 @@ for artifact in files:
                 # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
                 "androidx_collection__collection__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
+                "javax_inject__javax.inject__",
             )
             if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
@@ -90,6 +94,22 @@ for artifact in files:
             for resource in resources.rglob("translate_models_metadata.json"):
                 destination = report_path.parent / "translate_models_metadata.json"
                 destination.write_bytes(resource.read_bytes())
+        assets = target / "assets"
+        if assets.is_dir():
+            for asset in sorted(p for p in assets.rglob("*") if p.is_file()):
+                relative = asset.relative_to(target).as_posix()
+                report["aar_assets"].append({
+                    "aar": artifact.name,
+                    "path": relative,
+                    "size_bytes": asset.stat().st_size,
+                    "sha256": hashlib.sha256(asset.read_bytes()).hexdigest()
+                })
+        resource_symbols = target / "R.txt"
+        if resource_symbols.is_file():
+            symbols = [line.strip() for line in resource_symbols.read_text(encoding="utf-8").splitlines() if line.strip()]
+            report["aar_resource_symbols"].extend({"aar": artifact.name, "symbol": item} for item in symbols)
+            (report_path.parent / (artifact.stem + "-R.txt")).write_text(
+                "\n".join(symbols) + "\n", encoding="utf-8")
         jni = target / "jni"
         if jni.is_dir():
             for library in sorted((jni / "arm64-v8a").glob("*.so")):
@@ -136,6 +156,7 @@ for artifact in files:
                 # AndroidX Collection resolves as collection-jvm JAR on this Gradle variant.
                 "androidx_collection__collection-jvm__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
+                "javax_inject__javax.inject__",
             )):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
@@ -146,6 +167,14 @@ report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(report, indent=2))
 if not report["native_libraries"]:
     raise SystemExit("ML Kit AARs did not provide ARM64 JNI libraries")
+if not any(item["aar"] == "com_google_mlkit__language-id__17.0.6.aar"
+           and item["path"] == "lib/arm64-v8a/liblanguage_id_l2c_jni.so"
+           for item in report["native_libraries"]):
+    raise SystemExit("Bundled Language ID JNI library liblanguage_id_l2c_jni.so is missing")
+if not any(item["aar"] == "com_google_mlkit__language-id__17.0.6.aar"
+           and item["path"] == "assets/tflite_langid.tflite.jpg"
+           for item in report["aar_assets"]):
+    raise SystemExit("Bundled Language ID model asset assets/tflite_langid.tflite.jpg is missing")
 if not (report_path.parent / "translate_models_metadata.json").is_file():
     raise SystemExit("ML Kit translate_models_metadata.json resource was not found")
 PY
@@ -163,6 +192,14 @@ fi
 if ! javap -classpath "$BASEMENT_JAR" -p -s com.google.android.gms.common.internal.Preconditions | grep -Fq '(ZLjava/lang/Object;)V'; then
   echo "Pinned Preconditions does not define checkState(boolean, Object)" >&2
   exit 6
+fi
+
+# DataTransport's generated factories reference javax.inject.Provider. Keep this tiny
+# API in the isolated DEX instead of relying on an optional host transitive dependency.
+INJECT_JAR="$(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name 'javax_inject__javax.inject__1.jar' | head -n 1)"
+if [[ -z "$INJECT_JAR" ]] || ! jar tf "$INJECT_JAR" | grep -Fxq 'javax/inject/Provider.class'; then
+  echo "Pinned javax.inject runtime JAR or Provider.class is missing" >&2
+  exit 9
 fi
 
 # ML Kit Translate 17.x calls the OkHttp 3 static MediaType.parse(String) API.
@@ -189,20 +226,20 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
 {
   for type in \
     com.google.mlkit.common.sdkinternal.MlKitContext \
+    com.google.mlkit.common.model.RemoteModelManager \
     com.google.mlkit.common.internal.CommonComponentRegistrar \
     com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
-    com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar \
+    com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
     com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
-    com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.firebase.components.ComponentDiscoveryService \
     com.google.firebase.components.ComponentRegistrar; do
     echo "===== $type ====="
     javap -classpath "$CLASSPATH:$ANDROID_JAR" -c -p "$type" 2>&1 || true
   done
 } > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
-if ! grep -Fq 'public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
-  echo "Pinned unbundled Play Services Language ID runtime does not expose ThinLanguageIdRegistrar" >&2
+if ! grep -Fq 'com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
+  echo "Pinned bundled Language ID runtime does not expose ThickLanguageIdRegistrar" >&2
   exit 7
 fi
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
@@ -234,6 +271,12 @@ else
   javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
     -d "$WORK_DIR/classes" "$ADAPTER"
 fi
+{
+  echo "===== com.google.mlkit.nl.translate.R$raw ====="
+  javap -classpath "$WORK_DIR/classes:$TRANSLATE_CLASSES" -p 'com.google.mlkit.nl.translate.R$raw'
+  echo "===== com.google.mlkit.nl.translate.R$xml ====="
+  javap -classpath "$WORK_DIR/classes:$TRANSLATE_CLASSES" -p 'com.google.mlkit.nl.translate.R$xml'
+} >> "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
 jar --create --file "$WORK_DIR/mlkit-translate-adapter.jar" -C "$WORK_DIR/classes" .
 
 "$D8" --min-api 23 --lib "$ANDROID_JAR" --output "$WORK_DIR/dex" \
@@ -269,8 +312,9 @@ print(json.dumps(metadata, indent=2))
 PY
 
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
-Link Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
-Translation language models are downloaded on demand by ML Kit and are not included in this archive.
+Link Smart Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
+The Language ID model is bundled in the Pro host APK assets; it is not downloaded as an optional Play Services module.
+Translation language models are downloaded on demand by ML Kit and remain user-managed.
 The runtime dependencies are pinned in the plugin source manifest and build configuration.
 Third-party notices and licenses remain those of their respective upstream projects.
 NOTICE
