@@ -54,7 +54,7 @@ bundled_registrar_declared = any(
     )
     for component in aar_components
 )
-if not thin_registrar_declared:
+if not bundled_registrar_declared:
     raise SystemExit("Pinned bundled Language ID AAR does not declare ThickLanguageIdRegistrar in its manifest")
 common_artifacts = [
     item.get("file", "") for item in artifacts
