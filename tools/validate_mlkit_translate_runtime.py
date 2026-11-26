@@ -269,6 +269,11 @@ dex_files = sorted((root / "code").glob("classes*.dex"))
 defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
 required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
+    "Lcom/google/firebase/components/ComponentRegistrar;",
+    "Lcom/google/firebase/components/ComponentRuntime;",
+    "Lcom/google/mlkit/common/sdkinternal/MlKitContext;",
+    "Lcom/google/mlkit/common/internal/CommonComponentRegistrar;",
+    "Lcom/google/mlkit/nl/translate/NaturalLanguageTranslateRegistrar;",
     "Lcom/google/mlkit/common/model/RemoteModelManager;",
     "Lcom/google/mlkit/common/model/DownloadConditions;",
     "Lcom/google/mlkit/nl/translate/TranslateRemoteModel;",
