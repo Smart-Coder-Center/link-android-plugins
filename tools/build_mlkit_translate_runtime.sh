@@ -268,6 +268,12 @@ else
   javac -source 8 -target 8 -Xlint:-options -cp "$CLASSPATH:$ANDROID_JAR" \
     -d "$WORK_DIR/classes" "$ADAPTER"
 fi
+{
+  echo "===== com.google.mlkit.nl.translate.R$raw ====="
+  javap -classpath "$WORK_DIR/classes:$TRANSLATE_CLASSES" -p 'com.google.mlkit.nl.translate.R$raw'
+  echo "===== com.google.mlkit.nl.translate.R$xml ====="
+  javap -classpath "$WORK_DIR/classes:$TRANSLATE_CLASSES" -p 'com.google.mlkit.nl.translate.R$xml'
+} >> "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
 jar --create --file "$WORK_DIR/mlkit-translate-adapter.jar" -C "$WORK_DIR/classes" .
 
 "$D8" --min-api 23 --lib "$ANDROID_JAR" --output "$WORK_DIR/dex" \
