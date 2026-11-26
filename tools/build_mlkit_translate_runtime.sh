@@ -39,7 +39,7 @@ if not files:
 if sum(p.stat().st_size for p in files) > 1024**3:
     raise SystemExit("Resolved ML Kit runtime artifacts exceed the 1 GiB safety limit")
 
-report = {"artifacts": [], "aar_resources": [], "aar_components": [], "aar_manifests": [], "native_libraries": []}
+report = {"artifacts": [], "aar_resources": [], "aar_assets": [], "aar_resource_symbols": [], "aar_components": [], "aar_manifests": [], "native_libraries": []}
 for artifact in files:
     record = {"file": artifact.name, "size_bytes": artifact.stat().st_size}
     if artifact.suffix.lower() == ".aar":
@@ -61,7 +61,7 @@ for artifact in files:
                 "com_google_mlkit__translate__",
                 # Language ID API facade required by the unbundled Play Services implementation.
                 "com_google_mlkit__language-id-common__",
-                # Unbundled Language ID implementation and its GMS support classes.
+                # Bundled Language ID implementation and its model resources.
                 "com_google_mlkit__language-id__",
                 "com_google_mlkit__common__",
                 "com_google_firebase__firebase-components__",
@@ -90,6 +90,16 @@ for artifact in files:
             for resource in resources.rglob("translate_models_metadata.json"):
                 destination = report_path.parent / "translate_models_metadata.json"
                 destination.write_bytes(resource.read_bytes())
+        assets = target / "assets"
+        if assets.is_dir():
+            entries = [p.relative_to(target).as_posix() for p in assets.rglob("*") if p.is_file()]
+            report["aar_assets"].extend({"aar": artifact.name, "path": item} for item in entries)
+        resource_symbols = target / "R.txt"
+        if resource_symbols.is_file():
+            symbols = [line.strip() for line in resource_symbols.read_text(encoding="utf-8").splitlines() if line.strip()]
+            report["aar_resource_symbols"].extend({"aar": artifact.name, "symbol": item} for item in symbols)
+            (report_path.parent / (artifact.stem + "-R.txt")).write_text(
+                "\n".join(symbols) + "\n", encoding="utf-8")
         jni = target / "jni"
         if jni.is_dir():
             for library in sorted((jni / "arm64-v8a").glob("*.so")):
