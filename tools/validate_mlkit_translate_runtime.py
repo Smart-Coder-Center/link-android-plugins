@@ -51,7 +51,7 @@ if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
 source = manifest.get("source") or {}
 if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
     raise SystemExit("Language ID must be pinned to the bundled com.google.mlkit:language-id:17.0.6 artifact")
-if source.get("text_recognition_version") != "19.0.1" or source.get("ocr_model_delivery") != "play_services_on_demand":
+if source.get("text_recognition_version") != "19.0.1" or source.get("text_recognition_common_version") != "19.1.0" or source.get("ocr_model_delivery") != "play_services_on_demand":
     raise SystemExit("English OCR must use the pinned unbundled Play services Text Recognition API")
 if source.get("translate_version") != "17.0.2":
     raise SystemExit("Translate must be pinned to com.google.mlkit:translate:17.0.2")
@@ -126,6 +126,7 @@ required_isolated = (
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
     "com_google_android_gms__play-services-mlkit-text-recognition__19.0.1.aar",
+    "com_google_android_gms__play-services-mlkit-text-recognition-common__19.1.0.aar",
     "com_google_mlkit__language-id__17.0.6.aar",
     "com_google_mlkit__language-id-common__16.1.0.aar",
     "javax_inject__javax.inject__1.jar",
@@ -156,6 +157,9 @@ if '"com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader' not 
     raise SystemExit("MlKitContext must be loaded from the isolated plugin class loader")
 if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not in adapter_source:
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
+if ('"com.google.mlkit.vision.common.internal.VisionCommonRegistrar", registrarInterface' not in adapter_source
+        or '"com.google.mlkit.vision.text.internal.TextRegistrar", registrarInterface' not in adapter_source):
+    raise SystemExit("ML Kit Vision and Text Recognition registrars must be registered in the plugin-local component graph")
 if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' not in adapter_source:
     raise SystemExit("LanguageIdRegistrar must register LanguageIdentifierImpl.Factory")
 if '"com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface' not in adapter_source:
@@ -200,6 +204,8 @@ required_api = [
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
+    "public com.google.mlkit.vision.common.internal.VisionCommonRegistrar();",
+    "public com.google.mlkit.vision.text.internal.TextRegistrar();",
     "public static int translate_models_metadata;",
     "public static int rapid_response_client_defaults;",
 ]
@@ -295,6 +301,8 @@ required_classes = (
     "Lcom/google/mlkit/vision/text/TextRecognizer;",
     "Lcom/google/mlkit/vision/text/latin/TextRecognizerOptions;",
     "Lcom/google/mlkit/vision/common/InputImage;",
+    "Lcom/google/mlkit/vision/common/internal/VisionCommonRegistrar;",
+    "Lcom/google/mlkit/vision/text/internal/TextRegistrar;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
