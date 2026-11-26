@@ -114,11 +114,14 @@ jobs:
           test -s build/generated/mlkit-resources/assets/tflite_langid.tflite.jpg
           test -s build/generated/mlkit-resources/res/raw/translate_models_metadata.json
           test -s build/generated/mlkit-resources/res/xml/rapid_response_client_defaults.xml
-          grep -Fq 'proImplementation '\''com.google.mlkit:common:18.11.0'\''' build.gradle
-          grep -Fq 'name.startsWith("javax.inject.")' src/main/java/eu/siacs/conversations/speech/plugins/NativeRuntimePackageVerifier.java
           python3 - <<'PY'
           from pathlib import Path
           source = Path("build.gradle").read_text(encoding="utf-8")
+          loader = Path("src/main/java/eu/siacs/conversations/speech/plugins/NativeRuntimePackageVerifier.java").read_text(encoding="utf-8")
+          if "proImplementation 'com.google.mlkit:common:18.11.0'" not in source:
+              raise SystemExit("Host ML Kit Common version does not match the bundled plugin runtime")
+          if 'name.startsWith("javax.inject.")' not in loader:
+              raise SystemExit("Plugin class loader does not isolate javax.inject")
           required = "if (mode == 'conversations' && distribution == 'pro'"
           if required not in source or "features == 'standard' || features == 'lite'" not in source:
               raise SystemExit("ML Kit resources are not restricted to Conversations Pro Standard/Lite variants")
