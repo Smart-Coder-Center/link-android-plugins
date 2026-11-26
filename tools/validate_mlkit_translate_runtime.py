@@ -222,7 +222,6 @@ required_classes = (
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/thin/internal/ThickLanguageIdRegistrar;",
-    "Lcom/google/mlkit/nl/languageid/thin/internal/ThinLanguageIdentifierCreator;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
