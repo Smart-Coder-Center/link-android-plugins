@@ -43,7 +43,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private static final int MAX_CACHED_TRANSLATORS = 4;
-    private static final int MAX_LANGUAGE_ID_RETRIES = 120;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final LanguageIdentifier languageIdentifier;
@@ -85,12 +84,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
             return;
         }
-        // Match the standalone ML Translate flow: invoke Language ID directly.
-        // The bundled Language ID model is immediately available without a Play services module download.
-        identifyLanguageAttempt(text, callback, 0);
-    }
-
-    private void identifyLanguageAttempt(String text, Callback callback, int attempt) {
         synchronized (this) {
             if (closed) {
                 fail(callback, "Smart Translate is closed");
@@ -98,6 +91,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             }
         }
         try {
+            // The bundled model is packaged with the Pro host APK; no optional-module
+            // download or retry loop is required before the first identification.
             languageIdentifier.identifyLanguage(text)
                     .addOnSuccessListener(language -> {
                         if (language == null || "und".equals(language)) {
@@ -111,19 +106,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                             }
                         }
                     })
-                    .addOnFailureListener(error -> {
-                        // The unbundled model may report code 14 while Play services
-                        // completes its first-use download. Retry that state only.
-                        if (error instanceof MlKitException
-                                && ((MlKitException) error).getErrorCode() == 14
-                                && attempt < MAX_LANGUAGE_ID_RETRIES) {
-                            mainHandler.postDelayed(
-                                    () -> identifyLanguageAttempt(text, callback, attempt + 1),
-                                    1000L);
-                        } else {
-                            fail(callback, error);
-                        }
-                    });
+                    .addOnFailureListener(error -> fail(callback, error));
         } catch (Throwable error) {
             fail(callback, error);
         }
