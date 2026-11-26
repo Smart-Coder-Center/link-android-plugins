@@ -193,8 +193,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         if (factory == null) {
             throw new IllegalStateException("ML Kit Language ID Factory is not registered in the plugin-local MlKitContext");
         }
-        // Force Factory.create() now so a missing unbundled Play Services delegate is reported
-        // during plugin initialization, rather than later as an opaque translation failure.
+        // Force Factory.create() during plugin initialization so a missing bundled-model
+        // delegate is reported immediately rather than as an opaque first-use failure.
         LanguageIdentifier identifier = LanguageIdentification.getClient();
         if (identifier == null) {
             throw new IllegalStateException("ML Kit Language ID Factory returned a null client");
