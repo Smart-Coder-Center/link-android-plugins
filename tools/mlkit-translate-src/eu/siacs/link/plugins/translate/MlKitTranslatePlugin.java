@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
- * Language models are downloaded by ML Kit on demand and are not included in this ZIP.
+ * Language ID is bundled with Pro host resources; translation models remain on-demand.
  */
 public final class MlKitTranslatePlugin implements AutoCloseable {
     public interface Callback {
@@ -86,7 +86,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             return;
         }
         // Match the standalone ML Translate flow: invoke Language ID directly.
-        // The unbundled SDK manages first-use model availability through Play services.
+        // The bundled Language ID model is immediately available without a Play services module download.
         identifyLanguageAttempt(text, callback, 0);
     }
 
@@ -172,13 +172,13 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
             // LanguageIdRegistrar owns the LanguageIdentifierImpl.Factory component.
-            // ThinLanguageIdRegistrar contributes the unbundled Play Services creator delegate.
+            // ThickLanguageIdRegistrar provides the bundled model implementation.
             // Both are required: omitting the former leaves Factory null; omitting the latter
             // makes Factory creation fail with "No delegate creator registered".
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
-                    "com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface));
+                    "com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface));
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar", registrarInterface));
 
