@@ -1,6 +1,7 @@
 package eu.siacs.link.plugins.translate;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -17,6 +18,10 @@ import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
 import com.google.mlkit.nl.translate.TranslateRemoteModel;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import org.json.JSONArray;
 
@@ -45,7 +50,9 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     private static final int MAX_CACHED_TRANSLATORS = 4;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Context applicationContext;
     private final LanguageIdentifier languageIdentifier;
+    private TextRecognizer textRecognizer;
     private final LinkedHashMap<String, CachedTranslator> translatorCache =
             new LinkedHashMap<>(4, 0.75f, true);
     private boolean closed;
@@ -62,7 +69,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
     }
 
-    private MlKitTranslatePlugin() {
+    private MlKitTranslatePlugin(Context context) {
+        this.applicationContext = context.getApplicationContext();
         this.languageIdentifier = LanguageIdentification.getClient();
     }
 
@@ -72,7 +80,39 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
         patchResourceIds(context.getApplicationContext());
         initializeMlKitComponents(context.getApplicationContext());
-        return new MlKitTranslatePlugin();
+        return new MlKitTranslatePlugin(context);
+    }
+
+    /**
+     * Reads Latin-script text from a selected image. The unbundled ML Kit model is
+     * delivered by Google Play services on first use; no OCR model is packaged in Link APK.
+     */
+    public void recognizeText(Uri imageUri, Callback callback) {
+        if (imageUri == null) {
+            fail(callback, "تصویری برای خواندن انتخاب نشده است");
+            return;
+        }
+        synchronized (this) {
+            if (closed) {
+                fail(callback, "Smart Translate is closed");
+                return;
+            }
+        }
+        try {
+            InputImage image = InputImage.fromFilePath(applicationContext, imageUri);
+            final TextRecognizer recognizer;
+            synchronized (this) {
+                if (textRecognizer == null) {
+                    textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                }
+                recognizer = textRecognizer;
+            }
+            recognizer.process(image)
+                    .addOnSuccessListener(result -> success(callback, result == null ? "" : result.getText()))
+                    .addOnFailureListener(error -> fail(callback, error));
+        } catch (Throwable error) {
+            fail(callback, error);
+        }
     }
 
     public List<String> getSupportedLanguages() {
@@ -535,5 +575,8 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             try { translator.close(); } catch (Exception ignored) {}
         }
         try { languageIdentifier.close(); } catch (Exception ignored) {}
+        TextRecognizer recognizer;
+        synchronized (this) { recognizer = textRecognizer; textRecognizer = null; }
+        if (recognizer != null) { try { recognizer.close(); } catch (Exception ignored) {} }
     }
 }
