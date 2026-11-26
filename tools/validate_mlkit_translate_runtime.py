@@ -158,6 +158,8 @@ for required in (
     'RemoteModelManager.class.getClassLoader() != loader',
     'TranslateRemoteModel.class.getClassLoader() != loader',
     'manager.getDownloadedModels(TranslateRemoteModel.class)',
+    'Translation.getClient(smokeOptions)',
+    'smokeTranslator.close()',
     'registrarInterface.getClassLoader() != loader',
     'registrarClass.getClassLoader() != loader',
     'catch (Exception | LinkageError error)',
