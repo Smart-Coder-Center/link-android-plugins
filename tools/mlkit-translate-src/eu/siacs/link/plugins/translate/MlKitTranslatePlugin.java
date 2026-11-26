@@ -45,7 +45,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     private static final int MAX_CACHED_TRANSLATORS = 4;
     private static final int MAX_LANGUAGE_ID_RETRIES = 120;
 
-    private final Context context;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final LanguageIdentifier languageIdentifier;
     private final LinkedHashMap<String, CachedTranslator> translatorCache =
@@ -65,7 +64,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private MlKitTranslatePlugin(Context context) {
-        this.context = context.getApplicationContext();
         this.languageIdentifier = LanguageIdentification.getClient();
     }
 
@@ -519,13 +517,9 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     @Override
     public void close() {
         List<Translator> translatorsToClose = new ArrayList<>();
-        TaskCompletionSource<Void> pendingPreparation;
         synchronized (this) {
             if (closed) return;
             closed = true;
-            pendingPreparation = languageIdPreparationCompletion;
-            languageIdPreparationCompletion = null;
-            languageIdPreparationTask = null;
             for (CachedTranslator cached : translatorCache.values()) {
                 cached.evicted = true;
                 if (cached.activeOperations == 0) translatorsToClose.add(cached.translator);
@@ -533,9 +527,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             translatorCache.clear();
         }
         mainHandler.removeCallbacksAndMessages(null);
-        if (pendingPreparation != null) {
-            pendingPreparation.trySetException(new IllegalStateException("Smart Translate is closed"));
-        }
         for (Translator translator : translatorsToClose) {
             try { translator.close(); } catch (Exception ignored) {}
         }
