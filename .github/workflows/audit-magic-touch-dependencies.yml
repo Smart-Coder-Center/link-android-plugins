@@ -56,6 +56,12 @@ jobs:
           {
             echo "## Magic Touch upstream lock"
             cat tools/mediapipe-runtime.lock.generated.json
+            echo
+            echo "## AndroidX parent-classloader API audit"
+            cat plugins/image/magic-touch/provenance/androidx-parent-api-audit.json
+            echo
+            echo "## Candidate host ProGuard rules"
+            cat plugins/image/magic-touch/provenance/androidx-parent-api-keep-rules.pro
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload generated checksum lock and assembled package inputs
