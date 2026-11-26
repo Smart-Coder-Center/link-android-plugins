@@ -63,7 +63,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
     }
 
-    private MlKitTranslatePlugin(Context context) {
+    private MlKitTranslatePlugin() {
         this.languageIdentifier = LanguageIdentification.getClient();
     }
 
@@ -73,7 +73,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
         patchResourceIds(context.getApplicationContext());
         initializeMlKitComponents(context.getApplicationContext());
-        return new MlKitTranslatePlugin(context);
+        return new MlKitTranslatePlugin();
     }
 
     public List<String> getSupportedLanguages() {
