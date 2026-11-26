@@ -111,8 +111,10 @@ jobs:
       - name: Verify host-provided AndroidX runtime APIs
         working-directory: android-host
         run: |
-          ./gradlew --no-daemon dependencyInsight --dependency androidx.fragment:fragment --configuration conversationsProStandardRuntimeClasspath
-          ./gradlew --no-daemon dependencyInsight --dependency androidx.lifecycle:lifecycle-common --configuration conversationsProStandardRuntimeClasspath
+          ./gradlew --no-daemon dependencyInsight --dependency androidx.fragment:fragment --configuration conversationsProStandardRuntimeClasspath | tee /tmp/link-fragment-deps.txt
+          grep -Fq 'androidx.fragment:fragment' /tmp/link-fragment-deps.txt
+          ./gradlew --no-daemon dependencyInsight --dependency androidx.lifecycle:lifecycle-common --configuration conversationsProStandardRuntimeClasspath | tee /tmp/link-lifecycle-deps.txt
+          grep -Fq 'androidx.lifecycle:lifecycle-common' /tmp/link-lifecycle-deps.txt
 
       - name: Verify extracted model, Translate resources and loader isolation
         working-directory: android-host
