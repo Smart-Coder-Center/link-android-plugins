@@ -62,7 +62,7 @@ for artifact in files:
                 # Language ID API facade required by the unbundled Play Services implementation.
                 "com_google_mlkit__language-id-common__",
                 # Unbundled Language ID implementation and its GMS support classes.
-                "com_google_android_gms__play-services-mlkit-",
+                "com_google_mlkit__language-id__",
                 "com_google_mlkit__common__",
                 "com_google_firebase__firebase-components__",
                 "com_google_firebase__firebase-encoders-json__",
@@ -191,7 +191,7 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     com.google.mlkit.common.sdkinternal.MlKitContext \
     com.google.mlkit.common.internal.CommonComponentRegistrar \
     com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
-    com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar \
+    com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
     com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
@@ -202,7 +202,7 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
   done
 } > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
 if ! grep -Fq 'public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
-  echo "Pinned unbundled Play Services Language ID runtime does not expose ThinLanguageIdRegistrar" >&2
+  echo "Pinned bundled Language ID runtime does not expose ThickLanguageIdRegistrar" >&2
   exit 7
 fi
 ADAPTER="$REPO_ROOT/tools/mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
