@@ -203,6 +203,17 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         if (manager == null || manager.getDownloadedModels(TranslateRemoteModel.class) == null) {
             throw new IllegalStateException("ML Kit Translate RemoteModelManager is not registered in the plugin-local MlKitContext");
         }
+        // Construct a translator without downloading any language model. This proves that
+        // NaturalLanguageTranslateRegistrar is present in an existing as well as fresh context.
+        TranslatorOptions smokeOptions = new TranslatorOptions.Builder()
+                .setSourceLanguage("en")
+                .setTargetLanguage("fa")
+                .build();
+        Translator smokeTranslator = Translation.getClient(smokeOptions);
+        if (smokeTranslator == null) {
+            throw new IllegalStateException("ML Kit Translate registrar did not create a Translator");
+        }
+        smokeTranslator.close();
         // Force Factory.create() during plugin initialization so a missing bundled-model
         // delegate is reported immediately rather than as an opaque first-use failure.
         LanguageIdentifier identifier = LanguageIdentification.getClient();
