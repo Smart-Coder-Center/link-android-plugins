@@ -87,9 +87,22 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Check out the Link Android integration branch
+      - name: Verify cross-repository read token is configured
+        env:
+          ANDROID_REPO_READ_TOKEN: ${{ secrets.LINK_ANDROID_REPO_READ_TOKEN }}
         run: |
-          git clone --depth 1 --branch main https://github.com/Smart-Coder-Center/link-android.git android-host
+          if [ -z "$ANDROID_REPO_READ_TOKEN" ]; then
+            echo "::error::Add LINK_ANDROID_REPO_READ_TOKEN to the link-android-plugins repository Actions secrets. It must be a fine-grained PAT with Contents: Read access to Smart-Coder-Center/link-android."
+            exit 1
+          fi
+
+      - name: Check out the Link Android integration branch
+        uses: actions/checkout@v4
+        with:
+          repository: Smart-Coder-Center/link-android
+          ref: main
+          path: android-host
+          token: ${{ secrets.LINK_ANDROID_REPO_READ_TOKEN }}
 
       - name: Download the AAR audit from the plugin build
         uses: actions/download-artifact@v4
