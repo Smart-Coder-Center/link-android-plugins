@@ -142,8 +142,10 @@ def main():
     classes, methods, fields = sorted(classes), sorted(methods), sorted(fields)
     canonical = "\n".join(["CLASSES", *classes, "METHODS", *methods, "FIELDS", *fields]) + "\n"
     fingerprint = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
-    expected = baseline["api_fingerprint_sha256"]
+    baseline = None if str(baseline_path) == "-" else json.loads(
+        baseline_path.read_text(encoding="utf-8")
+    )
+    expected = baseline["api_fingerprint_sha256"] if baseline else None
 
     # Always write a reviewable report and generated rules, including on drift.
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -155,7 +157,8 @@ def main():
         "field_references": fields,
         "api_fingerprint_sha256": fingerprint,
         "baseline_fingerprint_sha256": expected,
-        "baseline_matches": fingerprint == expected,
+        "baseline_matches": fingerprint == expected if expected else None,
+        "audit_mode": "baseline-guarded" if expected else "report-only",
     }
     (output_dir / "androidx-parent-api-audit.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
@@ -196,7 +199,7 @@ def main():
         f"classes={len(classes)} methods={len(methods)} fields={len(fields)} "
         f"fingerprint={fingerprint}"
     )
-    if fingerprint != expected:
+    if expected and fingerprint != expected:
         raise SystemExit(
             "Unreviewed AndroidX parent-classloader API drift detected. "
             "Review provenance/androidx-parent-api-audit.json and the generated "
