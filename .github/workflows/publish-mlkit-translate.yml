@@ -47,6 +47,18 @@ jobs:
           tools/build_mlkit_translate_runtime.sh plugins/translation/ml-translate
           python3 tools/validate_mlkit_translate_runtime.py plugins/translation/ml-translate
 
+      - name: Upload AndroidX parent API audit diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-translate-1.0.20-androidx-parent-api-audit
+          path: |
+            plugins/translation/ml-translate/provenance/androidx-parent-api-audit.json
+            plugins/translation/ml-translate/provenance/androidx-parent-api-keep-rules.pro
+            plugins/translation/ml-translate/provenance/mlkit-internal-api.txt
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Build and verify signed plugin ZIP
         env:
           LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY: ${{ secrets.LINK_PLUGIN_RUNTIME_SIGNING_PRIVATE_KEY }}
