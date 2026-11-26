@@ -232,6 +232,8 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     com.google.mlkit.common.sdkinternal.MlKitContext \
     com.google.mlkit.common.model.RemoteModelManager \
     com.google.mlkit.common.internal.CommonComponentRegistrar \
+    com.google.mlkit.vision.common.internal.VisionCommonRegistrar \
+    com.google.mlkit.vision.text.internal.TextRegistrar \
     com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
