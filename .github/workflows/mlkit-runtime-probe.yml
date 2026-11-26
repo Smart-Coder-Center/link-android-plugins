@@ -89,7 +89,7 @@ jobs:
     steps:
       - name: Check out the Link Android integration branch
         run: |
-          git clone --depth 1 --branch fix/mlkit-bundled-language-id-resources https://github.com/Smart-Coder-Center/link-android.git android-host
+          git clone --depth 1 --branch main https://github.com/Smart-Coder-Center/link-android.git android-host
 
       - name: Download the AAR audit from the plugin build
         uses: actions/download-artifact@v4
