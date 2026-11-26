@@ -28,7 +28,7 @@ gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMlKitTranslateRuntimeArtifacts -PmlKitOutputDir="$WORK_DIR/artifacts"
 
 python3 - "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$SOURCE_DIR/provenance/mlkit-aar-audit.json" "$WORK_DIR/runtime-jars" <<'PY'
-import json, sys, zipfile
+import hashlib, json, sys, zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -76,6 +76,7 @@ for artifact in files:
                 # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
                 "androidx_collection__collection__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
+                "javax_inject__javax.inject__",
             )
             if artifact.name.startswith(runtime_prefixes):
                 (runtime_jars / destination.name).write_bytes(classes.read_bytes())
@@ -92,8 +93,14 @@ for artifact in files:
                 destination.write_bytes(resource.read_bytes())
         assets = target / "assets"
         if assets.is_dir():
-            entries = [p.relative_to(target).as_posix() for p in assets.rglob("*") if p.is_file()]
-            report["aar_assets"].extend({"aar": artifact.name, "path": item} for item in entries)
+            for asset in sorted(p for p in assets.rglob("*") if p.is_file()):
+                relative = asset.relative_to(target).as_posix()
+                report["aar_assets"].append({
+                    "aar": artifact.name,
+                    "path": relative,
+                    "size_bytes": asset.stat().st_size,
+                    "sha256": hashlib.sha256(asset.read_bytes()).hexdigest()
+                })
         resource_symbols = target / "R.txt"
         if resource_symbols.is_file():
             symbols = [line.strip() for line in resource_symbols.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -146,6 +153,7 @@ for artifact in files:
                 # AndroidX Collection resolves as collection-jvm JAR on this Gradle variant.
                 "androidx_collection__collection-jvm__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
+                "javax_inject__javax.inject__",
             )):
             (runtime_jars / artifact.name).write_bytes(artifact.read_bytes())
     else:
@@ -181,6 +189,14 @@ fi
 if ! javap -classpath "$BASEMENT_JAR" -p -s com.google.android.gms.common.internal.Preconditions | grep -Fq '(ZLjava/lang/Object;)V'; then
   echo "Pinned Preconditions does not define checkState(boolean, Object)" >&2
   exit 6
+fi
+
+# DataTransport's generated factories reference javax.inject.Provider. Keep this tiny
+# API in the isolated DEX instead of relying on an optional host transitive dependency.
+INJECT_JAR="$(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -name 'javax_inject__javax.inject__1.jar' | head -n 1)"
+if [[ -z "$INJECT_JAR" ]] || ! jar tf "$INJECT_JAR" | grep -Fxq 'javax/inject/Provider.class'; then
+  echo "Pinned javax.inject runtime JAR or Provider.class is missing" >&2
+  exit 9
 fi
 
 # ML Kit Translate 17.x calls the OkHttp 3 static MediaType.parse(String) API.
