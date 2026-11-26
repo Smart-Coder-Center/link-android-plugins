@@ -8,6 +8,11 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.common.moduleinstall.InstallStatusListener;
+import com.google.android.gms.common.moduleinstall.ModuleInstall;
+import com.google.android.gms.common.moduleinstall.ModuleInstallClient;
+import com.google.android.gms.common.moduleinstall.ModuleInstallRequest;
+import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate;
 import com.google.mlkit.common.MlKitException;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.common.model.RemoteModelManager;
@@ -107,12 +112,65 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                 }
                 recognizer = textRecognizer;
             }
-            recognizer.process(image)
-                    .addOnSuccessListener(result -> success(callback, result == null ? "" : result.getText()))
-                    .addOnFailureListener(error -> fail(callback, error));
+            ensureOcrModuleAndProcess(image, recognizer, callback);
         } catch (Throwable error) {
             fail(callback, error);
         }
+    }
+
+    private void ensureOcrModuleAndProcess(
+            InputImage image, TextRecognizer recognizer, Callback callback) {
+        ModuleInstallClient installer = ModuleInstall.getClient(applicationContext);
+        installer.areModulesAvailable(recognizer)
+                .addOnSuccessListener(availability -> {
+                    if (availability.areModulesAvailable()) {
+                        processRecognizedImage(image, recognizer, callback);
+                        return;
+                    }
+                    InstallStatusListener listener = new InstallStatusListener() {
+                        @Override public void onInstallStatusUpdated(ModuleInstallStatusUpdate update) {
+                            int state = update.getInstallState();
+                            if (state == ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED) {
+                                installer.unregisterListener(this);
+                                processRecognizedImage(image, recognizer, callback);
+                            } else if (state == ModuleInstallStatusUpdate.InstallState.STATE_FAILED
+                                    || state == ModuleInstallStatusUpdate.InstallState.STATE_CANCELED) {
+                                installer.unregisterListener(this);
+                                fail(callback, "دانلود مدل OCR از Google Play services ناموفق بود [code="
+                                        + update.getErrorCode() + "]");
+                            }
+                        }
+                    };
+                    ModuleInstallRequest request = ModuleInstallRequest.newBuilder()
+                            .addApi(recognizer)
+                            .setListener(listener)
+                            .build();
+                    installer.installModules(request)
+                            .addOnSuccessListener(response -> {
+                                if (response.areModulesAlreadyInstalled()) {
+                                    installer.unregisterListener(listener);
+                                    processRecognizedImage(image, recognizer, callback);
+                                }
+                            })
+                            .addOnFailureListener(error -> {
+                                installer.unregisterListener(listener);
+                                fail(callback, error);
+                            });
+                })
+                .addOnFailureListener(error -> fail(callback, error));
+    }
+
+    private void processRecognizedImage(
+            InputImage image, TextRecognizer recognizer, Callback callback) {
+        synchronized (this) {
+            if (closed) {
+                fail(callback, "Smart Translate is closed");
+                return;
+            }
+        }
+        recognizer.process(image)
+                .addOnSuccessListener(result -> success(callback, result == null ? "" : result.getText()))
+                .addOnFailureListener(error -> fail(callback, error));
     }
 
     public List<String> getSupportedLanguages() {
