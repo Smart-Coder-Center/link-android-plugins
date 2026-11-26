@@ -351,9 +351,11 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                     + "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>"
                     + "</Relationships>");
             StringBuilder body = new StringBuilder();
+            String paragraphProperties = containsRtl(text)
+                    ? "<w:pPr><w:bidi/><w:jc w:val=\"right\"/></w:pPr>" : "";
             String[] lines = text.split("\\R", -1);
             for (String line : lines) {
-                body.append("<w:p><w:r><w:t xml:space=\"preserve\">")
+                body.append("<w:p>").append(paragraphProperties).append("<w:r><w:t xml:space=\"preserve\">")
                         .append(xmlEscape(line)).append("</w:t></w:r></w:p>");
             }
             long imageWidthEmu = 5486400L;
@@ -396,6 +398,19 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                         + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"/>");
             }
         }
+    }
+
+    private static boolean containsRtl(String value) {
+        if (value == null) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+            if ((character >= 0x0590 && character <= 0x08ff)
+                    || (character >= 0xfb1d && character <= 0xfdff)
+                    || (character >= 0xfe70 && character <= 0xfeff)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void put(ZipOutputStream zip, String name, String value) throws IOException {
