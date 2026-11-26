@@ -103,7 +103,7 @@ jobs:
                   "gh", "release", "create", tag, str(archive),
                   "--title", "Link plugin ml-translate 1.0.19",
                   "--target", "main",
-                  "--notes", "Signed ML Kit Translate runtime for Link. Language models are downloaded on demand by ML Kit and are not bundled in this release."
+                  "--notes", "Signed ML Kit Translate runtime for Link. Language identification uses a bundled model; translation language models remain on-demand and user-managed."
               ])
           run(["gh", "release", "edit", tag, "--title", "Link plugin ml-translate 1.0.19"])
           print("Published or verified immutable release asset; SHA-256=" + expected_hash)
