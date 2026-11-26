@@ -23,6 +23,9 @@ mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
+rm -f "$SOURCE_DIR/provenance/mlkit-aar-audit.json" \
+  "$SOURCE_DIR/provenance/mlkit-internal-api.txt" \
+  "$SOURCE_DIR/provenance/translate_models_metadata.json"
 
 gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMlKitTranslateRuntimeArtifacts -PmlKitOutputDir="$WORK_DIR/artifacts"
