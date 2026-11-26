@@ -31,6 +31,7 @@ rm -f "$SOURCE_DIR/.link-runtime-generated.json"
 download_model() {
   local language="$1"
   local expected_size="$2"
+  local expected_blob_sha="$3"
   local destination="$SOURCE_DIR/model/tessdata/${language}.traineddata"
   local url="https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/${TESSDATA_REVISION}/${language}.traineddata"
   local final_url
@@ -51,9 +52,16 @@ PY
     echo "Unexpected ${language} OCR model size: $actual_size" >&2
     exit 8
   }
+  python3 - "$destination" "$expected_blob_sha" <<'PY'
+import hashlib, pathlib, sys
+data = pathlib.Path(sys.argv[1]).read_bytes()
+actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+if actual != sys.argv[2]:
+    raise SystemExit("OCR model Git blob SHA-1 mismatch")
+PY
 }
-download_model fas 431500
-download_model eng 4113088
+download_model fas 431500 1a17ee02076107e73abd15d2038389150c8f824f
+download_model eng 4113088 bbef4675053b5b468cdb477053e28b1c698ba08e
 
 # Resolve exact, version-pinned runtime artifacts in the isolated tools Gradle project.
 gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
