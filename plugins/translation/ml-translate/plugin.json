@@ -1,9 +1,9 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "name": "Smart Translate",
-  "description": "Detects source language and translates on-device with managed offline language models. Link asks before downloading missing models and lets users keep or remove downloaded languages.",
+  "description": "Detects source language with a bundled ML Kit model and translates on-device with managed offline language models.",
   "language": "und",
   "min_link_version": "2.21.0",
   "package_type": "native_runtime",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Calls ML Kit Language ID directly and lets the SDK/Google Play services manage first-use model availability, with bounded retry for MODEL_NOT_DOWNLOADED; removes Link's separate ModuleInstall consent/polling gate. Keeps explicit download/keep/remove controls for translation language models and isolates the OkHttp 3 transport required by ML Kit from Link's OkHttp 5 host runtime.",
+  "release_notes": "Replaces the Play Services-delivered Language ID model with the bundled ML Kit Language ID implementation. The model is included in generated Pro host resources, avoiding first-use optional-module downloads. Translation language models remain on-demand and user-managed.",
   "runtime": {
     "abis": [
       "arm64-v8a"
@@ -40,11 +40,11 @@
   "source": {
     "type": "mlkit_translate_runtime",
     "translate_version": "17.0.2",
-    "language_id_version": "17.0.0",
-    "language_id_provider": "com.google.android.gms:play-services-mlkit-language-id",
+    "language_id_version": "17.0.6",
+    "language_id_provider": "com.google.mlkit:language-id",
     "common_version": "18.10.0",
     "okhttp_version": "3.12.13",
     "okio_version": "1.15.0",
-    "language_id_flow": "direct_sdk_managed"
+    "language_id_flow": "bundled_model"
   }
 }
