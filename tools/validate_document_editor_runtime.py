@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 import re
 import subprocess
@@ -29,11 +30,18 @@ if runtime.get("entry_class") != "eu.siacs.link.plugins.document.DocumentEditorP
 if runtime.get("code_api_version") != 1 or runtime.get("abis") != ["arm64-v8a"]:
     raise SystemExit("Document Editor runtime API/ABI declaration is invalid")
 
-expected_models = {"fas.traineddata": 431500, "eng.traineddata": 4113088}
-for name, expected_size in expected_models.items():
+expected_models = {
+    "fas.traineddata": (431500, "1a17ee02076107e73abd15d2038389150c8f824f"),
+    "eng.traineddata": (4113088, "bbef4675053b5b468cdb477053e28b1c698ba08e"),
+}
+for name, (expected_size, expected_blob_sha) in expected_models.items():
     model = root / "model" / "tessdata" / name
     if not model.is_file() or model.stat().st_size != expected_size:
         raise SystemExit(f"Missing or unpinned OCR model payload: {name}")
+    data = model.read_bytes()
+    actual_blob_sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    if actual_blob_sha != expected_blob_sha:
+        raise SystemExit(f"OCR model Git blob SHA-1 mismatch: {name}")
 
 code_files = runtime.get("code_files", [])
 if not isinstance(code_files, list) or not code_files:
