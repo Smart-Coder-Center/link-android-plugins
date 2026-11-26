@@ -249,7 +249,13 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             PdfDocument document = new PdfDocument();
             try {
                 ensureOpen();
-                if (imageUri != null) bitmap = decodeScaled(imageUri);
+                if ((text == null || text.trim().isEmpty()) && imageUri == null) {
+                    throw new IllegalArgumentException("Add text or an image before exporting.");
+                }
+                if (imageUri != null) {
+                    bitmap = decodeScaled(imageUri);
+                    if (bitmap == null) throw new IOException("The selected image could not be decoded.");
+                }
                 TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 textPaint.setColor(0xff202124);
                 textPaint.setTextSize(12f);
@@ -321,7 +327,13 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             Bitmap bitmap = null;
             try {
                 ensureOpen();
-                if (imageUri != null) bitmap = decodeScaled(imageUri);
+                if ((text == null || text.trim().isEmpty()) && imageUri == null) {
+                    throw new IllegalArgumentException("Add text or an image before exporting.");
+                }
+                if (imageUri != null) {
+                    bitmap = decodeScaled(imageUri);
+                    if (bitmap == null) throw new IOException("The selected image could not be decoded.");
+                }
                 try (OutputStream raw = app.getContentResolver().openOutputStream(destination, "w")) {
                     if (raw == null) throw new IOException("Could not open the Word document destination.");
                     writeDocx(raw, text == null ? "" : text, bitmap);
