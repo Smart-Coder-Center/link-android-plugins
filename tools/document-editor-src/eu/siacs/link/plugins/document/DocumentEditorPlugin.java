@@ -455,6 +455,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             values.put(MediaStore.Downloads.DISPLAY_NAME, name);
             values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
             values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Link");
+            values.put(MediaStore.MediaColumns.IS_PENDING, 1);
             Uri target = app.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
             if (target == null) throw new IOException("Could not create the scanned PDF.");
             try (java.io.InputStream input = app.getContentResolver().openInputStream(source);
@@ -462,6 +463,9 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 if (input == null || output == null) throw new IOException("Could not save the scanned PDF.");
                 copy(input, output);
             }
+            ContentValues ready = new ContentValues();
+            ready.put(MediaStore.MediaColumns.IS_PENDING, 0);
+            app.getContentResolver().update(target, ready, null, null);
             return target;
         }
         File directory = new File(app.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Link");
