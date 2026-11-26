@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "source_plugin_version": "1.0.19",
+  "source_dex_sha256": "ac8406fc0dbbdf4efbf7f4b39dff47f6465a06693ad35dd7190299324cade051",
+  "external_androidx_classes": 23,
+  "method_references": 86,
+  "field_references": 1,
+  "api_fingerprint_sha256": "1f1c0886056dc41ab02ba790f122de67b45a052b5fa42ce32986815de333c6c5"
+}
