@@ -1,0 +1,22 @@
+Document Editor — Third-Party Notices
+
+This package includes or links to the following components:
+
+- Tesseract OCR 5.5.1 and Tesseract4Android 4.9.0 — Apache License 2.0.
+- Tesseract tessdata_fast Persian (fas) and English (eng) trained models — Apache License 2.0.
+- Leptonica 1.85.0 — BSD 2-Clause license.
+- libpng 1.6.48 — PNG Reference Library License.
+- libjpeg v9f — Independent JPEG Group license.
+- Google ML Kit Document Scanner and Google Code Scanner client libraries — Google Play services SDK terms and applicable Apache 2.0 notices.
+
+The corresponding Tesseract/Apache, Leptonica, libpng and libjpeg license texts are included in this directory. Tesseract and language-model source revisions are pinned in plugin.json and the runtime packaging script.
+
+Upstream references:
+- https://github.com/adaptech-cz/Tesseract4Android
+- https://github.com/tesseract-ocr/tesseract
+- https://github.com/tesseract-ocr/tessdata_fast
+- https://github.com/DanBloomberg/leptonica
+- https://github.com/pnggroup/libpng
+- https://github.com/libjpeg-turbo/libjpeg-turbo
+- https://developers.google.com/ml-kit/vision/doc-scanner/android
+- https://developers.google.com/ml-kit/vision/barcode-scanning/code-scanner
