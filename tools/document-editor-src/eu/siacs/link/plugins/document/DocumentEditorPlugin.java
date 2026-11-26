@@ -560,14 +560,26 @@ public final class DocumentEditorPlugin implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() {
-        if (closed) return;
-        closed = true;
-        if (ocr != null) {
-            ocr.recycle();
-            ocr = null;
+    public void close() {
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            pendingDocumentCallback = null;
         }
-        worker.shutdownNow();
-        pendingDocumentCallback = null;
+        // Queue native OCR cleanup behind any in-flight operation to avoid recycling
+        // the Tesseract engine while JNI is still using it.
+        try {
+            worker.execute(() -> {
+                synchronized (DocumentEditorPlugin.this) {
+                    if (ocr != null) {
+                        ocr.recycle();
+                        ocr = null;
+                    }
+                }
+            });
+        } catch (RuntimeException ignored) {
+            // The app process will reclaim native resources if the executor has already stopped.
+        }
+        worker.shutdown();
     }
 }
