@@ -207,7 +207,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         // NaturalLanguageTranslateRegistrar is present in an existing as well as fresh context.
         TranslatorOptions smokeOptions = new TranslatorOptions.Builder()
                 .setSourceLanguage("en")
-                .setTargetLanguage("fa")
+                .setTargetLanguage("es")
                 .build();
         Translator smokeTranslator = Translation.getClient(smokeOptions);
         if (smokeTranslator == null) {
