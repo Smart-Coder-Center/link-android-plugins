@@ -25,6 +25,7 @@ required_runtime_behaviors = (
     "cached.translator.close()",
     "TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)",
     "recognizer.process(image)",
+    "verifyTextRecognitionClient(pluginLoader)",
 )
 missing_behaviors = [item for item in required_runtime_behaviors if item not in adapter_source]
 if missing_behaviors:
@@ -92,6 +93,19 @@ bundled_registrar_declared = any(
 )
 if not bundled_registrar_declared:
     raise SystemExit("Pinned bundled Language ID AAR does not declare ThickLanguageIdRegistrar in its manifest")
+text_registrars = {
+    "com.google.mlkit.vision.common.internal.VisionCommonRegistrar",
+    "com.google.mlkit.vision.text.internal.TextRegistrar",
+}
+declared_text_registrars = {
+    item.get("name", "").removeprefix("com.google.firebase.components:")
+    for component in aar_components for item in component.get("metadata", [])
+    if item.get("value") == "com.google.firebase.components.ComponentRegistrar"
+}
+missing_text_registrars = sorted(text_registrars - declared_text_registrars)
+if missing_text_registrars:
+    raise SystemExit("Text Recognition AAR metadata is missing required component registrars: "
+                     + ", ".join(missing_text_registrars))
 if any(
     "ThinLanguageIdRegistrar" in item.get("name", "")
     for component in aar_components
@@ -149,7 +163,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "com_google_mlkit__vision-common__", "com_google_mlkit__text-recognition-common__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "com_google_mlkit__vision-common__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -173,6 +187,9 @@ if adapter_source.count("verifyLanguageIdFactory(pluginLoader, mlKitContext,") !
     raise SystemExit("Both existing and freshly initialized MlKitContext paths must verify Language ID Factory")
 for required in (
     '"com.google.mlkit.nl.languageid.internal.LanguageIdentifierImpl$Factory", true, loader',
+    "TextRecognition.class.getClassLoader() != loader",
+    "TextRecognizer.class.getClassLoader() != loader",
+    "InputImage.class.getClassLoader() != loader",
     'mlKitContextClass.getMethod("get", Class.class)',
     'LanguageIdentification.getClient()',
     'identifier.close()',
