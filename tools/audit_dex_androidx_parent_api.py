@@ -180,16 +180,23 @@ def main():
     ]
     for descriptor in classes:
         owner = descriptor[1:-1].replace("/", ".")
-        rules.append(f"-keep class {owner} {{")
+        members = []
         for name, args in sorted(methods_by_class.get(descriptor, [])):
             params = ", ".join(parse_arguments(args))
-            rules.append(f"    <init>({params});" if name == "<init>"
-                         else f"    *** {name}({params});")
+            members.append(f"    <init>({params});" if name == "<init>"
+                           else f"    *** {name}({params});")
         for name in sorted(fields_by_class.get(descriptor, [])):
-            rules.append(f"    *** {name};")
-        if not methods_by_class.get(descriptor) and not fields_by_class.get(descriptor):
-            rules.append("    *;")
-        rules.append("}")
+            members.append(f"    *** {name};")
+        if not members:
+            members.append("    *;")
+        # The DEX type_ids table does not encode whether an external type is a
+        # class, interface or annotation. Emit all legal owner forms; ProGuard
+        # applies only the matching form, avoiding a false class-only rule for
+        # AndroidX interfaces and lifecycle annotations.
+        for kind in ("class", "interface", "@interface"):
+            rules.append(f"-keep {kind} {owner} {{")
+            rules.extend(members)
+            rules.append("}")
     (output_dir / "androidx-parent-api-keep-rules.pro").write_text(
         "\n".join(rules) + "\n", encoding="utf-8"
     )
