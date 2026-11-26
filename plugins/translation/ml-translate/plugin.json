@@ -1,7 +1,7 @@
 {
   "id": "ml-translate",
   "kind": "translation",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "name": "Smart Translate",
   "description": "Detects language, reads English text from images with on-demand ML Kit OCR, and translates on-device with managed offline language models.",
   "language": "und",
@@ -23,7 +23,7 @@
       "version": "1.0.1"
     }
   ],
-  "release_notes": "Adds English Latin-script image OCR through the unbundled ML Kit Text Recognition API. The OCR model is delivered on demand by Google Play services and is not packaged in the Link APK. Existing bundled Language ID and user-managed translation models are unchanged.",
+  "release_notes": "Fixes plugin-local ML Kit vision runtime packaging for the Text Recognition Detector API. The OCR model is delivered on demand by Google Play services and is not packaged in the Link APK. Existing bundled Language ID and user-managed translation models are unchanged.",
   "runtime": {
     "abis": [
       "arm64-v8a"
@@ -48,6 +48,7 @@
     "okio_version": "1.15.0",
     "text_recognition_version": "19.0.1",
     "text_recognition_common_version": "19.1.0",
+    "vision_interfaces": "transitive_plugin_local",
     "ocr_model_delivery": "play_services_on_demand",
     "language_id_flow": "bundled_model"
   }
