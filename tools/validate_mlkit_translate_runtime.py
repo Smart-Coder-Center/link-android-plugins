@@ -35,6 +35,8 @@ if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
     raise SystemExit("Language ID must use the bundled model runtime for release 1.0.19")
 
 source = manifest.get("source") or {}
+if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
+    raise SystemExit("Language ID must be pinned to the bundled com.google.mlkit:language-id:17.0.6 artifact")
 common_version = source.get("common_version")
 if not common_version:
     raise SystemExit("The shared ML Kit common runtime version must be pinned in plugin.json")
@@ -48,10 +50,15 @@ artifacts = aar_audit.get("artifacts", [])
 aar_components = aar_audit.get("aar_components", [])
 aar_assets = aar_audit.get("aar_assets", [])
 native_libraries = aar_audit.get("native_libraries", [])
-if not any(item.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
-           and item.get("path") == "assets/tflite_langid.tflite.jpg"
-           for item in aar_assets):
-    raise SystemExit("Bundled Language ID model asset is absent from the audited AAR")
+model_assets = [
+    item for item in aar_assets
+    if item.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
+    and item.get("path") == "assets/tflite_langid.tflite.jpg"
+]
+if len(model_assets) != 1 or not (0 < model_assets[0].get("size_bytes", 0) <= 8 * 1024 * 1024):
+    raise SystemExit("Bundled Language ID model asset is missing, duplicated, or outside the size limit")
+if not __import__("re").fullmatch(r"[a-f0-9]{64}", model_assets[0].get("sha256", "")):
+    raise SystemExit("Bundled Language ID model asset SHA-256 audit is missing or invalid")
 if not any(item.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
            and item.get("path") == "lib/arm64-v8a/liblanguage_id_l2c_jni.so"
            for item in native_libraries):
@@ -67,6 +74,16 @@ bundled_registrar_declared = any(
 )
 if not bundled_registrar_declared:
     raise SystemExit("Pinned bundled Language ID AAR does not declare ThickLanguageIdRegistrar in its manifest")
+if any(
+    "ThinLanguageIdRegistrar" in item.get("name", "")
+    for component in aar_components
+    for item in component.get("metadata", [])
+):
+    raise SystemExit("Unbundled ThinLanguageIdRegistrar must not be present in the runtime AAR set")
+artifact_names_for_policy = {item.get("file", "") for item in artifacts}
+if any(name.startswith("com_google_android_gms__play-services-mlkit-language-id__")
+       for name in artifact_names_for_policy):
+    raise SystemExit("Unbundled Play Services Language ID module must not be packaged")
 common_artifacts = [
     item.get("file", "") for item in artifacts
     if item.get("file", "").startswith("com_google_mlkit__common__")
@@ -91,6 +108,7 @@ required_isolated = (
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
     "com_google_mlkit__language-id__17.0.6.aar",
     "com_google_mlkit__language-id-common__16.1.0.aar",
+    "javax_inject__javax.inject__1.jar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
 collection_artifacts = sorted(
@@ -110,7 +128,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -161,7 +179,11 @@ missing_api = [signature for signature in required_api if signature not in api_t
 if missing_api:
     raise SystemExit("Pinned ML Kit registrar API changed; cannot safely initialize from plugin DEX: " + "; ".join(missing_api))
 
-runtime = dict(manifest.get("runtime") or {})
+declared_runtime = dict(manifest.get("runtime") or {})
+for key in ("abis", "load_order", "code_files", "entry_class", "code_api_version"):
+    if declared_runtime.get(key) != generated.get(key):
+        raise SystemExit("plugin.json runtime metadata is stale for generated field: " + key)
+runtime = dict(declared_runtime)
 runtime.update(generated)
 manifest["runtime"] = runtime
 
@@ -231,6 +253,7 @@ required_classes = (
     "Lokhttp3/MediaType;",
     "Lokio/ByteString;",
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
+    "Ljavax/inject/Provider;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/bundled/internal/ThickLanguageIdRegistrar;",
