@@ -126,10 +126,16 @@ jobs:
           from pathlib import Path
           source = Path("build.gradle").read_text(encoding="utf-8")
           loader = Path("src/main/java/eu/siacs/conversations/speech/plugins/NativeRuntimePackageVerifier.java").read_text(encoding="utf-8")
-          if "proImplementation 'com.google.mlkit:common:18.11.0'" not in source:
-              raise SystemExit("Host ML Kit Common version does not match the bundled plugin runtime")
-          if 'name.startsWith("javax.inject.")' not in loader:
-              raise SystemExit("Plugin class loader does not isolate javax.inject")
+          rules = Path("proguard-rules.pro").read_text(encoding="utf-8")
+          if "proImplementation 'androidx.core:core:1.16.0'" not in source:
+              raise SystemExit("Pro host does not pin the AndroidX Core API used by the plugin DEX")
+          if "proImplementation 'com.google.mlkit:common:" in source or "proImplementation 'com.google.android.gms:play-services-base:" in source:
+              raise SystemExit("Redundant host ML Kit/GMS bootstrap dependencies defeat plugin class-loader isolation")
+          for prefix in ("javax.inject.", "com.google.android.gms.", "com.google.mlkit.common.", "com.google.firebase."):
+              if f'name.startsWith("{prefix}")' not in loader:
+                  raise SystemExit(f"Plugin class loader does not isolate {prefix}")
+          if "androidx.lifecycle.LifecycleObserver" not in rules or "androidx.fragment.app.DialogFragment" not in rules:
+              raise SystemExit("R8 keep rules are missing parent-loaded AndroidX APIs referenced by the plugin DEX")
           required = "if (mode == 'conversations' && distribution == 'pro'"
           if required not in source or "features == 'standard' || features == 'lite'" not in source:
               raise SystemExit("ML Kit resources are not restricted to Conversations Pro Standard/Lite variants")
