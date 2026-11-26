@@ -57,11 +57,15 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ inputs.run_id }}
 
-      - name: Verify downloaded audit file
+      - name: Verify downloaded audit files and R8 keep-rule coverage
         working-directory: android-host
         run: |
           test -s plugin-audit/provenance/mlkit-aar-audit.json
           test -s plugin-audit/provenance/mlkit-internal-api.txt
+          test -s plugin-audit/provenance/androidx-parent-api-audit.json
+          python3 ../tools/verify_androidx_keep_rules.py \
+            --audit plugin-audit/provenance/androidx-parent-api-audit.json \
+            --rules proguard-rules.pro
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
