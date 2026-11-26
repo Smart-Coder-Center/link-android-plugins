@@ -82,17 +82,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         return Collections.unmodifiableList(TranslateLanguage.getAllLanguages());
     }
 
-    /**
-     * Explicitly prepare Google Play services' optional Language ID module.
-     * The system may display its own consent/download UI. Completion is reported only
-     * after the module is confirmed available, not when the request is merely accepted.
-     */
-    public void prepareLanguageIdModule(Callback callback) {
-        ensureLanguageIdModule()
-                .addOnSuccessListener(ignored -> success(callback, "ready"))
-                .addOnFailureListener(error -> fail(callback, error));
-    }
-
     public void identifyLanguage(String text, Callback callback) {
         if (text == null || text.trim().isEmpty()) {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
