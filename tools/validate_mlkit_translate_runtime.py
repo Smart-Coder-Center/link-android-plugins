@@ -26,6 +26,9 @@ required_runtime_behaviors = (
     "TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)",
     "recognizer.process(image)",
     "verifyTextRecognitionClient(pluginLoader)",
+    "installer.areModulesAvailable(recognizer)",
+    "installer.installModules(request)",
+    "ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED",
 )
 missing_behaviors = [item for item in required_runtime_behaviors if item not in adapter_source]
 if missing_behaviors:
@@ -320,6 +323,13 @@ required_classes = (
     "Lcom/google/mlkit/vision/common/InputImage;",
     "Lcom/google/mlkit/vision/common/internal/VisionCommonRegistrar;",
     "Lcom/google/mlkit/vision/text/internal/TextRegistrar;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstall;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallClient;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallRequest;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallStatusUpdate;",
+    "Lcom/google/android/gms/common/moduleinstall/InstallStatusListener;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleAvailabilityResponse;",
+    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallResponse;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
