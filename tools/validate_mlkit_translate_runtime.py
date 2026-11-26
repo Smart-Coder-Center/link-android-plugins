@@ -46,7 +46,7 @@ for required in (
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
 if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
-    raise SystemExit("Language ID must use the bundled model runtime for release 1.0.19")
+    raise SystemExit("Language ID must use the bundled model runtime for release 1.0.20")
 
 source = manifest.get("source") or {}
 if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
@@ -125,6 +125,7 @@ required_isolated = (
     "com_google_android_gms__play-services-base__18.10.0.aar",
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
+    "com_google_android_gms__play-services-mlkit-text-recognition__19.0.1.aar",
     "com_google_mlkit__language-id__17.0.6.aar",
     "com_google_mlkit__language-id-common__16.1.0.aar",
     "javax_inject__javax.inject__1.jar",
