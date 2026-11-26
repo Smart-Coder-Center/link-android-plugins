@@ -116,6 +116,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Cache Link Gradle dependencies
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
@@ -130,16 +135,16 @@ jobs:
 
       - name: Run only the Pro ML Kit resource extraction task (no APK build)
         working-directory: android-host
-        run: ./gradlew --no-daemon --stacktrace extractMlKitTranslateResources
+        run: ./gradlew --no-daemon --max-workers=2 --stacktrace extractMlKitTranslateResources
 
       - name: Verify host-provided AndroidX runtime APIs
         working-directory: android-host
         run: |
-          ./gradlew --no-daemon dependencyInsight --dependency androidx.fragment:fragment --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-fragment-deps.txt
+          ./gradlew --no-daemon --max-workers=2 dependencyInsight --dependency androidx.fragment:fragment --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-fragment-deps.txt
           grep -Fq 'androidx.fragment:fragment' /tmp/link-fragment-deps.txt
-          ./gradlew --no-daemon dependencyInsight --dependency androidx.lifecycle:lifecycle-common --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-lifecycle-deps.txt
+          ./gradlew --no-daemon --max-workers=2 dependencyInsight --dependency androidx.lifecycle:lifecycle-common --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-lifecycle-deps.txt
           grep -Fq 'androidx.lifecycle:lifecycle-common' /tmp/link-lifecycle-deps.txt
-          ./gradlew --no-daemon dependencyInsight --dependency com.google.mlkit:common --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-host-mlkit-common.txt
+          ./gradlew --no-daemon --max-workers=2 dependencyInsight --dependency com.google.mlkit:common --configuration conversationsProStandardReleaseRuntimeClasspath | tee /tmp/link-host-mlkit-common.txt
           if grep -Fq 'com.google.mlkit:common:' /tmp/link-host-mlkit-common.txt; then
             echo "ML Kit Common must remain plugin-local, not in the Pro host APK"
             exit 1
