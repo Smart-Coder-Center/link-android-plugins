@@ -28,6 +28,18 @@ missing_behaviors = [item for item in required_runtime_behaviors if item not in 
 if missing_behaviors:
     raise SystemExit("Translate runtime is missing managed module/model lifecycle or translator caching: "
                      + ", ".join(missing_behaviors))
+if "MAX_LANGUAGE_ID_RETRIES" in adapter_source or "mainHandler.postDelayed" in adapter_source:
+    raise SystemExit("Bundled Language ID must not wait for an optional module or run delayed retry loops")
+if adapter_source.index("patchResourceIds(context.getApplicationContext());") > adapter_source.index("initializeMlKitComponents(context.getApplicationContext());"):
+    raise SystemExit("Translate host resource IDs must be patched before ML Kit initialization")
+for required in (
+    'patchResourceId(context, "raw", "translate_models_metadata")',
+    'patchResourceId(context, "xml", "rapid_response_client_defaults")',
+    'context.getResources().getIdentifier(name, type, context.getPackageName())',
+    'resourceClass.getDeclaredField(name)',
+):
+    if required not in adapter_source:
+        raise SystemExit("Translate host resource binding is incomplete: " + required)
 
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
