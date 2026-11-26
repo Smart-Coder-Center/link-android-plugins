@@ -204,7 +204,6 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
     com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar \
-    com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.firebase.components.ComponentDiscoveryService \
     com.google.firebase.components.ComponentRegistrar; do
     echo "===== $type ====="
