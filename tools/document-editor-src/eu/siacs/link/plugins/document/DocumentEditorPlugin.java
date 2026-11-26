@@ -171,8 +171,11 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             }
             String pdfMessage = "";
             if (result != null && result.getPdf() != null && result.getPdf().getUri() != null) {
-                Uri savedPdf = savePdfToDownloads(result.getPdf().getUri());
-                pdfMessage = " PDF saved: " + savedPdf;
+                savePdfToDownloads(result.getPdf().getUri());
+                pdfMessage = " PDF saved to Downloads/Link.";
+            }
+            if (savedPages == 0 && pdfMessage.isEmpty()) {
+                throw new IOException("The scanner returned no pages or PDF.");
             }
             Callback callback;
             synchronized (this) {
