@@ -1,17 +1,13 @@
 package eu.siacs.link.plugins.translate;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.google.android.gms.common.moduleinstall.ModuleInstall;
-import com.google.android.gms.common.moduleinstall.ModuleInstallClient;
-import com.google.android.gms.common.moduleinstall.ModuleInstallIntentResponse;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.mlkit.common.MlKitException;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.mlkit.nl.languageid.LanguageIdentification;
@@ -47,17 +43,13 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private static final int MAX_CACHED_TRANSLATORS = 4;
-    private static final int MAX_LANGUAGE_ID_INSTALL_CHECKS = 120;
+    private static final int MAX_LANGUAGE_ID_RETRIES = 120;
 
     private final Context context;
-    private final ModuleInstallClient moduleInstallClient;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final LanguageIdentifier languageIdentifier;
     private final LinkedHashMap<String, CachedTranslator> translatorCache =
             new LinkedHashMap<>(4, 0.75f, true);
-    private Task<Void> languageIdPreparationTask;
-    private TaskCompletionSource<Void> languageIdPreparationCompletion;
-    private boolean languageIdReady;
     private boolean closed;
 
     private static final class CachedTranslator {
@@ -74,7 +66,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
 
     private MlKitTranslatePlugin(Context context) {
         this.context = context.getApplicationContext();
-        this.moduleInstallClient = ModuleInstall.getClient(this.context);
         this.languageIdentifier = LanguageIdentification.getClient();
     }
 
@@ -107,22 +98,20 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             fail(callback, "متنی برای تشخیص زبان وارد نشده است");
             return;
         }
-        ensureLanguageIdModule()
-                .addOnSuccessListener(ignored -> identifyLanguageWhenReady(text, callback))
-                .addOnFailureListener(error -> fail(callback, error));
+        // Match the standalone ML Translate flow: invoke Language ID directly.
+        // The unbundled SDK manages first-use model availability through Play services.
+        identifyLanguageAttempt(text, callback, 0);
     }
 
-    private void identifyLanguageWhenReady(String text, Callback callback) {
-        final LanguageIdentifier identifier;
+    private void identifyLanguageAttempt(String text, Callback callback, int attempt) {
         synchronized (this) {
             if (closed) {
                 fail(callback, "Smart Translate is closed");
                 return;
             }
-            identifier = languageIdentifier;
         }
         try {
-            identifier.identifyLanguage(text)
+            languageIdentifier.identifyLanguage(text)
                     .addOnSuccessListener(language -> {
                         if (language == null || "und".equals(language)) {
                             fail(callback, "زبان متن قابل تشخیص نیست؛ زبان را دستی انتخاب کنید");
@@ -135,109 +124,22 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
                             }
                         }
                     })
-                    .addOnFailureListener(error -> fail(callback, error));
+                    .addOnFailureListener(error -> {
+                        // The unbundled model may report code 14 while Play services
+                        // completes its first-use download. Retry that state only.
+                        if (error instanceof MlKitException
+                                && ((MlKitException) error).getErrorCode() == 14
+                                && attempt < MAX_LANGUAGE_ID_RETRIES) {
+                            mainHandler.postDelayed(
+                                    () -> identifyLanguageAttempt(text, callback, attempt + 1),
+                                    1000L);
+                        } else {
+                            fail(callback, error);
+                        }
+                    });
         } catch (Throwable error) {
             fail(callback, error);
         }
-    }
-
-    private Task<Void> ensureLanguageIdModule() {
-        final TaskCompletionSource<Void> completion;
-        synchronized (this) {
-            if (closed) return Tasks.forException(
-                    new IllegalStateException("Smart Translate is closed"));
-            if (languageIdReady) return Tasks.forResult(null);
-            if (languageIdPreparationTask != null) return languageIdPreparationTask;
-            completion = new TaskCompletionSource<>();
-            languageIdPreparationTask = completion.getTask();
-            languageIdPreparationCompletion = completion;
-        }
-
-        try {
-            moduleInstallClient.areModulesAvailable(languageIdentifier)
-                    .addOnSuccessListener(availability -> {
-                        if (availability.areModulesAvailable()) {
-                            completeLanguageIdPreparation(completion, null);
-                            return;
-                        }
-                        // getInstallModulesIntent is Google's user-facing installation flow.
-                        // Sending its PendingIntent displays the Play services consent/download
-                        // UI instead of silently submitting an install request that can fail.
-                        moduleInstallClient.getInstallModulesIntent(languageIdentifier)
-                                .addOnSuccessListener(response -> launchLanguageIdInstallFlow(
-                                        completion, response))
-                                .addOnFailureListener(error ->
-                                        completeLanguageIdPreparation(completion, error));
-                    })
-                    .addOnFailureListener(error ->
-                            completeLanguageIdPreparation(completion, error));
-        } catch (Throwable error) {
-            completeLanguageIdPreparation(completion,
-                    error instanceof Exception ? (Exception) error : new IllegalStateException(error));
-        }
-        return completion.getTask();
-    }
-
-    private void launchLanguageIdInstallFlow(TaskCompletionSource<Void> completion,
-            ModuleInstallIntentResponse response) {
-        synchronized (this) {
-            if (closed) {
-                completeLanguageIdPreparation(completion,
-                        new IllegalStateException("Smart Translate is closed"));
-                return;
-            }
-        }
-        PendingIntent pendingIntent = response == null ? null : response.getPendingIntent();
-        if (pendingIntent == null) {
-            // A null PendingIntent means Play services considers the requested module present.
-            waitForLanguageIdModule(completion, 0);
-            return;
-        }
-        try {
-            pendingIntent.send();
-            // The PendingIntent owns the consent UI. Keep the request pending until Play
-            // services confirms that the Language ID module is actually available.
-            waitForLanguageIdModule(completion, 0);
-        } catch (PendingIntent.CanceledException error) {
-            completeLanguageIdPreparation(completion,
-                    new IllegalStateException("Google Play services Language ID install prompt could not be opened", error));
-        }
-    }
-
-    private void waitForLanguageIdModule(TaskCompletionSource<Void> completion, int attempt) {
-        synchronized (this) {
-            if (closed) {
-                completeLanguageIdPreparation(completion,
-                        new IllegalStateException("Smart Translate is closed"));
-                return;
-            }
-        }
-        moduleInstallClient.areModulesAvailable(languageIdentifier)
-                .addOnSuccessListener(availability -> {
-                    if (availability.areModulesAvailable()) {
-                        completeLanguageIdPreparation(completion, null);
-                    } else if (attempt >= MAX_LANGUAGE_ID_INSTALL_CHECKS) {
-                        completeLanguageIdPreparation(completion,
-                                new IllegalStateException(
-                                        "Google Play services did not make the Language ID module available after the install prompt. Check Google Play services, network access, and available storage, then retry."));
-                    } else {
-                        mainHandler.postDelayed(
-                                () -> waitForLanguageIdModule(completion, attempt + 1), 1000L);
-                    }
-                })
-                .addOnFailureListener(error ->
-                        completeLanguageIdPreparation(completion, error));
-    }
-
-    private void completeLanguageIdPreparation(TaskCompletionSource<Void> completion, Exception error) {
-        synchronized (this) {
-            if (languageIdPreparationTask != completion.getTask()) return;
-            languageIdPreparationTask = null;
-            languageIdPreparationCompletion = null;
-            if (error == null) languageIdReady = true;
-        }
-        if (error == null) completion.trySetResult(null);
-        else completion.trySetException(error);
     }
 
     /**
