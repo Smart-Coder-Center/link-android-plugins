@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 33,
+  "catalog_version": 34,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -20,6 +20,43 @@
         "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-asr.koochik-rnnt.fa-1.0.0-test.2/asr.koochik-rnnt.fa-1.0.0-test.2.zip",
         "size_bytes": 100951964,
         "sha256": "d3decb88501a412bbf2b0639dd4f3a5639f9e65e446708f43ed19dc85d8ce9fb"
+      }
+    },
+    {
+      "id": "document-editor",
+      "kind": "document",
+      "version": "1.0.0",
+      "name": "Document Editor",
+      "description": "Persian and English image-to-text OCR, automatic document scanning, PDF and editable Word export, and QR/barcode reading in one optional capability.",
+      "language": "und",
+      "min_link_version": "2.21.0",
+      "package_type": "native_runtime",
+      "license": {
+        "name": "Apache-2.0, BSD-2-Clause, libpng and IJG",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "attribution": "Tesseract OCR 5.5.1, Tesseract4Android 4.9.0, tessdata_fast Persian/English models, Google ML Kit Document Scanner and Google Code Scanner. Leptonica retains its BSD-2-Clause notice."
+      },
+      "release_notes": "First unified Document Editor package: offline Persian/English OCR, Google Play services document scanning and code scanning, and local PDF/DOCX export.",
+      "runtime": {
+        "abis": [
+          "arm64-v8a"
+        ],
+        "load_order": [
+          "lib/arm64-v8a/libjpeg.so",
+          "lib/arm64-v8a/libpngx.so",
+          "lib/arm64-v8a/libleptonica.so",
+          "lib/arm64-v8a/libtesseract.so"
+        ],
+        "code_files": [
+          "code/classes.dex"
+        ],
+        "entry_class": "eu.siacs.link.plugins.document.DocumentEditorPlugin",
+        "code_api_version": 1
+      },
+      "archive": {
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-document-editor-1.0.0/document-editor-1.0.0.zip",
+        "size_bytes": 17765928,
+        "sha256": "585c448093b6096d7628e49424c6cfd55b9ac28df94d7f58cd1b18275060da96"
       }
     },
     {
