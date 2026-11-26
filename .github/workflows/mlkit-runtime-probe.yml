@@ -115,6 +115,11 @@ jobs:
           grep -Fq 'androidx.fragment:fragment' /tmp/link-fragment-deps.txt
           ./gradlew --no-daemon dependencyInsight --dependency androidx.lifecycle:lifecycle-common --configuration conversationsProStandardRuntimeClasspath | tee /tmp/link-lifecycle-deps.txt
           grep -Fq 'androidx.lifecycle:lifecycle-common' /tmp/link-lifecycle-deps.txt
+          ./gradlew --no-daemon dependencyInsight --dependency com.google.mlkit:common --configuration conversationsProStandardRuntimeClasspath | tee /tmp/link-host-mlkit-common.txt
+          if grep -Eq 'com\\.google\\.mlkit:common:[0-9]' /tmp/link-host-mlkit-common.txt; then
+            echo "ML Kit Common must remain plugin-local, not in the Pro host APK"
+            exit 1
+          fi
 
       - name: Verify extracted model, Translate resources and loader isolation
         working-directory: android-host
