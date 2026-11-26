@@ -88,8 +88,13 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 bitmap = decodeScaled(imageUri);
                 if (bitmap == null) throw new IOException("The selected image could not be decoded.");
                 TessBaseAPI engine = getOcr();
-                engine.setImage(bitmap);
-                String text = engine.getUTF8Text();
+                String text;
+                try {
+                    engine.setImage(bitmap);
+                    text = engine.getUTF8Text();
+                } finally {
+                    engine.clear();
+                }
                 success(callback, text == null ? "" : text.trim());
             } catch (Throwable error) {
                 fail(callback, safeMessage(error));
