@@ -33,6 +33,7 @@ A source manifest may include an optional `source` object for reproducible remot
 
 - `huggingface_files`: requires a repository ID, a full 40-character commit SHA, and a list of relative file paths. The publisher downloads those exact files over HTTPS and checks the final redirect host against the Hugging Face allowlist.
 - `github_release_zip`: imports an already-published immutable migration seed ZIP from this repository. It requires the canonical Release URL, exact byte size, and SHA-256; extraction rejects unsafe paths, symlinks, excessive entry counts, and expanded archives over 16 GiB.
+- `document_editor_runtime`: builds the unified Document Editor runtime from exact Tesseract4Android and Google scanner SDK versions plus a full immutable `tessdata_fast` commit. The publisher verifies the Persian/English model sizes and Git blob hashes, compiles the plugin DEX, and validates the ARM64 ELF payload before signing.
 
 The private acquisition descriptor is removed from both the generated inner manifest and public catalog; only generated payload checksums and provenance/attribution metadata are published. A migration seed proves the integrity of the imported archive, but does not replace independent pinning of its original upstream source.
 
@@ -61,7 +62,8 @@ The Action creates a data-only ZIP with a root-level `plugin.json` and all paylo
 Packages have an explicit `package_type`:
 
 - `data` (default): data/configuration only. APK, DEX, JAR, native libraries, executable binaries, scripts, and code intended to be loaded/executed by Link are rejected.
-- `native_runtime`: a separate, signed, ABI-specific package class. It may contain approved native `.so` libraries under `lib/<abi>/` plus model/data assets. It may not contain APK, DEX, JAR, scripts, or arbitrary executable files.
+- `native_runtime`: a separate, signed, ABI-specific runtime package. It may contain approved native `.so` libraries under `lib/<abi>/`, DEX/JAR code only under `code/` and exactly declared by `runtime.code_files`, audited dependency JARs under `vendor-jars/`, and approved model/data assets (including `.traineddata`). APKs, scripts, and arbitrary executable files are forbidden.
+- `dex_runtime`: a signed runtime package for DEX/JAR code without native `.so` libraries. Code must be under `code/` and declared by `runtime.code_files`; dependency JARs and approved model/data assets follow the same path and payload restrictions.
 
 Each native runtime ZIP currently targets exactly one Android ABI. Publish separate immutable plugin versions/artifacts if another ABI is needed; this keeps the signed load order unambiguous.
 
@@ -104,7 +106,7 @@ License and attribution files should be included in the source package when supp
 
 ## Native runtime package requirements
 
-The publisher now has a separate `native_runtime` package path. Ordinary data plugins remain data-only. Native runtime source packages may include approved `.so` libraries under `lib/<abi>/` and model/data assets in the same plugin ZIP; APK, DEX, JAR, scripts, and arbitrary executable payloads remain forbidden.
+The publisher has separate `native_runtime` and `dex_runtime` package paths. Ordinary `data` plugins remain data-only and cannot carry executable code. Runtime packages are signed and verified separately: DEX/JAR code must be explicitly declared under `runtime.code_files`; native libraries must be under `lib/<abi>/` and declared in the dependency-first `runtime.load_order`; model/data assets such as `.traineddata` are allowed only in the signed runtime payload. APKs, scripts, and undeclared executable payloads remain forbidden.
 
 Before any native runtime is enabled for users, the Android consumer must independently implement and pass:
 - pinned Ed25519 public-key verification of the canonical root manifest;
