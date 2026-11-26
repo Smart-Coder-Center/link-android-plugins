@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 31,
+  "catalog_version": 32,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -71,18 +71,18 @@
           "version": "1.0.1"
         }
       ],
-      "description": "Detects source language with a bundled ML Kit model and translates on-device with managed offline language models.",
+      "description": "Detects language, reads English text from images with on-demand ML Kit OCR, and translates on-device with managed offline language models.",
       "id": "ml-translate",
       "kind": "translation",
       "language": "und",
       "license": {
-        "attribution": "Google ML Kit Translation and Language Identification APIs",
+        "attribution": "Google ML Kit Translation, Language Identification, and Text Recognition APIs",
         "name": "Apache-2.0"
       },
       "min_link_version": "2.21.0",
       "name": "Smart Translate",
       "package_type": "native_runtime",
-      "release_notes": "Replaces the Play Services-delivered Language ID model with the bundled ML Kit Language ID implementation. The model is included in generated Pro host resources, avoiding first-use optional-module downloads. Translation language models remain on-demand and user-managed.",
+      "release_notes": "Adds English Latin-script image OCR through the unbundled ML Kit Text Recognition API. The OCR model is delivered on demand by Google Play services and is not packaged in the Link APK. Existing bundled Language ID and user-managed translation models are unchanged.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -97,11 +97,11 @@
           "lib/arm64-v8a/libtranslate_jni.so"
         ]
       },
-      "version": "1.0.19",
+      "version": "1.0.20",
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.19/ml-translate-1.0.19.zip",
-        "size_bytes": 8678445,
-        "sha256": "0f2350c4285f1f8db46b7e9dca7c71d3d2a015c9fc482b2920565389d7e11f2c"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-ml-translate-1.0.20/ml-translate-1.0.20.zip",
+        "size_bytes": 8798724,
+        "sha256": "8341abeafb66981899c243ceaaf1b49d90c06401cb2b8d32c347dbf4b9ad8b5d"
       }
     },
     {
