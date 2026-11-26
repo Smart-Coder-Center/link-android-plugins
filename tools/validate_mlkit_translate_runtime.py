@@ -45,7 +45,7 @@ if not aar_report.is_file():
     raise SystemExit("ML Kit AAR dependency audit is missing")
 artifacts = json.loads(aar_report.read_text(encoding="utf-8")).get("artifacts", [])
 aar_components = json.loads(aar_report.read_text(encoding="utf-8")).get("aar_components", [])
-thin_registrar_declared = any(
+bundled_registrar_declared = any(
     component.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
     and any(
         item.get("name") == "com.google.firebase.components:com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar"
