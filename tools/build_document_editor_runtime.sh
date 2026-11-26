@@ -55,7 +55,7 @@ PY
   python3 - "$destination" "$expected_blob_sha" <<'PY'
 import hashlib, pathlib, sys
 data = pathlib.Path(sys.argv[1]).read_bytes()
-actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 if actual != sys.argv[2]:
     raise SystemExit("OCR model Git blob SHA-1 mismatch")
 PY
