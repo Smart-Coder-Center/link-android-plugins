@@ -7,6 +7,7 @@ repositories {
         url = uri('https://maven-central.storage-download.googleapis.com/maven2/')
     }
     mavenCentral()
+    maven { url = uri('https://jitpack.io') }
 }
 
 configurations {
@@ -77,6 +78,36 @@ tasks.register('copyMlKitTranslateRuntimeArtifacts') {
                 rename { safeName }
             }
             println("MLKIT_TRANSLATE_ARTIFACT ${artifact.moduleVersion.id} ${extension} ${artifact.file.length()}")
+        }
+    }
+}
+
+
+configurations {
+    documentEditorRuntime
+}
+
+dependencies {
+    // Persian/English offline OCR: Tesseract 5.5.1 with ARM64 JNI libraries.
+    documentEditorRuntime 'cz.adaptech.tesseract4android:tesseract4android:4.9.0'
+    // Document edge detection/crop/PDF and QR/1D barcode UI are delivered by Google Play services.
+    documentEditorRuntime 'com.google.android.gms:play-services-mlkit-document-scanner:16.0.0'
+    documentEditorRuntime 'com.google.android.gms:play-services-code-scanner:16.1.0'
+}
+
+tasks.register('copyDocumentEditorRuntimeArtifacts') {
+    doLast {
+        def destination = file(project.findProperty('documentEditorOutputDir') ?: 'build/document-editor-artifacts')
+        destination.mkdirs()
+        configurations.documentEditorRuntime.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def extension = artifact.extension ?: artifact.type ?: 'jar'
+            def safeName = "${artifact.moduleVersion.id.group.replace('.', '_')}__${artifact.name}__${artifact.moduleVersion.id.version}.${extension}"
+            copy {
+                from artifact.file
+                into destination
+                rename { safeName }
+            }
+            println("DOCUMENT_EDITOR_ARTIFACT ${artifact.moduleVersion.id} ${extension} ${artifact.file.length()}")
         }
     }
 }
