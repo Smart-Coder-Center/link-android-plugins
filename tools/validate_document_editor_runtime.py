@@ -73,7 +73,7 @@ if len(load_order) != len(expected_load_order) or set(load_order) != expected_lo
 for library in libraries:
     header = subprocess.run(["readelf", "-h", str(library)], check=True,
                             text=True, capture_output=True).stdout
-    if not re.search(r"Class:\\s+ELF64", header) or not re.search(r"Machine:\\s+AArch64", header):
+    if not re.search(r"Class:\s+ELF64", header) or not re.search(r"Machine:\s+AArch64", header):
         raise SystemExit(f"Invalid ARM64 ELF library: {library.name}")
 
 print("Document Editor runtime metadata, OCR models, DEX APIs and ARM64 libraries validated.")
