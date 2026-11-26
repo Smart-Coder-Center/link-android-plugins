@@ -22,9 +22,9 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult;
-import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScanner;
-import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
-import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScanning;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
