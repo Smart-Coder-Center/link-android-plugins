@@ -25,7 +25,9 @@ rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
 rm -f "$SOURCE_DIR/provenance/mlkit-aar-audit.json" \
   "$SOURCE_DIR/provenance/mlkit-internal-api.txt" \
-  "$SOURCE_DIR/provenance/translate_models_metadata.json"
+  "$SOURCE_DIR/provenance/translate_models_metadata.json" \
+  "$SOURCE_DIR/provenance/androidx-parent-api-audit.json" \
+  "$SOURCE_DIR/provenance/androidx-parent-api-keep-rules.pro"
 
 gradle --no-daemon --stacktrace --project-dir "$REPO_ROOT/tools" \
   copyMlKitTranslateRuntimeArtifacts -PmlKitOutputDir="$WORK_DIR/artifacts"
