@@ -113,6 +113,7 @@ if '"com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", 
     raise SystemExit("Bundled Language ID must register ThickLanguageIdRegistrar as the creator delegate")
 
 # Verify both the existing-context and fresh-initialization paths before exposing the plugin.
+# Bundled Language ID must use the bundled Thick registrar, not a Play Services module loader.
 if "private static synchronized void initializeMlKitComponents(Context context)" not in adapter_source:
     raise SystemExit("ML Kit component initialization must be synchronized")
 if adapter_source.count("verifyLanguageIdFactory(pluginLoader, mlKitContext,") != 2:
