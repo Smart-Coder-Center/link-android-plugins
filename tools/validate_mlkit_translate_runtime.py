@@ -175,7 +175,7 @@ required_api = [
     "public static com.google.mlkit.common.sdkinternal.MlKitContext initialize(android.content.Context, java.util.List<com.google.firebase.components.ComponentRegistrar>);",
     "public static com.google.mlkit.common.sdkinternal.MlKitContext getInstance();",
     "public <T> T get(java.lang.Class<T>);",
-    "public static com.google.mlkit.common.model.RemoteModelManager getInstance();",
+    "public static synchronized com.google.mlkit.common.model.RemoteModelManager getInstance();",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
