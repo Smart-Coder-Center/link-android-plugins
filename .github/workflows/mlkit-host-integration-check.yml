@@ -63,7 +63,7 @@ jobs:
           test -s plugin-audit/provenance/mlkit-aar-audit.json
           test -s plugin-audit/provenance/mlkit-internal-api.txt
           test -s plugin-audit/provenance/androidx-parent-api-audit.json
-          python3 ../tools/verify_androidx_keep_rules.py \
+          python3 tools/verify_androidx_keep_rules.py \
             --audit plugin-audit/provenance/androidx-parent-api-audit.json \
             --rules proguard-rules.pro
 
