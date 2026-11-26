@@ -46,16 +46,16 @@ if not aar_report.is_file():
 artifacts = json.loads(aar_report.read_text(encoding="utf-8")).get("artifacts", [])
 aar_components = json.loads(aar_report.read_text(encoding="utf-8")).get("aar_components", [])
 thin_registrar_declared = any(
-    component.get("aar") == "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar"
+    component.get("aar") == "com_google_mlkit__language-id__17.0.6.aar"
     and any(
-        item.get("name") == "com.google.firebase.components:com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar"
+        item.get("name") == "com.google.firebase.components:com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar"
         and item.get("value") == "com.google.firebase.components.ComponentRegistrar"
         for item in component.get("metadata", [])
     )
     for component in aar_components
 )
 if not thin_registrar_declared:
-    raise SystemExit("Pinned unbundled Play Services AAR does not declare ThinLanguageIdRegistrar in its manifest")
+    raise SystemExit("Pinned bundled Language ID AAR does not declare ThickLanguageIdRegistrar in its manifest")
 common_artifacts = [
     item.get("file", "") for item in artifacts
     if item.get("file", "").startswith("com_google_mlkit__common__")
@@ -78,7 +78,7 @@ required_isolated = (
     "com_google_android_gms__play-services-base__18.10.0.aar",
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
-    "com_google_android_gms__play-services-mlkit-language-id__17.0.0.aar",
+    "com_google_mlkit__language-id__17.0.6.aar",
     "com_google_mlkit__language-id-common__16.1.0.aar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
@@ -99,7 +99,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -109,8 +109,8 @@ if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
 if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' not in adapter_source:
     raise SystemExit("LanguageIdRegistrar must register LanguageIdentifierImpl.Factory")
-if '"com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar", registrarInterface' not in adapter_source:
-    raise SystemExit("Unbundled Play Services Language ID must register ThinLanguageIdRegistrar as the creator delegate")
+if '"com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface' not in adapter_source:
+    raise SystemExit("Bundled Language ID must register ThickLanguageIdRegistrar as the creator delegate")
 
 # Verify both the existing-context and fresh-initialization paths before exposing the plugin.
 if "private static synchronized void initializeMlKitComponents(Context context)" not in adapter_source:
@@ -142,7 +142,7 @@ required_api = [
     "public <T> T get(java.lang.Class<T>);",
     "public com.google.mlkit.common.internal.CommonComponentRegistrar();",
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
-    "public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();",
+    "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
 ]
 missing_api = [signature for signature in required_api if signature not in api_text]
@@ -221,7 +221,7 @@ required_classes = (
     "Lkotlin/jvm/internal/markers/KMutableCollection;",
     "Lcom/google/mlkit/nl/languageid/LanguageIdentification;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
-    "Lcom/google/mlkit/nl/languageid/thin/internal/ThinLanguageIdRegistrar;",
+    "Lcom/google/mlkit/nl/languageid/thin/internal/ThickLanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/thin/internal/ThinLanguageIdentifierCreator;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
 )
