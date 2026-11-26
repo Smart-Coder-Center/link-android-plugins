@@ -42,7 +42,7 @@
     "translate_version": "17.0.2",
     "language_id_version": "17.0.6",
     "language_id_provider": "com.google.mlkit:language-id",
-    "common_version": "18.10.0",
+    "common_version": "18.11.0",
     "okhttp_version": "3.12.13",
     "okio_version": "1.15.0",
     "language_id_flow": "bundled_model"
