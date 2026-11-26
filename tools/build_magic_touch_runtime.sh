@@ -20,7 +20,9 @@ command -v gradle >/dev/null
 command -v javac >/dev/null
 command -v readelf >/dev/null
 
-mkdir -p "$SOURCE_DIR/model" "$SOURCE_DIR/lib/arm64-v8a" "$SOURCE_DIR/code" "$WORK_DIR/artifacts"
+mkdir -p "$SOURCE_DIR/model" "$SOURCE_DIR/lib/arm64-v8a" "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$WORK_DIR/artifacts"
+rm -f "$SOURCE_DIR/provenance/androidx-parent-api-audit.json" \
+  "$SOURCE_DIR/provenance/androidx-parent-api-keep-rules.pro"
 model_final_url="$(curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
   --max-filesize 104857600 --retry 3 --connect-timeout 20 \
   "$MODEL_URL" -o "$SOURCE_DIR/model/interactive_segmentation.task" -w '%{url_effective}')"
@@ -142,6 +144,11 @@ mapfile -t DEX_FILES < <(find "$WORK_DIR/dex" -maxdepth 1 -type f -name 'classes
 for dex in "${DEX_FILES[@]}"; do
   cp "$dex" "$SOURCE_DIR/code/$(basename "$dex")"
 done
+
+# Report AndroidX APIs delegated to Link's parent class loader. Establish a reviewed
+# baseline after inspecting the first report; do not block this unrelated plugin build yet.
+python3 "$REPO_ROOT/tools/audit_dex_androidx_parent_api.py" \
+  "$SOURCE_DIR/code" "-" "$SOURCE_DIR/provenance"
 
 python3 - "$SOURCE_DIR" <<'PY'
 import json, re, subprocess, sys
