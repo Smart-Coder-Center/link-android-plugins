@@ -146,7 +146,7 @@ needed = {}
 for library in libraries:
     dynamic = subprocess.run(["readelf", "-d", str(library)], check=True,
                              text=True, capture_output=True).stdout
-    needed[library.name] = re.findall(r"Shared library: \\[(.+?)\\]", dynamic)
+    needed[library.name] = re.findall(r"Shared library: \[(.+?)\]", dynamic)
 system_prefixes = (
     "libandroid.", "libc.", "libdl.", "liblog.", "libm.", "libz.",
     "libEGL.", "libGLES", "libOpenSLES.", "libvulkan.", "libjnigraphics.",
@@ -169,12 +169,12 @@ def visit(name):
 for name, library in by_name.items():
     header = subprocess.run(["readelf", "-h", str(library)], check=True,
                             text=True, capture_output=True).stdout
-    if not re.search(r"Class:\\s+ELF64", header) or not re.search(r"Machine:\\s+AArch64", header):
+    if not re.search(r"Class:\s+ELF64", header) or not re.search(r"Machine:\s+AArch64", header):
         raise SystemExit(f"Native library is not a 64-bit ARM ELF: {library.name}")
 for name in sorted(by_name):
     visit(name)
 dex_files = sorted((root / "code").glob("classes*.dex"),
-                   key=lambda p: int(re.search(r"(\\d+)?\\.dex$", p.name).group(1) or 1))
+                   key=lambda p: int(re.search(r"(\d+)?\.dex$", p.name).group(1) or 1))
 metadata = {
     "abis": ["arm64-v8a"],
     "load_order": order,
@@ -183,7 +183,7 @@ metadata = {
     "code_api_version": 1
 }
 (root / ".link-runtime-generated.json").write_text(
-    json.dumps(metadata, indent=2) + "\\n", encoding="utf-8")
+    json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 print("Document Editor runtime metadata generated:", json.dumps(metadata, sort_keys=True))
 PY
 
