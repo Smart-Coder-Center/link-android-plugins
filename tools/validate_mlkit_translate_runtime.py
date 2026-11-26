@@ -13,12 +13,8 @@ generated = json.loads(generated_path.read_text(encoding="utf-8"))
 adapter_path = Path(__file__).resolve().parent / "mlkit-translate-src/eu/siacs/link/plugins/translate/MlKitTranslatePlugin.java"
 adapter_source = adapter_path.read_text(encoding="utf-8")
 required_runtime_behaviors = (
-    "ModuleInstall.getClient(this.context)",
-    "moduleInstallClient.areModulesAvailable(languageIdentifier)",
-    "moduleInstallClient.getInstallModulesIntent(languageIdentifier)",
-    "response.getPendingIntent()",
-    "pendingIntent.send()",
-    "MAX_LANGUAGE_ID_INSTALL_CHECKS",
+    "languageIdentifier.identifyLanguage(text)",
+    "MAX_LANGUAGE_ID_RETRIES",
     "mainHandler.postDelayed",
     "RemoteModelManager.getInstance()",
     "getDownloadedModels(TranslateRemoteModel.class)",
@@ -216,9 +212,6 @@ dex_files = sorted((root / "code").glob("classes*.dex"))
 defined_classes = set().union(*(dex_defined_classes(path) for path in dex_files))
 required_classes = (
     "Lcom/google/android/gms/common/internal/Preconditions;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstall;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallClient;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallIntentResponse;",
     "Lcom/google/mlkit/common/model/RemoteModelManager;",
     "Lcom/google/mlkit/common/model/DownloadConditions;",
     "Lcom/google/mlkit/nl/translate/TranslateRemoteModel;",
