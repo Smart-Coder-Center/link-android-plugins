@@ -336,7 +336,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
     }
 
     private void writeDocx(OutputStream output, String text, Bitmap image) throws Exception {
-        try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
+        try (ZipOutputStream zip = new ZipOutputStream(output)) {
             put(zip, "[Content_Types].xml",
                     "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
                     + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
