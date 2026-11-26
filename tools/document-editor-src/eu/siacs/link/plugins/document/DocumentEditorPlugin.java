@@ -18,10 +18,10 @@ import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 
-import com.google.android.gms.mlkit.documentscanner.GmsDocumentScanning;
-import com.google.android.gms.mlkit.documentscanner.GmsDocumentScanner;
-import com.google.android.gms.mlkit.documentscanner.GmsDocumentScannerOptions;
-import com.google.android.gms.mlkit.documentscanner.GmsDocumentScanningResult;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult;
 import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScanner;
 import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
 import com.google.android.gms.mlkit.vision.codescanner.GmsBarcodeScanning;
