@@ -9,7 +9,7 @@
   "package_type": "native_runtime",
   "license": {
     "name": "Apache-2.0",
-    "attribution": "Google ML Kit Translation and Language Identification APIs"
+    "attribution": "Google ML Kit Translation, Language Identification, and Text Recognition APIs"
   },
   "dependencies": [
     {
