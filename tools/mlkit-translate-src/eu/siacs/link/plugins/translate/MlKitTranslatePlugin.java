@@ -184,6 +184,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             try {
                 Object existingContext = mlKitContext.getMethod("getInstance").invoke(null);
                 verifyLanguageIdFactory(pluginLoader, mlKitContext, existingContext);
+                verifyTextRecognitionClient(pluginLoader);
                 return;
             } catch (InvocationTargetException notInitialized) {
                 if (!(notInitialized.getCause() instanceof IllegalStateException)) throw notInitialized;
@@ -194,6 +195,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             List<Object> registrars = new ArrayList<>();
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.vision.common.internal.VisionCommonRegistrar", registrarInterface));
+            registrars.add(createRegistrar(pluginLoader,
+                    "com.google.mlkit.vision.text.internal.TextRegistrar", registrarInterface));
             // LanguageIdRegistrar owns the LanguageIdentifierImpl.Factory component.
             // ThickLanguageIdRegistrar provides the bundled model implementation.
             // Both are required: omitting the former leaves Factory null; omitting the latter
@@ -208,6 +213,7 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             Method initialize = mlKitContext.getMethod("initialize", Context.class, List.class);
             Object initializedContext = initialize.invoke(null, context, registrars);
             verifyLanguageIdFactory(pluginLoader, mlKitContext, initializedContext);
+            verifyTextRecognitionClient(pluginLoader);
         } catch (Exception | LinkageError error) {
             Throwable cause = error instanceof InvocationTargetException
                     && ((InvocationTargetException) error).getCause() != null
@@ -261,6 +267,20 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             throw new IllegalStateException("ML Kit Language ID Factory returned a null client");
         }
         identifier.close();
+    }
+
+    private static void verifyTextRecognitionClient(ClassLoader loader) {
+        if (TextRecognition.class.getClassLoader() != loader
+                || TextRecognizer.class.getClassLoader() != loader
+                || TextRecognizerOptions.class.getClassLoader() != loader
+                || InputImage.class.getClassLoader() != loader) {
+            throw new LinkageError("ML Kit Text Recognition API classes were not loaded from the Smart Translate plugin DEX");
+        }
+        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+        if (recognizer == null) {
+            throw new IllegalStateException("ML Kit Text Recognition registrar did not create a recognizer");
+        }
+        recognizer.close();
     }
 
     private static Object createRegistrar(ClassLoader loader, String className,
