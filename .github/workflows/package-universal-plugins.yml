@@ -259,7 +259,7 @@ jobs:
           link_re = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
           dependency_types = {"data", "native_runtime", "dex_runtime", "play_feature"}
           forbidden = {".apk", ".dex", ".jar", ".so", ".sh", ".bat", ".cmd", ".ps1", ".py", ".class", ".js", ".mjs", ".cjs", ".rb", ".pl", ".php", ".vbs", ".command", ".exe", ".com"}
-          runtime_data_suffixes = {".task", ".tflite", ".onnx", ".model", ".pb", ".bin", ".dat", ".txt", ".json", ".yaml", ".yml", ".md"}
+          runtime_data_suffixes = {".task", ".tflite", ".onnx", ".model", ".pb", ".bin", ".dat", ".txt", ".json", ".yaml", ".yml", ".md", ".traineddata"}
           runtime_code_suffixes = {".jar", ".dex"}
           supported_abis = {"arm64-v8a", "armeabi-v7a", "x86", "x86_64"}
           public_key_path = Path("keys/native-runtime-ed25519-public.pem")
