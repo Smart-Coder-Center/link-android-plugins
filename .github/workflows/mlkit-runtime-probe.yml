@@ -81,3 +81,48 @@ jobs:
             plugins/translation/ml-translate/code/**
           if-no-files-found: warn
           retention-days: 3
+
+  verify-pro-host-resource-extraction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the Link Android integration branch
+        run: |
+          git clone --depth 1 --branch fix/mlkit-bundled-language-id-resources https://github.com/Smart-Coder-Center/link-android.git android-host
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install Link compile SDK
+        run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
+
+      - name: Run only the Pro ML Kit resource extraction task (no APK build)
+        working-directory: android-host
+        run: ./gradlew --no-daemon --stacktrace extractMlKitTranslateResources
+
+      - name: Verify extracted model, Translate resources and loader isolation
+        working-directory: android-host
+        run: |
+          test -s build/generated/mlkit-resources/assets/tflite_langid.tflite.jpg
+          test -s build/generated/mlkit-resources/res/raw/translate_models_metadata.json
+          test -s build/generated/mlkit-resources/res/xml/rapid_response_client_defaults.xml
+          grep -Fq 'proImplementation '\''com.google.mlkit:common:18.11.0'\''' build.gradle
+          grep -Fq 'name.startsWith("javax.inject.")' src/main/java/eu/siacs/conversations/speech/plugins/NativeRuntimePackageVerifier.java
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("build.gradle").read_text(encoding="utf-8")
+          required = "if (mode == 'conversations' && distribution == 'pro'"
+          if required not in source or "features == 'standard' || features == 'lite'" not in source:
+              raise SystemExit("ML Kit resources are not restricted to Conversations Pro Standard/Lite variants")
+          model = Path("build/generated/mlkit-resources/assets/tflite_langid.tflite.jpg")
+          print(f"Bundled Language ID model extracted: {model.stat().st_size} bytes")
+          PY
+
