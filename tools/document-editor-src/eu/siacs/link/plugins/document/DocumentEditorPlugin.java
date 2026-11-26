@@ -379,7 +379,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             StringBuilder body = new StringBuilder();
             String paragraphProperties = containsRtl(text)
                     ? "<w:pPr><w:bidi/><w:jc w:val=\"right\"/></w:pPr>" : "";
-            String[] lines = text.split("\\R", -1);
+            String[] lines = text.split("\\r\\n|\\r|\\n", -1);
             for (String line : lines) {
                 body.append("<w:p>").append(paragraphProperties).append("<w:r><w:t xml:space=\"preserve\">")
                         .append(xmlEscape(line)).append("</w:t></w:r></w:p>");
