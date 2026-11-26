@@ -286,8 +286,9 @@ print(json.dumps(metadata, indent=2))
 PY
 
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
-Link Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
-Translation language models are downloaded on demand by ML Kit and are not included in this archive.
+Link Smart Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
+The Language ID model is bundled in the Pro host APK assets; it is not downloaded as an optional Play Services module.
+Translation language models are downloaded on demand by ML Kit and remain user-managed.
 The runtime dependencies are pinned in the plugin source manifest and build configuration.
 Third-party notices and licenses remain those of their respective upstream projects.
 NOTICE
