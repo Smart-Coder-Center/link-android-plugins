@@ -216,11 +216,30 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                     if (value == null || value.trim().isEmpty()) {
                         fail(callback, "No readable barcode data was returned.");
                     } else {
-                        success(callback, "Format: " + barcode.getFormat() + "\n" + value);
+                        success(callback, barcodeFormatName(barcode.getFormat()) + "\n" + value);
                     }
                 })
                 .addOnCanceledListener(() -> fail(callback, "Scanning was cancelled."))
                 .addOnFailureListener(error -> fail(callback, safeMessage(error)));
+    }
+
+    private static String barcodeFormatName(int format) {
+        switch (format) {
+            case Barcode.FORMAT_QR_CODE: return "QR Code";
+            case Barcode.FORMAT_CODE_128: return "Code 128";
+            case Barcode.FORMAT_CODE_39: return "Code 39";
+            case Barcode.FORMAT_CODE_93: return "Code 93";
+            case Barcode.FORMAT_CODABAR: return "Codabar";
+            case Barcode.FORMAT_EAN_13: return "EAN-13";
+            case Barcode.FORMAT_EAN_8: return "EAN-8";
+            case Barcode.FORMAT_ITF: return "ITF";
+            case Barcode.FORMAT_UPC_A: return "UPC-A";
+            case Barcode.FORMAT_UPC_E: return "UPC-E";
+            case Barcode.FORMAT_PDF417: return "PDF417";
+            case Barcode.FORMAT_AZTEC: return "Aztec";
+            case Barcode.FORMAT_DATA_MATRIX: return "Data Matrix";
+            default: return "Barcode";
+        }
     }
 
     /** Creates a multi-page PDF from editable text and an optional selected image. */
