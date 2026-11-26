@@ -201,7 +201,7 @@ CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
     javap -classpath "$CLASSPATH:$ANDROID_JAR" -c -p "$type" 2>&1 || true
   done
 } > "$SOURCE_DIR/provenance/mlkit-internal-api.txt"
-if ! grep -Fq 'public com.google.mlkit.nl.languageid.thin.internal.ThinLanguageIdRegistrar();' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
+if ! grep -Fq 'com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar' "$SOURCE_DIR/provenance/mlkit-internal-api.txt"; then
   echo "Pinned bundled Language ID runtime does not expose ThickLanguageIdRegistrar" >&2
   exit 7
 fi
