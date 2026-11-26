@@ -193,6 +193,16 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         if (factory == null) {
             throw new IllegalStateException("ML Kit Language ID Factory is not registered in the plugin-local MlKitContext");
         }
+        if (RemoteModelManager.class.getClassLoader() != loader
+                || TranslateRemoteModel.class.getClassLoader() != loader) {
+            throw new LinkageError("Translate model-management classes were not loaded from the Smart Translate plugin DEX");
+        }
+        // Force the Translate component graph as well. A pre-existing MlKitContext that
+        // has Language ID but lacks NaturalLanguageTranslateRegistrar must not be accepted.
+        RemoteModelManager manager = RemoteModelManager.getInstance();
+        if (manager == null || manager.getDownloadedModels(TranslateRemoteModel.class) == null) {
+            throw new IllegalStateException("ML Kit Translate RemoteModelManager is not registered in the plugin-local MlKitContext");
+        }
         // Force Factory.create() during plugin initialization so a missing bundled-model
         // delegate is reported immediately rather than as an opaque first-use failure.
         LanguageIdentifier identifier = LanguageIdentification.getClient();
