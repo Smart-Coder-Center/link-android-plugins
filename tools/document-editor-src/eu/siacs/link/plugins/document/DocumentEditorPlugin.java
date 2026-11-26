@@ -433,9 +433,9 @@ public final class DocumentEditorPlugin implements AutoCloseable {
         values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
         if (Build.VERSION.SDK_INT >= 29) {
-            values.put(MediaStore.Images.Media.RELATIVE_PATH,
+            values.put("relative_path",
                     Environment.DIRECTORY_PICTURES + "/Link Scans");
-            values.put(MediaStore.Images.Media.IS_PENDING, 1);
+            values.put("is_pending", 1);
         }
         Uri target = app.getContentResolver().insert(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -447,7 +447,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
         }
         if (Build.VERSION.SDK_INT >= 29) {
             ContentValues ready = new ContentValues();
-            ready.put(MediaStore.Images.Media.IS_PENDING, 0);
+            ready.put("is_pending", 0);
             app.getContentResolver().update(target, ready, null, null);
         }
         return target;
@@ -457,11 +457,11 @@ public final class DocumentEditorPlugin implements AutoCloseable {
         String name = "Link-Scan-" + System.currentTimeMillis() + ".pdf";
         if (Build.VERSION.SDK_INT >= 29) {
             ContentValues values = new ContentValues();
-            values.put(MediaStore.Downloads.DISPLAY_NAME, name);
-            values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
-            values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Link");
-            values.put(MediaStore.MediaColumns.IS_PENDING, 1);
-            Uri target = app.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+            values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+            values.put("relative_path", Environment.DIRECTORY_DOWNLOADS + "/Link");
+            values.put("is_pending", 1);
+            Uri target = app.getContentResolver().insert(Uri.parse("content://media/external/downloads"), values);
             if (target == null) throw new IOException("Could not create the scanned PDF.");
             try (java.io.InputStream input = app.getContentResolver().openInputStream(source);
                  OutputStream output = app.getContentResolver().openOutputStream(target, "w")) {
@@ -469,7 +469,7 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 copy(input, output);
             }
             ContentValues ready = new ContentValues();
-            ready.put(MediaStore.MediaColumns.IS_PENDING, 0);
+            ready.put("is_pending", 0);
             app.getContentResolver().update(target, ready, null, null);
             return target;
         }
