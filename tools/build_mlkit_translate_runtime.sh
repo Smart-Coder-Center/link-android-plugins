@@ -261,15 +261,9 @@ mapfile -t RUNTIME_JARS < <(find "$WORK_DIR/runtime-jars" -maxdepth 1 -type f -n
 CLASSPATH="$(IFS=:; echo "${JARS[*]}")"
 {
   for type in \
-    com.google.android.gms.common.moduleinstall.ModuleInstall \
-    com.google.android.gms.common.moduleinstall.ModuleInstallClient \
-    com.google.android.gms.common.moduleinstall.ModuleInstallRequest \
-    com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate \
     com.google.mlkit.common.sdkinternal.MlKitContext \
     com.google.mlkit.common.model.RemoteModelManager \
     com.google.mlkit.common.internal.CommonComponentRegistrar \
-    com.google.mlkit.vision.common.internal.VisionCommonRegistrar \
-    com.google.mlkit.vision.text.internal.TextRegistrar \
     com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar \
     com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar \
     com.google.mlkit.common.internal.MlKitComponentDiscoveryService \
