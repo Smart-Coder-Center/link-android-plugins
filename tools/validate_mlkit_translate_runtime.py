@@ -67,7 +67,7 @@ for name, (expected_size, expected_blob_sha) in expected_models.items():
     if not model.is_file() or model.stat().st_size != expected_size:
         raise SystemExit("Missing or unpinned Persian/English OCR model: " + name)
     data = model.read_bytes()
-    actual_blob_sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    actual_blob_sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
     if actual_blob_sha != expected_blob_sha:
         raise SystemExit("OCR model Git blob SHA-1 mismatch: " + name)
 
