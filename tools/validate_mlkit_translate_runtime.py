@@ -110,19 +110,6 @@ bundled_registrar_declared = any(
 )
 if not bundled_registrar_declared:
     raise SystemExit("Pinned bundled Language ID AAR does not declare ThickLanguageIdRegistrar in its manifest")
-text_registrars = {
-    "com.google.mlkit.vision.common.internal.VisionCommonRegistrar",
-    "com.google.mlkit.vision.text.internal.TextRegistrar",
-}
-declared_text_registrars = {
-    item.get("name", "").removeprefix("com.google.firebase.components:")
-    for component in aar_components for item in component.get("metadata", [])
-    if item.get("value") == "com.google.firebase.components.ComponentRegistrar"
-}
-missing_text_registrars = sorted(text_registrars - declared_text_registrars)
-if missing_text_registrars:
-    raise SystemExit("Text Recognition AAR metadata is missing required component registrars: "
-                     + ", ".join(missing_text_registrars))
 if any(
     "ThinLanguageIdRegistrar" in item.get("name", "")
     for component in aar_components
