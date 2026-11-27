@@ -1,6 +1,6 @@
 # Document Editor runtime
 
-One optional Link capability, delivered as one signed ARM64 runtime package (current source version: 1.0.1).
+One optional Link capability, delivered as one signed ARM64 runtime package (current source version: 1.0.2).
 
 ## Included tools
 
@@ -11,7 +11,7 @@ One optional Link capability, delivered as one signed ARM64 runtime package (cur
 
 ## Delivery
 
-The package is built by `tools/build_document_editor_runtime.sh` and published by the shared manual universal-plugin workflow. It contains the signed plugin DEX, the ARM64 Tesseract JNI libraries, and the two pinned Tesseract language files. Google scanner models and UI are delivered by Google Play services when first needed; they are not bundled into the Link APK or plugin archive. The isolated plugin DEX also bundles the pinned ML Kit Common runtime and initializes its own `MlKitContext` before either scanner is created, because the host app's ML Kit initialization provider cannot initialize classes loaded by the plugin's separate class loader.
+The package is built by `tools/build_document_editor_runtime.sh` and published by the shared manual universal-plugin workflow. It contains the signed plugin DEX, the ARM64 Tesseract JNI libraries, and the two pinned Tesseract language files. Google scanner models and UI are delivered by Google Play services when first needed; they are not bundled into the Link APK or plugin archive. The isolated plugin DEX also bundles the pinned ML Kit Common runtime and initializes its isolated ML Kit runtime through the public `MlKit.initialize(context)` API before either scanner is created, because the host app's ML Kit initialization provider cannot initialize classes loaded by the plugin's separate class loader.
 
 The source model files are pinned to the immutable `tessdata_fast` commit `87416418657359cb625c412a48b6e1d6d41c29bd`.
 
