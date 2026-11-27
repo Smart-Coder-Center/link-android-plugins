@@ -356,7 +356,7 @@ PY
 
 cat > "$SOURCE_DIR/NOTICE" <<'NOTICE'
 Link Smart Translate Runtime uses Google ML Kit Translation and Language Identification APIs.
-English image OCR uses the unbundled Google ML Kit Text Recognition API; its model is downloaded on demand by Google Play services and is not bundled in the Link APK.
+Persian and English image OCR uses offline Tesseract4Android 4.9.0 with the pinned fas and eng tessdata models, bundled only in this optional plugin package.
 The Language ID model is bundled in the Pro host APK assets; it is not downloaded as an optional Play Services module.
 Translation language models are downloaded on demand by ML Kit and remain user-managed.
 The runtime dependencies are pinned in the plugin source manifest and build configuration.
