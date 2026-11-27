@@ -99,9 +99,6 @@ for artifact in files:
             runtime_prefixes = (
                 "cz_adaptech_tesseract4android__",
                 "com_google_mlkit__translate__",
-                "com_google_mlkit__vision-common__",
-                # Text Recognition API inheritance: Detector is defined in vision-interfaces.
-                "com_google_mlkit__vision-interfaces__",
                 # Language ID API facade required by the bundled implementation.
                 "com_google_mlkit__language-id-common__",
                 # Bundled Language ID implementation and its model resources.
@@ -115,7 +112,6 @@ for artifact in files:
                 "com_google_android_gms__play-services-base__",
                 "com_google_android_gms__play-services-basement__",
                 "com_google_android_gms__play-services-tasks__",
-                "com_google_android_gms__play-services-mlkit-",
                 # GMS ClientSettings depends on ArraySet; keep it in the same plugin DEX.
                 "androidx_collection__collection__",
                 "org_jetbrains_kotlin__kotlin-stdlib__",
