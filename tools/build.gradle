@@ -41,6 +41,8 @@ configurations {
 }
 
 dependencies {
+    // Same offline Persian/English OCR engine used by Document Editor; packaged only in this plugin.
+    mlKitTranslateRuntime 'cz.adaptech.tesseract4android:tesseract4android:4.9.0'
     mlKitTranslateRuntime 'com.google.mlkit:translate:17.0.2'
     // Bundled Language ID implementation; its model resources must be merged into Pro host APK resources.
     mlKitTranslateRuntime 'com.google.mlkit:language-id:17.0.6'
