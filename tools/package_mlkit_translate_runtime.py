@@ -40,7 +40,7 @@ for path in sorted(root.rglob("*")):
     relative = path.relative_to(root)
     if "provenance" in relative.parts:
         continue
-    if relative.parts[0] not in {"code", "lib", "NOTICE"}:
+    if relative.parts[0] not in {"code", "lib", "model", "NOTICE"}:
         raise SystemExit(f"Unreviewed runtime payload path: {relative}")
     if path.is_symlink():
         raise SystemExit(f"Symlink is not allowed: {relative}")
@@ -56,6 +56,9 @@ if so_paths != sorted(runtime.get("load_order", [])):
     raise SystemExit("runtime.load_order does not match the JNI payload")
 if not dex_paths or not so_paths or "NOTICE" not in {name for name, _ in payload}:
     raise SystemExit("DEX, JNI libraries, and NOTICE are all required")
+model_paths = {name for name, _ in payload if name.startswith("model/tessdata/")}
+if model_paths != {"model/tessdata/fas.traineddata", "model/tessdata/eng.traineddata"}:
+    raise SystemExit("Persian and English Tesseract OCR models are both required in the plugin package")
 
 signed_manifest = dict(metadata)
 signed_manifest.pop("source", None)
