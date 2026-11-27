@@ -374,7 +374,8 @@ for path in sorted(root.rglob("*")):
     payload.append({"path": relative.as_posix(), "sha256": digest, "size_bytes": path.stat().st_size})
 
 payload_paths = {item["path"] for item in payload}
-if payload_paths != set(actual_dex) | set(actual_so) | {"NOTICE"}:
+expected_model_paths = {"model/tessdata/fas.traineddata", "model/tessdata/eng.traineddata"}
+if payload_paths != set(actual_dex) | set(actual_so) | expected_model_paths | {"NOTICE"}:
     raise SystemExit("Runtime package contains missing or unreviewed payload files")
 
 print(json.dumps({
