@@ -263,7 +263,14 @@ public final class DocumentEditorPlugin implements AutoCloseable {
         try {
             initialize.invoke(null, app);
         } catch (java.lang.reflect.InvocationTargetException error) {
-            Throwable cause = error.getCause();
+            // ML Kit may itself call through reflection. Unwrap the entire chain rather
+            // than reporting a generic InvocationTargetException to the user.
+            Throwable cause = error;
+            while (cause instanceof java.lang.reflect.InvocationTargetException
+                    && ((java.lang.reflect.InvocationTargetException) cause).getCause() != null) {
+                cause = ((java.lang.reflect.InvocationTargetException) cause).getCause();
+            }
+
             // The isolated plugin runtime may be reused for multiple tool launches.
             // ML Kit is a process-level singleton: a second initialize() call is expected
             // and means the runtime is already ready, not that scanner startup has failed.
