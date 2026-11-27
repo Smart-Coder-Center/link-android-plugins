@@ -135,6 +135,12 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             }
             pendingDocumentCallback = callback;
         }
+        try {
+            initializeMlKitContext();
+        } catch (Throwable error) {
+            completeDocumentFailure(safeMessage(error));
+            return;
+        }
         GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
                 .setGalleryImportAllowed(true)
                 .setPageLimit(30)
@@ -206,6 +212,12 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             fail(callback, "The scanner needs an active Link screen.");
             return;
         }
+        try {
+            initializeMlKitContext();
+        } catch (Throwable error) {
+            fail(callback, safeMessage(error));
+            return;
+        }
         GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
                 .setBarcodeFormats(
                         Barcode.FORMAT_QR_CODE,
@@ -235,6 +247,21 @@ public final class DocumentEditorPlugin implements AutoCloseable {
                 })
                 .addOnCanceledListener(() -> fail(callback, "Scanning was cancelled."))
                 .addOnFailureListener(error -> fail(callback, safeMessage(error)));
+    }
+
+    /**
+     * ML Kit normally initializes through its manifest ContentProvider. This plugin is
+     * loaded in an isolated DEX class loader, so the host provider cannot initialize
+     * the plugin's separate MlKitContext singleton. Initialize that exact runtime copy
+     * explicitly before creating either Google Play services scanner.
+     */
+    private void initializeMlKitContext() throws Exception {
+        Class<?> mlKitContext = Class.forName(
+                "com.google.mlkit.common.sdkinternal.MlKitContext",
+                true, getClass().getClassLoader());
+        java.lang.reflect.Method initialize = mlKitContext.getMethod(
+                "initializeIfNeeded", Context.class);
+        initialize.invoke(null, app);
     }
 
     private static String barcodeFormatName(int format) {
