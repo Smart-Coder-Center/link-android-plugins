@@ -23,12 +23,13 @@ required_runtime_behaviors = (
     "MAX_CACHED_TRANSLATORS",
     "languageIdentifier.close()",
     "cached.translator.close()",
-    "TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)",
-    "recognizer.process(image)",
-    "verifyTextRecognitionClient(pluginLoader)",
-    "installer.areModulesAvailable(recognizer)",
-    "installer.installModules(request)",
-    "ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED",
+    "TessBaseAPI",
+    "candidate.init(new File(packageDirectory, \"model\").getAbsolutePath(),",
+    "\"fas+eng\"",
+    "TessBaseAPI.PageSegMode.PSM_AUTO",
+    "engine.setImage(bitmap)",
+    "engine.getUTF8Text()",
+    "decodeScaled(imageUri)",
 )
 missing_behaviors = [item for item in required_runtime_behaviors if item not in adapter_source]
 if missing_behaviors:
@@ -50,13 +51,26 @@ for required in (
 if manifest.get("id") != "ml-translate" or manifest.get("package_type") != "native_runtime":
     raise SystemExit("Translate runtime must use the signed native_runtime package type")
 if (manifest.get("source") or {}).get("language_id_flow") != "bundled_model":
-    raise SystemExit("Language ID must use the bundled model runtime for release 1.0.21")
+    raise SystemExit("Language ID must use the bundled model runtime for release 1.0.22")
 
 source = manifest.get("source") or {}
 if source.get("language_id_provider") != "com.google.mlkit:language-id" or source.get("language_id_version") != "17.0.6":
     raise SystemExit("Language ID must be pinned to the bundled com.google.mlkit:language-id:17.0.6 artifact")
-if source.get("text_recognition_version") != "19.0.1" or source.get("text_recognition_common_version") != "19.1.0" or source.get("ocr_model_delivery") != "play_services_on_demand":
-    raise SystemExit("English OCR must use the pinned unbundled Play services Text Recognition API")
+if source.get("tesseract4android_version") != "4.9.0" or source.get("tessdata_fast_revision") != "87416418657359cb625c412a48b6e1d6d41c29bd" or source.get("ocr_languages") != ["fas", "eng"] or source.get("ocr_engine") != "tesseract4android_offline":
+    raise SystemExit("Image OCR must use the pinned offline Tesseract Persian+English runtime and models")
+expected_models = {
+    "fas.traineddata": (431500, "1a17ee02076107e73abd15d2038389150c8f824f"),
+    "eng.traineddata": (4113088, "bbef4675053b5b468cdb477053e28b1c698ba08e"),
+}
+for name, (expected_size, expected_blob_sha) in expected_models.items():
+    model = root / "model" / "tessdata" / name
+    if not model.is_file() or model.stat().st_size != expected_size:
+        raise SystemExit("Missing or unpinned Persian/English OCR model: " + name)
+    data = model.read_bytes()
+    actual_blob_sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    if actual_blob_sha != expected_blob_sha:
+        raise SystemExit("OCR model Git blob SHA-1 mismatch: " + name)
+
 if source.get("translate_version") != "17.0.2":
     raise SystemExit("Translate must be pinned to com.google.mlkit:translate:17.0.2")
 common_version = source.get("common_version")
@@ -132,6 +146,7 @@ if common_artifacts != [expected_common]:
 
 # The plugin must own the registry classes, not just Translate's front-end classes.
 required_isolated = (
+    "cz_adaptech_tesseract4android__tesseract4android__4.9.0.aar",
     "com_google_mlkit__translate__17.0.2.aar",
     "com_google_firebase__firebase-components__16.1.0.aar",
     "com_google_firebase__firebase-encoders-json__17.1.0.aar",
@@ -323,6 +338,7 @@ required_classes = (
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/bundled/internal/ThickLanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
+    "Lcom/googlecode/tesseract/android/TessBaseAPI;",
     "Lcom/google/mlkit/vision/text/TextRecognition;",
     "Lcom/google/mlkit/vision/text/TextRecognizer;",
     "Lcom/google/mlkit/vision/text/latin/TextRecognizerOptions;",
@@ -352,7 +368,7 @@ for path in sorted(root.rglob("*")):
     relative = path.relative_to(root)
     if "provenance" in relative.parts:
         continue
-    if relative.parts[0] not in {"code", "lib", "NOTICE"}:
+    if relative.parts[0] not in {"code", "lib", "model", "NOTICE"}:
         raise SystemExit(f"Unexpected file in runtime package source: {relative}")
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     payload.append({"path": relative.as_posix(), "sha256": digest, "size_bytes": path.stat().st_size})
