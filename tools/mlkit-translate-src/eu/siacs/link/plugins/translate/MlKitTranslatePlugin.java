@@ -10,11 +10,6 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.android.gms.common.moduleinstall.InstallStatusListener;
-import com.google.android.gms.common.moduleinstall.ModuleInstall;
-import com.google.android.gms.common.moduleinstall.ModuleInstallClient;
-import com.google.android.gms.common.moduleinstall.ModuleInstallRequest;
-import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate;
 import com.google.mlkit.common.MlKitException;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.common.model.RemoteModelManager;
@@ -259,10 +254,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             List<Object> registrars = new ArrayList<>();
             registrars.add(createRegistrar(pluginLoader,
                     "com.google.mlkit.common.internal.CommonComponentRegistrar", registrarInterface));
-            registrars.add(createRegistrar(pluginLoader,
-                    "com.google.mlkit.vision.common.internal.VisionCommonRegistrar", registrarInterface));
-            registrars.add(createRegistrar(pluginLoader,
-                    "com.google.mlkit.vision.text.internal.TextRegistrar", registrarInterface));
             // LanguageIdRegistrar owns the LanguageIdentifierImpl.Factory component.
             // ThickLanguageIdRegistrar provides the bundled model implementation.
             // Both are required: omitting the former leaves Factory null; omitting the latter
