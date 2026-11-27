@@ -253,15 +253,21 @@ public final class DocumentEditorPlugin implements AutoCloseable {
      * ML Kit normally initializes through its manifest ContentProvider. This plugin is
      * loaded in an isolated DEX class loader, so the host provider cannot initialize
      * the plugin's separate MlKitContext singleton. Initialize that exact runtime copy
-     * explicitly before creating either Google Play services scanner.
+     * explicitly through ML Kit's public initialization API before creating either scanner.
      */
     private void initializeMlKitContext() throws Exception {
-        Class<?> mlKitContext = Class.forName(
-                "com.google.mlkit.common.sdkinternal.MlKitContext",
+        Class<?> mlKit = Class.forName(
+                "com.google.mlkit.common.MlKit",
                 true, getClass().getClassLoader());
-        java.lang.reflect.Method initialize = mlKitContext.getMethod(
-                "initializeIfNeeded", Context.class);
-        initialize.invoke(null, app);
+        java.lang.reflect.Method initialize = mlKit.getMethod("initialize", Context.class);
+        try {
+            initialize.invoke(null, app);
+        } catch (java.lang.reflect.InvocationTargetException error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof Exception) throw (Exception) cause;
+            if (cause instanceof Error) throw (Error) cause;
+            throw error;
+        }
     }
 
     private static String barcodeFormatName(int format) {
