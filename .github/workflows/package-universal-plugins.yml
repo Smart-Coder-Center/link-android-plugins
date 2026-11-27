@@ -150,6 +150,11 @@ jobs:
                   language_id_version = source.get("language_id_version")
                   if translate_version != "17.0.2" or language_id_version != "17.0.6":
                       raise SystemExit(f"ML Kit Translate source versions are not the reviewed pins: {manifest_path}")
+                  if (source.get("tesseract4android_version") != "4.9.0"
+                          or source.get("tessdata_fast_revision") != "87416418657359cb625c412a48b6e1d6d41c29bd"
+                          or source.get("ocr_languages") != ["fas", "eng"]
+                          or source.get("ocr_engine") != "tesseract4android_offline"):
+                      raise SystemExit(f"Smart Translate OCR engine/models are not the reviewed Persian/English pins: {manifest_path}")
                   subprocess.run(["bash", "tools/build_mlkit_translate_runtime.sh", str(base)], check=True)
                   generated_path = base / ".link-runtime-generated.json"
                   if not generated_path.is_file():
