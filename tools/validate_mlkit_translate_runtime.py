@@ -157,19 +157,11 @@ required_isolated = (
     "com_google_android_gms__play-services-base__18.10.0.aar",
     "com_google_android_gms__play-services-basement__18.10.0.aar",
     "com_google_android_gms__play-services-tasks__18.4.1.aar",
-    "com_google_android_gms__play-services-mlkit-text-recognition__19.0.1.aar",
-    "com_google_android_gms__play-services-mlkit-text-recognition-common__19.1.0.aar",
     "com_google_mlkit__language-id__17.0.6.aar",
     "com_google_mlkit__language-id-common__16.1.0.aar",
     "javax_inject__javax.inject__1.jar",
 )
 artifact_names = {item.get("file", "") for item in artifacts}
-vision_interfaces_artifacts = sorted(
-    name for name in artifact_names
-    if name.startswith("com_google_mlkit__vision-interfaces__") and name.endswith(".aar")
-)
-if len(vision_interfaces_artifacts) != 1:
-    raise SystemExit("Expected exactly one ML Kit vision-interfaces AAR providing Detector; got " + repr(vision_interfaces_artifacts))
 collection_artifacts = sorted(
     name for name in artifact_names
     if name.startswith("androidx_collection__collection-jvm__") and name.endswith(".jar")
@@ -187,7 +179,7 @@ if missing_isolated:
     raise SystemExit("Pinned plugin-local ML Kit registry dependencies are missing: " + ", ".join(missing_isolated))
 
 build_script = (Path(__file__).resolve().parent / "build_mlkit_translate_runtime.sh").read_text(encoding="utf-8")
-for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__", "com_google_mlkit__vision-common__", "com_google_mlkit__vision-interfaces__", "com_google_android_gms__play-services-mlkit-", "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
+for required in ("com_google_mlkit__common__", "com_google_mlkit__language-id-common__", "com_google_firebase__firebase-components__", "com_google_android_datatransport__", "com_google_android_gms__play-services-basement__", "com_google_mlkit__language-id__",  "androidx_collection__collection-jvm__", "org_jetbrains_kotlin__kotlin-stdlib__", "javax_inject__javax.inject__", "public static int translate_models_metadata;", "public static int rapid_response_client_defaults;", "com_squareup_okhttp3__okhttp__3.12.13.jar", "com_squareup_okio__okio__1.15.0.jar"):
     if required not in build_script:
         raise SystemExit("Build script does not bundle plugin-local component dependency: " + required)
 
@@ -195,9 +187,6 @@ if '"com.google.mlkit.common.sdkinternal.MlKitContext", true, pluginLoader' not 
     raise SystemExit("MlKitContext must be loaded from the isolated plugin class loader")
 if '"com.google.firebase.components.ComponentRegistrar", true, pluginLoader' not in adapter_source:
     raise SystemExit("ComponentRegistrar must be loaded from the isolated plugin class loader")
-if ('"com.google.mlkit.vision.common.internal.VisionCommonRegistrar", registrarInterface' not in adapter_source
-        or '"com.google.mlkit.vision.text.internal.TextRegistrar", registrarInterface' not in adapter_source):
-    raise SystemExit("ML Kit Vision and Text Recognition registrars must be registered in the plugin-local component graph")
 if '"com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar", registrarInterface' not in adapter_source:
     raise SystemExit("LanguageIdRegistrar must register LanguageIdentifierImpl.Factory")
 if '"com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar", registrarInterface' not in adapter_source:
@@ -245,8 +234,6 @@ required_api = [
     "public com.google.mlkit.nl.languageid.internal.LanguageIdRegistrar();",
     "public com.google.mlkit.nl.languageid.bundled.internal.ThickLanguageIdRegistrar();",
     "public com.google.mlkit.nl.translate.NaturalLanguageTranslateRegistrar();",
-    "public com.google.mlkit.vision.common.internal.VisionCommonRegistrar();",
-    "public com.google.mlkit.vision.text.internal.TextRegistrar();",
     "public static int translate_models_metadata;",
     "public static int rapid_response_client_defaults;",
 ]
@@ -339,20 +326,6 @@ required_classes = (
     "Lcom/google/mlkit/nl/languageid/bundled/internal/ThickLanguageIdRegistrar;",
     "Lcom/google/mlkit/nl/languageid/internal/LanguageIdentifierImpl$Factory;",
     "Lcom/googlecode/tesseract/android/TessBaseAPI;",
-    "Lcom/google/mlkit/vision/text/TextRecognition;",
-    "Lcom/google/mlkit/vision/text/TextRecognizer;",
-    "Lcom/google/mlkit/vision/text/latin/TextRecognizerOptions;",
-    "Lcom/google/mlkit/vision/common/InputImage;",
-    "Lcom/google/mlkit/vision/interfaces/Detector;",
-    "Lcom/google/mlkit/vision/common/internal/VisionCommonRegistrar;",
-    "Lcom/google/mlkit/vision/text/internal/TextRegistrar;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstall;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallClient;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallRequest;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallStatusUpdate;",
-    "Lcom/google/android/gms/common/moduleinstall/InstallStatusListener;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleAvailabilityResponse;",
-    "Lcom/google/android/gms/common/moduleinstall/ModuleInstallResponse;",
 )
 missing_classes = [name for name in required_classes if name not in defined_classes]
 if missing_classes:
