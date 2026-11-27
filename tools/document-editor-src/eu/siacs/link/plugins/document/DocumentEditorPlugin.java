@@ -141,24 +141,28 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             completeDocumentFailure(safeMessage(error));
             return;
         }
-        GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
-                .setGalleryImportAllowed(true)
-                .setPageLimit(30)
-                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
-                        GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
-                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-                .build();
-        GmsDocumentScanner scanner = GmsDocumentScanning.getClient(options);
-        scanner.getStartScanIntent(activity)
-                .addOnSuccessListener(sender -> {
-                    try {
-                        activity.startIntentSenderForResult(sender, REQUEST_DOCUMENT_SCAN,
-                                null, 0, 0, 0);
-                    } catch (Exception error) {
-                        completeDocumentFailure(safeMessage(error));
-                    }
-                })
-                .addOnFailureListener(error -> completeDocumentFailure(safeMessage(error)));
+        try {
+            GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
+                    .setGalleryImportAllowed(true)
+                    .setPageLimit(30)
+                    .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
+                            GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
+                    .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                    .build();
+            GmsDocumentScanner scanner = GmsDocumentScanning.getClient(options);
+            scanner.getStartScanIntent(activity)
+                    .addOnSuccessListener(sender -> {
+                        try {
+                            activity.startIntentSenderForResult(sender, REQUEST_DOCUMENT_SCAN,
+                                    null, 0, 0, 0);
+                        } catch (Exception error) {
+                            completeDocumentFailure(safeMessage(error));
+                        }
+                    })
+                    .addOnFailureListener(error -> completeDocumentFailure(safeMessage(error)));
+        } catch (Throwable error) {
+            completeDocumentFailure(safeMessage(error));
+        }
     }
 
     /** Called by the host Activity for the request code started above. */
@@ -600,9 +604,17 @@ public final class DocumentEditorPlugin implements AutoCloseable {
 
     private static String safeMessage(Throwable error) {
         if (error == null) return "The operation failed.";
-        String message = error.getMessage();
-        if (message == null || message.trim().isEmpty()) return error.getClass().getSimpleName();
-        return message;
+        Throwable root = error;
+        // Reflection wrappers can be nested by Google Play services/ML Kit.
+        for (int depth = 0; depth < 8
+                && root instanceof java.lang.reflect.InvocationTargetException
+                && ((java.lang.reflect.InvocationTargetException) root).getCause() != null;
+                depth++) {
+            root = ((java.lang.reflect.InvocationTargetException) root).getCause();
+        }
+        String message = root.getMessage();
+        if (message == null || message.trim().isEmpty()) return root.getClass().getSimpleName();
+        return root.getClass().getSimpleName() + ": " + message;
     }
 
     private synchronized void ensureOpen() {
