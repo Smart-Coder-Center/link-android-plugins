@@ -222,35 +222,50 @@ public final class DocumentEditorPlugin implements AutoCloseable {
             fail(callback, safeMessage(error));
             return;
         }
-        GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                        Barcode.FORMAT_QR_CODE,
-                        Barcode.FORMAT_CODE_128,
-                        Barcode.FORMAT_CODE_39,
-                        Barcode.FORMAT_CODE_93,
-                        Barcode.FORMAT_CODABAR,
-                        Barcode.FORMAT_EAN_13,
-                        Barcode.FORMAT_EAN_8,
-                        Barcode.FORMAT_ITF,
-                        Barcode.FORMAT_UPC_A,
-                        Barcode.FORMAT_UPC_E,
-                        Barcode.FORMAT_PDF417,
-                        Barcode.FORMAT_AZTEC,
-                        Barcode.FORMAT_DATA_MATRIX)
-                .enableAutoZoom()
-                .build();
-        GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(activity, options);
-        scanner.startScan()
-                .addOnSuccessListener(barcode -> {
-                    String value = barcode == null ? null : barcode.getRawValue();
-                    if (value == null || value.trim().isEmpty()) {
-                        fail(callback, "No readable barcode data was returned.");
-                    } else {
-                        success(callback, barcodeFormatName(barcode.getFormat()) + "\n" + value);
-                    }
-                })
-                .addOnCanceledListener(() -> fail(callback, "Scanning was cancelled."))
-                .addOnFailureListener(error -> fail(callback, safeMessage(error)));
+        try {
+            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(
+                            Barcode.FORMAT_QR_CODE,
+                            Barcode.FORMAT_CODE_128,
+                            Barcode.FORMAT_CODE_39,
+                            Barcode.FORMAT_CODE_93,
+                            Barcode.FORMAT_CODABAR,
+                            Barcode.FORMAT_EAN_13,
+                            Barcode.FORMAT_EAN_8,
+                            Barcode.FORMAT_ITF,
+                            Barcode.FORMAT_UPC_A,
+                            Barcode.FORMAT_UPC_E,
+                            Barcode.FORMAT_PDF417,
+                            Barcode.FORMAT_AZTEC,
+                            Barcode.FORMAT_DATA_MATRIX)
+                    .enableAutoZoom()
+                    .build();
+            GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(activity, options);
+            if (scanner == null) {
+                fail(callback, "Google Code Scanner could not be initialized. Check Google Play services and try again.");
+                return;
+            }
+            com.google.android.gms.tasks.Task<Barcode> scanTask = scanner.startScan();
+            if (scanTask == null) {
+                fail(callback, "Google Code Scanner did not return a scan task. Check Google Play services and try again.");
+                return;
+            }
+            scanTask.addOnSuccessListener(barcode -> {
+                if (barcode == null) {
+                    fail(callback, "The scanner returned an empty result.");
+                    return;
+                }
+                String value = barcode.getRawValue();
+                if (value == null || value.trim().isEmpty()) {
+                    fail(callback, "No readable barcode data was returned.");
+                } else {
+                    success(callback, barcodeFormatName(barcode.getFormat()) + "\n" + value);
+                }
+            }).addOnCanceledListener(() -> fail(callback, "Scanning was cancelled."))
+                    .addOnFailureListener(error -> fail(callback, safeMessage(error)));
+        } catch (Throwable error) {
+            fail(callback, safeMessage(error));
+        }
     }
 
     /**
