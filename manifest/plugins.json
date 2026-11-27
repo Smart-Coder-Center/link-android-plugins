@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": 36,
+  "catalog_version": 37,
   "plugins": [
     {
       "id": "asr.koochik-rnnt.fa",
@@ -25,7 +25,7 @@
     {
       "id": "document-editor",
       "kind": "document",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "name": "Document Editor",
       "description": "Persian and English image-to-text OCR, automatic document scanning, PDF and editable Word export, and QR/barcode reading in one optional capability.",
       "language": "und",
@@ -36,7 +36,7 @@
         "url": "https://www.apache.org/licenses/LICENSE-2.0",
         "attribution": "Tesseract OCR 5.5.1, Tesseract4Android 4.9.0, tessdata_fast Persian/English models, Google ML Kit Document Scanner and Google Code Scanner. Leptonica retains its BSD-2-Clause notice."
       },
-      "release_notes": "Fix isolated ML Kit initialization by using the documented public MlKit.initialize API for document scanning and QR/barcode scanning; surface the underlying initialization error if it fails.",
+      "release_notes": "Make ML Kit initialization idempotent so reopening Barcode/QR Reader or Document Scanner does not fail when the isolated runtime is already initialized.",
       "runtime": {
         "abis": [
           "arm64-v8a"
@@ -54,9 +54,9 @@
         "code_api_version": 1
       },
       "archive": {
-        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-document-editor-1.0.2/document-editor-1.0.2.zip",
-        "size_bytes": 17766286,
-        "sha256": "1250288ff602031ac89d9af5577966fe2bfd7964fcdc06252beba1a8b07d7828"
+        "url": "https://github.com/Smart-Coder-Center/link-android-plugins/releases/download/plugin-document-editor-1.0.3/document-editor-1.0.3.zip",
+        "size_bytes": 17766395,
+        "sha256": "26bb9a4e15b4e6244bd8e8b86141b540f32c29dacbccc3e74a483224d81863b6"
       }
     },
     {
