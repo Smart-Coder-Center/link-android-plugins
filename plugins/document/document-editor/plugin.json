@@ -1,7 +1,7 @@
 {
   "id": "document-editor",
   "kind": "document",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": "Document Editor",
   "description": "Persian and English image-to-text OCR, automatic document scanning, PDF and editable Word export, and QR/barcode reading in one optional capability.",
   "language": "und",
@@ -12,7 +12,7 @@
     "url": "https://www.apache.org/licenses/LICENSE-2.0",
     "attribution": "Tesseract OCR 5.5.1, Tesseract4Android 4.9.0, tessdata_fast Persian/English models, Google ML Kit Document Scanner and Google Code Scanner. Leptonica retains its BSD-2-Clause notice."
   },
-  "release_notes": "Make ML Kit initialization idempotent so reopening Barcode/QR Reader or Document Scanner does not fail when the isolated runtime is already initialized.",
+  "release_notes": "Fix nested ML Kit reflection initialization failures and report actionable document scanner startup errors.",
   "source": {
     "type": "document_editor_runtime",
     "tesseract4android_version": "4.9.0",
