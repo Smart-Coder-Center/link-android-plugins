@@ -59,6 +59,9 @@ for symbol in (
     "eu/siacs/link/plugins/document/DocumentEditorPlugin",
     "recognizeText", "startDocumentScan", "startCodeScan",
     "exportPdf", "exportDocx", "handleActivityResult",
+    "initializeMlKitContext",
+    "com/google/mlkit/common/sdkinternal/MlKitContext",
+    "initializeIfNeeded",
 ):
     if symbol.encode("utf-8") not in dex_payload:
         raise SystemExit(f"Document Editor DEX is missing required API: {symbol}")
