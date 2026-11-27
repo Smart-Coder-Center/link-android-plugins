@@ -1,6 +1,8 @@
 package eu.siacs.link.plugins.translate;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,14 +25,12 @@ import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
 import com.google.mlkit.nl.translate.TranslateRemoteModel;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 import org.json.JSONArray;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,6 +41,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * ML Kit translation adapter loaded only from a verified Link DEX runtime package.
@@ -53,11 +55,14 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
     }
 
     private static final int MAX_CACHED_TRANSLATORS = 4;
+    private static final int MAX_IMAGE_DIMENSION = 3200;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Context applicationContext;
+    private final File packageDirectory;
+    private final ExecutorService ocrWorker = Executors.newSingleThreadExecutor();
     private final LanguageIdentifier languageIdentifier;
-    private TextRecognizer textRecognizer;
+    private TessBaseAPI ocr;
     private final LinkedHashMap<String, CachedTranslator> translatorCache =
             new LinkedHashMap<>(4, 0.75f, true);
     private boolean closed;
@@ -74,8 +79,15 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
     }
 
-    private MlKitTranslatePlugin(Context context) {
+    private MlKitTranslatePlugin(Context context, File packageDirectory) {
         this.applicationContext = context.getApplicationContext();
+        this.packageDirectory = packageDirectory;
+        File persian = new File(packageDirectory, "model/tessdata/fas.traineddata");
+        File english = new File(packageDirectory, "model/tessdata/eng.traineddata");
+        if (!persian.isFile() || !english.isFile()
+                || persian.length() < 100_000L || english.length() < 1_000_000L) {
+            throw new IllegalStateException("Persian and English OCR models are missing from Smart Translate");
+        }
         this.languageIdentifier = LanguageIdentification.getClient();
     }
 
@@ -85,13 +97,10 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
         }
         patchResourceIds(context.getApplicationContext());
         initializeMlKitComponents(context.getApplicationContext());
-        return new MlKitTranslatePlugin(context);
+        return new MlKitTranslatePlugin(context, packageDirectory);
     }
 
-    /**
-     * Reads Latin-script text from a selected image. The unbundled ML Kit model is
-     * delivered by Google Play services on first use; no OCR model is packaged in Link APK.
-     */
+    /** Persian and English image OCR using the same offline Tesseract engine as Document Editor. */
     public void recognizeText(Uri imageUri, Callback callback) {
         if (imageUri == null) {
             fail(callback, "تصویری برای خواندن انتخاب نشده است");
@@ -104,73 +113,71 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             }
         }
         try {
-            InputImage image = InputImage.fromFilePath(applicationContext, imageUri);
-            final TextRecognizer recognizer;
-            synchronized (this) {
-                if (textRecognizer == null) {
-                    textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+            ocrWorker.execute(() -> {
+                Bitmap bitmap = null;
+                try {
+                    ensureOpenForOcr();
+                    bitmap = decodeScaled(imageUri);
+                    if (bitmap == null) throw new IOException("The selected image could not be decoded.");
+                    TessBaseAPI engine = getOcr();
+                    String text;
+                    try {
+                        engine.setImage(bitmap);
+                        text = engine.getUTF8Text();
+                    } finally {
+                        engine.clear();
+                    }
+                    final String result = text == null ? "" : text.trim();
+                    mainHandler.post(() -> success(callback, result));
+                } catch (Throwable error) {
+                    mainHandler.post(() -> fail(callback, error));
+                } finally {
+                    if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
                 }
-                recognizer = textRecognizer;
-            }
-            ensureOcrModuleAndProcess(image, recognizer, callback);
+            });
         } catch (Throwable error) {
             fail(callback, error);
         }
     }
 
-    private void ensureOcrModuleAndProcess(
-            InputImage image, TextRecognizer recognizer, Callback callback) {
-        ModuleInstallClient installer = ModuleInstall.getClient(applicationContext);
-        installer.areModulesAvailable(recognizer)
-                .addOnSuccessListener(availability -> {
-                    if (availability.areModulesAvailable()) {
-                        processRecognizedImage(image, recognizer, callback);
-                        return;
-                    }
-                    InstallStatusListener listener = new InstallStatusListener() {
-                        @Override public void onInstallStatusUpdated(ModuleInstallStatusUpdate update) {
-                            int state = update.getInstallState();
-                            if (state == ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED) {
-                                installer.unregisterListener(this);
-                                processRecognizedImage(image, recognizer, callback);
-                            } else if (state == ModuleInstallStatusUpdate.InstallState.STATE_FAILED
-                                    || state == ModuleInstallStatusUpdate.InstallState.STATE_CANCELED) {
-                                installer.unregisterListener(this);
-                                fail(callback, "دانلود مدل OCR از Google Play services ناموفق بود [code="
-                                        + update.getErrorCode() + "]");
-                            }
-                        }
-                    };
-                    ModuleInstallRequest request = ModuleInstallRequest.newBuilder()
-                            .addApi(recognizer)
-                            .setListener(listener)
-                            .build();
-                    installer.installModules(request)
-                            .addOnSuccessListener(response -> {
-                                if (response.areModulesAlreadyInstalled()) {
-                                    installer.unregisterListener(listener);
-                                    processRecognizedImage(image, recognizer, callback);
-                                }
-                            })
-                            .addOnFailureListener(error -> {
-                                installer.unregisterListener(listener);
-                                fail(callback, error);
-                            });
-                })
-                .addOnFailureListener(error -> fail(callback, error));
+    private Bitmap decodeScaled(Uri uri) throws Exception {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        try (java.io.InputStream input = applicationContext.getContentResolver().openInputStream(uri)) {
+            if (input == null) throw new IOException("Could not read the selected image.");
+            BitmapFactory.decodeStream(input, null, bounds);
+        }
+        int sample = 1;
+        while (bounds.outWidth / sample > MAX_IMAGE_DIMENSION
+                || bounds.outHeight / sample > MAX_IMAGE_DIMENSION) sample *= 2;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sample;
+        try (java.io.InputStream input = applicationContext.getContentResolver().openInputStream(uri)) {
+            if (input == null) throw new IOException("Could not read the selected image.");
+            return BitmapFactory.decodeStream(input, null, options);
+        }
     }
 
-    private void processRecognizedImage(
-            InputImage image, TextRecognizer recognizer, Callback callback) {
-        synchronized (this) {
-            if (closed) {
-                fail(callback, "Smart Translate is closed");
-                return;
+    private synchronized TessBaseAPI getOcr() throws Exception {
+        ensureOpenForOcr();
+        if (ocr == null) {
+            TessBaseAPI candidate = new TessBaseAPI();
+            boolean initialized = false;
+            try {
+                initialized = candidate.init(new File(packageDirectory, "model").getAbsolutePath(),
+                        "fas+eng", TessBaseAPI.OEM_LSTM_ONLY);
+                if (!initialized) throw new IllegalStateException("Could not initialize Persian/English OCR.");
+                candidate.setPageSegMode(TessBaseAPI.PageSegMode.PSM_AUTO);
+                ocr = candidate;
+            } finally {
+                if (!initialized) candidate.recycle();
             }
         }
-        recognizer.process(image)
-                .addOnSuccessListener(result -> success(callback, result == null ? "" : result.getText()))
-                .addOnFailureListener(error -> fail(callback, error));
+        return ocr;
+    }
+
+    private synchronized void ensureOpenForOcr() {
+        if (closed) throw new IllegalStateException("Smart Translate is closed");
     }
 
     public List<String> getSupportedLanguages() {
@@ -242,7 +249,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             try {
                 Object existingContext = mlKitContext.getMethod("getInstance").invoke(null);
                 verifyLanguageIdFactory(pluginLoader, mlKitContext, existingContext);
-                verifyTextRecognitionClient(pluginLoader);
                 return;
             } catch (InvocationTargetException notInitialized) {
                 if (!(notInitialized.getCause() instanceof IllegalStateException)) throw notInitialized;
@@ -271,7 +277,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             Method initialize = mlKitContext.getMethod("initialize", Context.class, List.class);
             Object initializedContext = initialize.invoke(null, context, registrars);
             verifyLanguageIdFactory(pluginLoader, mlKitContext, initializedContext);
-            verifyTextRecognitionClient(pluginLoader);
         } catch (Exception | LinkageError error) {
             Throwable cause = error instanceof InvocationTargetException
                     && ((InvocationTargetException) error).getCause() != null
@@ -325,20 +330,6 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             throw new IllegalStateException("ML Kit Language ID Factory returned a null client");
         }
         identifier.close();
-    }
-
-    private static void verifyTextRecognitionClient(ClassLoader loader) {
-        if (TextRecognition.class.getClassLoader() != loader
-                || TextRecognizer.class.getClassLoader() != loader
-                || TextRecognizerOptions.class.getClassLoader() != loader
-                || InputImage.class.getClassLoader() != loader) {
-            throw new LinkageError("ML Kit Text Recognition API classes were not loaded from the Smart Translate plugin DEX");
-        }
-        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        if (recognizer == null) {
-            throw new IllegalStateException("ML Kit Text Recognition registrar did not create a recognizer");
-        }
-        recognizer.close();
     }
 
     private static Object createRegistrar(ClassLoader loader, String className,
@@ -653,8 +644,23 @@ public final class MlKitTranslatePlugin implements AutoCloseable {
             try { translator.close(); } catch (Exception ignored) {}
         }
         try { languageIdentifier.close(); } catch (Exception ignored) {}
-        TextRecognizer recognizer;
-        synchronized (this) { recognizer = textRecognizer; textRecognizer = null; }
-        if (recognizer != null) { try { recognizer.close(); } catch (Exception ignored) {} }
+        try {
+            ocrWorker.execute(() -> {
+                synchronized (MlKitTranslatePlugin.this) {
+                    if (ocr != null) {
+                        try { ocr.recycle(); } catch (Exception ignored) {}
+                        ocr = null;
+                    }
+                }
+            });
+            ocrWorker.shutdown();
+        } catch (Exception ignored) {
+            synchronized (this) {
+                if (ocr != null) {
+                    try { ocr.recycle(); } catch (Exception ignoredAgain) {}
+                    ocr = null;
+                }
+            }
+        }
     }
 }
