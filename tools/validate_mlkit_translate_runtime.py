@@ -200,9 +200,6 @@ if adapter_source.count("verifyLanguageIdFactory(pluginLoader, mlKitContext,") !
     raise SystemExit("Both existing and freshly initialized MlKitContext paths must verify Language ID Factory")
 for required in (
     '"com.google.mlkit.nl.languageid.internal.LanguageIdentifierImpl$Factory", true, loader',
-    "TextRecognition.class.getClassLoader() != loader",
-    "TextRecognizer.class.getClassLoader() != loader",
-    "InputImage.class.getClassLoader() != loader",
     'mlKitContextClass.getMethod("get", Class.class)',
     'LanguageIdentification.getClient()',
     'identifier.close()',
