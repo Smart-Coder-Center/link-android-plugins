@@ -17,12 +17,46 @@ done
 command -v gradle >/dev/null
 command -v javac >/dev/null
 command -v python3 >/dev/null
+command -v curl >/dev/null
+command -v readelf >/dev/null
 
 rm -rf "$SOURCE_DIR/lib/arm64-v8a"
-mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/runtime-jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
+mkdir -p "$SOURCE_DIR/code" "$SOURCE_DIR/model/tessdata" "$SOURCE_DIR/provenance" "$SOURCE_DIR/lib/arm64-v8a" "$WORK_DIR/artifacts" "$WORK_DIR/unpacked" "$WORK_DIR/jars" "$WORK_DIR/runtime-jars" "$WORK_DIR/classes" "$WORK_DIR/dex"
 find "$SOURCE_DIR/code" -maxdepth 1 -type f -name 'classes*.dex' -delete
+find "$SOURCE_DIR/model/tessdata" -maxdepth 1 -type f -name '*.traineddata' -delete
 rm -rf "$SOURCE_DIR/vendor-jars"
 rm -f "$SOURCE_DIR/.link-runtime-generated.json"
+
+TESSDATA_REVISION="87416418657359cb625c412a48b6e1d6d41c29bd"
+download_ocr_model() {
+  local language="$1" expected_size="$2" expected_blob_sha="$3"
+  local destination="$SOURCE_DIR/model/tessdata/${language}.traineddata"
+  local url="https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/${TESSDATA_REVISION}/${language}.traineddata"
+  local final_url
+  final_url="$(curl --silent --show-error --fail --location --proto '=https' --proto-redir '=https' \
+    --max-filesize 10485760 --retry 3 --connect-timeout 20 \
+    "$url" -o "$destination" -w '%{url_effective}')"
+  python3 - "$final_url" <<'PYMODEL'
+import sys
+from urllib.parse import urlparse
+url = urlparse(sys.argv[1])
+if url.scheme != "https" or url.hostname != "raw.githubusercontent.com":
+    raise SystemExit("OCR model redirected to an untrusted host")
+PYMODEL
+  test -s "$destination"
+  python3 - "$destination" "$expected_size" "$expected_blob_sha" <<'PYMODEL'
+import hashlib, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+data = path.read_bytes()
+if len(data) != int(sys.argv[2]):
+    raise SystemExit("Unexpected OCR model size: " + path.name)
+actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+if actual != sys.argv[3]:
+    raise SystemExit("OCR model Git blob SHA-1 mismatch: " + path.name)
+PYMODEL
+}
+download_ocr_model fas 431500 1a17ee02076107e73abd15d2038389150c8f824f
+download_ocr_model eng 4113088 bbef4675053b5b468cdb477053e28b1c698ba08e
 rm -f "$SOURCE_DIR/provenance/mlkit-aar-audit.json" \
   "$SOURCE_DIR/provenance/mlkit-internal-api.txt" \
   "$SOURCE_DIR/provenance/translate_models_metadata.json" \
@@ -63,7 +97,7 @@ for artifact in files:
             # Sharing only ML Kit Common with the host can reuse a singleton that lacks
             # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
             runtime_prefixes = (
-                "com_google_mlkit__translate__",
+                "cz_adaptech_tesseract4android__",\n                "com_google_mlkit__translate__",
                 "com_google_mlkit__vision-common__",
                 # Text Recognition API inheritance: Detector is defined in vision-interfaces.
                 "com_google_mlkit__vision-interfaces__",
@@ -338,4 +372,4 @@ The runtime dependencies are pinned in the plugin source manifest and build conf
 Third-party notices and licenses remain those of their respective upstream projects.
 NOTICE
 
-echo "ML Kit Translate DEX runtime assembled in $SOURCE_DIR"
+echo "Smart Translate runtime assembled with offline Persian/English Tesseract OCR in $SOURCE_DIR"
