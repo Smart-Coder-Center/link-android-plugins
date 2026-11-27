@@ -50,7 +50,7 @@ path = pathlib.Path(sys.argv[1])
 data = path.read_bytes()
 if len(data) != int(sys.argv[2]):
     raise SystemExit("Unexpected OCR model size: " + path.name)
-actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 if actual != sys.argv[3]:
     raise SystemExit("OCR model Git blob SHA-1 mismatch: " + path.name)
 PYMODEL
@@ -97,7 +97,8 @@ for artifact in files:
             # Sharing only ML Kit Common with the host can reuse a singleton that lacks
             # NaturalLanguageTranslateRegistrar and triggers the missing model-manager error.
             runtime_prefixes = (
-                "cz_adaptech_tesseract4android__",\n                "com_google_mlkit__translate__",
+                "cz_adaptech_tesseract4android__",
+                "com_google_mlkit__translate__",
                 "com_google_mlkit__vision-common__",
                 # Text Recognition API inheritance: Detector is defined in vision-interfaces.
                 "com_google_mlkit__vision-interfaces__",
